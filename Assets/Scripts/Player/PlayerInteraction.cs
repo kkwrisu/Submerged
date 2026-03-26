@@ -5,7 +5,7 @@ public class PlayerInteract : MonoBehaviour
 {
     [Header("Config")]
     public float interactDistance = 3f;
-    public LayerMask interactLayer;
+    public string interactTag = "Interactable";
 
     [Header("Referência")]
     public Camera cam;
@@ -22,14 +22,17 @@ public class PlayerInteract : MonoBehaviour
         Ray ray = new Ray(cam.transform.position, cam.transform.forward);
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, interactDistance, interactLayer))
+        if (Physics.Raycast(ray, out hit, interactDistance))
         {
-            Interactable interactable = hit.collider.GetComponent<Interactable>();
-
-            if (interactable != null)
+            if (hit.collider.CompareTag(interactTag))
             {
-                currentTarget = interactable;
-                return;
+                Interactable interactable = hit.collider.GetComponent<Interactable>();
+
+                if (interactable != null)
+                {
+                    currentTarget = interactable;
+                    return;
+                }
             }
         }
 
