@@ -56,9 +56,13 @@ public class PlayerMovement : MonoBehaviour
     public float hangDropDistance = 0.15f;
     public float hangDropSpeed = 8f;
 
+    [Header("Ledge Blocking Near Ladder")]
+    public float ledgeBlockAfterLadderTime = 0.25f;
+
     private float hangTimer;
     private bool isDroppingToHang;
     private float hangStartY;
+    private float ledgeBlockTimer;
 
     private bool isClimbing;
     private bool isHanging;
@@ -79,6 +83,17 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 standingCenter;
     private Vector3 crouchingCenter;
 
+    [Header("Ladder")]
+    public string ladderTag = "Ladder";
+    public float ladderEnterSpeedThreshold = 0.1f;
+    public float ladderDetachJumpForce = 5f;
+    public float ladderHorizontalExitForce = 2f;
+    public float ladderIdleStickForce = -0.5f;
+
+    private Ladder currentLadder;
+    private bool isOnLadder;
+    private bool isInsideLadder;
+
     void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -94,11 +109,20 @@ public class PlayerMovement : MonoBehaviour
     {
         stepTimer -= Time.deltaTime;
         hangTimer -= Time.deltaTime;
+        ledgeBlockTimer -= Time.deltaTime;
 
         HandleGroundCheck();
         HandleCrouch();
 
-        if (!isGrounded && !isClimbing && !isHanging && !isDroppingToHang && !isPullingUp)
+        if (isOnLadder)
+        {
+            HandleLadderMovement();
+            return;
+        }
+
+        TryEnterLadder();
+
+        if (CanCheckLedge())
             CheckLedge();
 
         HandleHang();
@@ -107,8 +131,30 @@ public class PlayerMovement : MonoBehaviour
         HandleMovement();
     }
 
+    bool CanCheckLedge()
+    {
+        if (isGrounded) return false;
+        if (isClimbing || isHanging || isDroppingToHang || isPullingUp) return false;
+        if (isOnLadder) return false;
+
+        // ESSENCIAL: impede detectar borda quando estiver na área da escada
+        if (isInsideLadder) return false;
+        if (currentLadder != null) return false;
+
+        // pequeno cooldown ao sair da escada
+        if (ledgeBlockTimer > 0f) return false;
+
+        return true;
+    }
+
     void HandleGroundCheck()
     {
+        if (isOnLadder)
+        {
+            isGrounded = false;
+            return;
+        }
+
         Vector3 capsuleStart = groundCheck.position + Vector3.up * 0.1f;
         Vector3 capsuleEnd = groundCheck.position;
 
@@ -126,7 +172,7 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleCrouch()
     {
-        bool canCrouchNow = !isClimbing && !isHanging && !isDroppingToHang && !isPullingUp;
+        bool canCrouchNow = !isClimbing && !isHanging && !isDroppingToHang && !isPullingUp && !isOnLadder;
 
         if (crouchHeld && canCrouchNow)
         {
@@ -140,11 +186,19 @@ public class PlayerMovement : MonoBehaviour
                 isCrouching = true;
         }
 
+        float oldHeight = controller.height;
+
         float targetHeight = isCrouching ? crouchHeight : standingHeight;
         Vector3 targetCenter = isCrouching ? crouchingCenter : standingCenter;
 
         controller.height = Mathf.Lerp(controller.height, targetHeight, crouchTransitionSpeed * Time.deltaTime);
         controller.center = Vector3.Lerp(controller.center, targetCenter, crouchTransitionSpeed * Time.deltaTime);
+
+        float heightDelta = controller.height - oldHeight;
+        if (Mathf.Abs(heightDelta) > 0.0001f)
+        {
+            controller.Move(Vector3.up * (heightDelta * 0.5f));
+        }
 
         if (isCrouching)
             isSprinting = false;
@@ -152,7 +206,7 @@ public class PlayerMovement : MonoBehaviour
 
     bool CanStandUp()
     {
-        if (isClimbing || isHanging || isDroppingToHang || isPullingUp)
+        if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder)
             return true;
 
         float radius = controller.radius * 0.95f;
@@ -173,20 +227,14 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleMovement()
     {
-        if (isClimbing || isHanging || isDroppingToHang || isPullingUp) return;
+        if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder) return;
 
-        float targetSpeed;
-
-        if (isCrouching)
-            targetSpeed = crouchSpeed;
-        else
-            targetSpeed = isSprinting ? sprintSpeed : walkSpeed;
+        float targetSpeed = isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
 
         Vector3 moveDirection = transform.right * moveInput.x + transform.forward * moveInput.y;
         Vector3 targetVelocity = moveDirection * targetSpeed;
 
         float control = isGrounded ? 1f : airControl;
-
         float lerpSpeed = moveInput.magnitude > 0.01f ? acceleration : deceleration;
 
         currentVelocity = Vector3.Lerp(
@@ -203,13 +251,15 @@ public class PlayerMovement : MonoBehaviour
             yVelocity += gravity * fallMultiplier * Time.deltaTime;
         else if (yVelocity > 0)
             yVelocity += gravity * lowJumpMultiplier * Time.deltaTime;
+        else
+            yVelocity += gravity * Time.deltaTime;
 
         controller.Move(Vector3.up * yVelocity * Time.deltaTime);
     }
 
     void StepClimb(Vector3 moveDirection)
     {
-        if (!isGrounded || isCrouching || moveInput.magnitude < 0.1f || stepTimer > 0)
+        if (!isGrounded || isCrouching || moveInput.magnitude < 0.1f || stepTimer > 0 || isOnLadder)
             return;
 
         RaycastHit lowerHit;
@@ -226,6 +276,10 @@ public class PlayerMovement : MonoBehaviour
 
     void CheckLedge()
     {
+        // trava extra de segurança
+        if (isInsideLadder || currentLadder != null || ledgeBlockTimer > 0f)
+            return;
+
         RaycastHit wallHit;
 
         if (Physics.Raycast(ledgeCheck.position, transform.forward, out wallHit, ledgeCheckDistance, groundMask, QueryTriggerInteraction.Ignore))
@@ -253,6 +307,11 @@ public class PlayerMovement : MonoBehaviour
 
     void StartHang(Vector3 ledgePoint)
     {
+        if (isOnLadder) return;
+        if (isInsideLadder) return;
+        if (currentLadder != null) return;
+        if (ledgeBlockTimer > 0f) return;
+
         climbTarget = ledgePoint;
 
         yVelocity = 0f;
@@ -298,6 +357,8 @@ public class PlayerMovement : MonoBehaviour
 
     void StartClimb(Vector3 ledgePoint)
     {
+        if (isOnLadder) return;
+
         isClimbing = true;
         climbTarget = ledgePoint;
         climbStartY = transform.position.y;
@@ -346,6 +407,107 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    void TryEnterLadder()
+    {
+        if (!isInsideLadder || currentLadder == null) return;
+        if (isClimbing || isHanging || isDroppingToHang || isPullingUp) return;
+        if (isCrouching) return;
+
+        if (Mathf.Abs(moveInput.y) > ladderEnterSpeedThreshold)
+        {
+            EnterLadder(currentLadder);
+        }
+    }
+
+    void EnterLadder(Ladder ladder)
+    {
+        isOnLadder = true;
+        isSprinting = false;
+        isCrouching = false;
+
+        currentVelocity = Vector3.zero;
+        yVelocity = 0f;
+
+        // enquanto entra na escada, bloqueia o ledge
+        ledgeBlockTimer = ledgeBlockAfterLadderTime;
+    }
+
+    void ExitLadder(bool jumpedOff = false, bool exitedTop = false)
+    {
+        if (currentLadder != null && exitedTop)
+        {
+            Vector3 targetTop = currentLadder.GetTopExitPosition(transform.position);
+
+            controller.enabled = false;
+            transform.position = targetTop;
+            controller.enabled = true;
+        }
+
+        isOnLadder = false;
+
+        // ESSENCIAL: bloqueia o ledge logo após sair da escada
+        ledgeBlockTimer = ledgeBlockAfterLadderTime;
+
+        if (jumpedOff)
+        {
+            yVelocity = ladderDetachJumpForce;
+            currentVelocity = transform.forward * ladderHorizontalExitForce;
+        }
+        else
+        {
+            yVelocity = -2f;
+        }
+
+        if (!isInsideLadder)
+            currentLadder = null;
+    }
+
+    void HandleLadderMovement()
+    {
+        if (currentLadder == null)
+        {
+            isOnLadder = false;
+            return;
+        }
+
+        Vector3 ladderUp = currentLadder.GetUpDirection();
+
+        if (currentLadder.snapPlayerToLadder)
+        {
+            Vector3 snapOffset = currentLadder.GetSnapOffset(transform.position);
+            controller.Move(snapOffset * currentLadder.snapSpeed * Time.deltaTime);
+        }
+
+        float verticalInput = moveInput.y;
+        Vector3 climbMotion = ladderUp * (verticalInput * currentLadder.climbSpeed);
+
+        if (Mathf.Abs(verticalInput) < 0.01f)
+            climbMotion += ladderUp * ladderIdleStickForce;
+
+        controller.Move(climbMotion * Time.deltaTime);
+
+        currentVelocity = Vector3.zero;
+        yVelocity = 0f;
+
+        if (verticalInput > 0.1f && currentLadder.IsAboveTop(transform.position))
+        {
+            ExitLadder(false, true);
+            return;
+        }
+
+        if (verticalInput < -0.1f && currentLadder.IsBelowBottom(transform.position))
+        {
+            ExitLadder(false, false);
+            return;
+        }
+
+        if (!isInsideLadder && Mathf.Abs(verticalInput) < 0.01f)
+        {
+            ExitLadder(false, false);
+            return;
+        }
+    }
+
     public void OnMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
@@ -353,7 +515,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnSprint(InputAction.CallbackContext context)
     {
-        if (isCrouching)
+        if (isCrouching || isOnLadder)
         {
             isSprinting = false;
             return;
@@ -364,7 +526,15 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnJump(InputAction.CallbackContext context)
     {
-        if (context.performed && isGrounded && !isCrouching)
+        if (!context.performed) return;
+
+        if (isOnLadder)
+        {
+            ExitLadder(true, false);
+            return;
+        }
+
+        if (isGrounded && !isCrouching)
         {
             yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
@@ -372,15 +542,77 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnCrouch(InputAction.CallbackContext context)
     {
+        if (isOnLadder)
+        {
+            crouchHeld = false;
+            return;
+        }
+
         if (context.performed)
             crouchHeld = true;
         else if (context.canceled)
             crouchHeld = false;
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!other.CompareTag(ladderTag)) return;
+
+        Ladder ladder = other.GetComponent<Ladder>();
+        if (ladder == null)
+            ladder = other.GetComponentInParent<Ladder>();
+
+        if (ladder != null)
+        {
+            currentLadder = ladder;
+            isInsideLadder = true;
+
+            // prioridade total para a escada
+            ledgeBlockTimer = ledgeBlockAfterLadderTime;
+        }
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (!other.CompareTag(ladderTag)) return;
+
+        if (currentLadder == null)
+        {
+            Ladder ladder = other.GetComponent<Ladder>();
+            if (ladder == null)
+                ladder = other.GetComponentInParent<Ladder>();
+
+            if (ladder != null)
+                currentLadder = ladder;
+        }
+
+        isInsideLadder = true;
+        ledgeBlockTimer = ledgeBlockAfterLadderTime;
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (!other.CompareTag(ladderTag)) return;
+
+        Ladder ladder = other.GetComponent<Ladder>();
+        if (ladder == null)
+            ladder = other.GetComponentInParent<Ladder>();
+
+        if (ladder == currentLadder)
+        {
+            isInsideLadder = false;
+
+            // continua bloqueando por um tempinho ao sair
+            ledgeBlockTimer = ledgeBlockAfterLadderTime;
+
+            if (!isOnLadder)
+                currentLadder = null;
+        }
+    }
+
     public bool IsClimbing()
     {
-        return isClimbing || isHanging || isDroppingToHang || isPullingUp;
+        return isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder;
     }
 
     public bool IsSprinting()
@@ -396,5 +628,10 @@ public class PlayerMovement : MonoBehaviour
     public bool IsCrouching()
     {
         return isCrouching;
+    }
+
+    public bool IsOnLadder()
+    {
+        return isOnLadder;
     }
 }

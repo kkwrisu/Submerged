@@ -24,6 +24,7 @@ public class PlayerLook : MonoBehaviour
     [Header("FOV")]
     public float normalFOV = 60f;
     public float sprintFOV = 75f;
+    public float crouchFOV = 55f;
     public float fovSpeed = 5f;
 
     [Header("Climb FX")]
@@ -39,7 +40,12 @@ public class PlayerLook : MonoBehaviour
     public float pullUpShakeAmount = 0.08f;
     public float pullUpShakeSpeed = 20f;
 
+    [Header("Crouch Camera")]
+    public float crouchYOffset = -0.5f;
+    public float crouchSmooth = 10f;
+
     private Vector3 climbOffset;
+    private Vector3 crouchOffset;
     private float currentTilt;
 
     private float joltTimer;
@@ -56,6 +62,7 @@ public class PlayerLook : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
 
         defaultPos = transform.localPosition;
         playerMovement = GetComponentInParent<PlayerMovement>();
@@ -67,6 +74,7 @@ public class PlayerLook : MonoBehaviour
     void Update()
     {
         Look();
+        HandleCrouchCamera();
         HandleHeadBob();
         HandleFOV();
         HandleClimbCamera();
@@ -75,6 +83,8 @@ public class PlayerLook : MonoBehaviour
 
     void Look()
     {
+        if (playerBody == null) return;
+
         currentLook = Vector2.SmoothDamp(currentLook, lookInput, ref lookVelocity, smoothTime);
 
         float mouseX = currentLook.x * sensitivity * Time.deltaTime;
@@ -87,25 +97,39 @@ public class PlayerLook : MonoBehaviour
         playerBody.Rotate(Vector3.up * mouseX);
     }
 
+    void HandleCrouchCamera()
+    {
+        if (playerMovement == null) return;
+
+        Vector3 targetOffset = playerMovement.IsCrouching() ? new Vector3(0f, crouchYOffset, 0f) : Vector3.zero;
+        crouchOffset = Vector3.Lerp(crouchOffset, targetOffset, Time.deltaTime * crouchSmooth);
+    }
+
     void HandleHeadBob()
     {
         if (playerMovement != null && playerMovement.IsClimbing())
         {
-            transform.localPosition = Vector3.Lerp(transform.localPosition, defaultPos + climbOffset, Time.deltaTime * climbSmooth);
+            Vector3 targetPos = defaultPos + crouchOffset + climbOffset;
+            transform.localPosition = Vector3.Lerp(transform.localPosition, targetPos, Time.deltaTime * climbSmooth);
             return;
         }
 
-        if (currentLook.magnitude > 0.1f || (playerMovement != null && playerMovement.IsMoving()))
+        Vector3 basePos = defaultPos + crouchOffset;
+
+        if (playerMovement != null && playerMovement.IsMoving())
         {
             bobTimer += Time.deltaTime * bobFrequency;
-            float bobOffset = Mathf.Sin(bobTimer) * bobAmplitude;
 
-            transform.localPosition = defaultPos + new Vector3(0, bobOffset, 0);
+            float bobOffsetY = Mathf.Sin(bobTimer) * bobAmplitude;
+            float bobOffsetX = Mathf.Cos(bobTimer * 0.5f) * bobAmplitude * 0.35f;
+
+            Vector3 bobPos = basePos + new Vector3(bobOffsetX, bobOffsetY, 0f);
+            transform.localPosition = Vector3.Lerp(transform.localPosition, bobPos, Time.deltaTime * 10f);
         }
         else
         {
-            bobTimer = 0;
-            transform.localPosition = Vector3.Lerp(transform.localPosition, defaultPos, Time.deltaTime * 5f);
+            bobTimer = 0f;
+            transform.localPosition = Vector3.Lerp(transform.localPosition, basePos, Time.deltaTime * 8f);
         }
     }
 
@@ -122,19 +146,13 @@ public class PlayerLook : MonoBehaviour
 
         if (isClimbing)
         {
-            float t = Mathf.Clamp01((transform.localPosition.y - defaultPos.y) / -climbYOffset);
-            float ease = Mathf.Sin(t * Mathf.PI * 0.5f);
-
-            climbOffset = new Vector3(0, climbYOffset * ease, 0);
-
             float bob = Mathf.Sin(Time.time * 10f) * 0.04f;
-            climbOffset.y += bob;
-
+            climbOffset = new Vector3(0f, climbYOffset + bob, 0f);
             currentTilt = Mathf.Lerp(currentTilt, climbTilt, Time.deltaTime * climbSmooth);
         }
         else
         {
-            climbOffset = Vector3.zero;
+            climbOffset = Vector3.Lerp(climbOffset, Vector3.zero, Time.deltaTime * climbSmooth);
             currentTilt = Mathf.Lerp(currentTilt, 0f, Time.deltaTime * climbSmooth);
         }
 
@@ -163,7 +181,7 @@ public class PlayerLook : MonoBehaviour
         if (shakeTimer > 0f)
         {
             float shake = Mathf.Sin(Time.time * pullUpShakeSpeed) * pullUpShakeAmount * shakeTimer;
-            transform.localPosition += new Vector3(shake, -shake, 0);
+            transform.localPosition += new Vector3(shake, -shake, 0f);
 
             shakeTimer -= Time.deltaTime * 6f;
         }
@@ -175,7 +193,13 @@ public class PlayerLook : MonoBehaviour
     {
         if (cam == null || playerMovement == null) return;
 
-        float targetFOV = playerMovement.IsSprinting() ? sprintFOV : normalFOV;
+        float targetFOV = normalFOV;
+
+        if (playerMovement.IsCrouching())
+            targetFOV = crouchFOV;
+        else if (playerMovement.IsSprinting())
+            targetFOV = sprintFOV;
+
         cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFOV, Time.deltaTime * fovSpeed);
     }
 
