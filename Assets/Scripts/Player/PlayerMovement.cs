@@ -25,6 +25,8 @@ public class PlayerMovement : MonoBehaviour
     public float jumpHeight = 1.6f;
 
     private float yVelocity;
+
+    private bool sprintHeld;
     private bool isSprinting;
 
     [Header("Ground Check")]
@@ -53,15 +55,25 @@ public class PlayerMovement : MonoBehaviour
     public float pullUpSpeed = 6f;
 
     public float hangInputDelay = 0.2f;
-    public float hangDropDistance = 0.15f;
     public float hangDropSpeed = 8f;
+
+    [Header("Fixed Hang Position")]
+    public float hangBackOffset = 0.35f;
+
+    [Tooltip("Quanto a cabeça do player fica acima da borda.")]
+    public float hangHeadAboveLedge = 0.15f;
+
+    [Tooltip("Velocidade do encaixe horizontal ao agarrar a borda.")]
+    public float hangHorizontalSnapSpeed = 14f;
 
     [Header("Ledge Blocking Near Ladder")]
     public float ledgeBlockAfterLadderTime = 0.25f;
 
+    [Header("Ledge Release")]
+    public float ledgeBlockAfterReleaseTime = 0.25f;
+
     private float hangTimer;
     private bool isDroppingToHang;
-    private float hangStartY;
     private float ledgeBlockTimer;
 
     private bool isClimbing;
@@ -69,6 +81,7 @@ public class PlayerMovement : MonoBehaviour
     private bool isPullingUp;
 
     private Vector3 climbTarget;
+    private Vector3 hangTargetPosition;
     private float climbStartY;
     private Vector3 pullUpTarget;
 
@@ -88,11 +101,40 @@ public class PlayerMovement : MonoBehaviour
     public float ladderEnterSpeedThreshold = 0.1f;
     public float ladderDetachJumpForce = 5f;
     public float ladderHorizontalExitForce = 2f;
-    public float ladderIdleStickForce = -0.5f;
+
+    [Header("Ladder Side Exit")]
+    public float ladderSideExitThreshold = 0.3f;
+    public float ladderReenterBlockTime = 0.2f;
+
+    [Header("Ladder Speeds")]
+    public float ladderClimbUpSpeed = 3.5f;
+    public float ladderClimbDownSpeed = 3.5f;
+    public float ladderFastDownSpeed = 7f;
+
+    [Tooltip("Se estiver parado na escada, fica totalmente parado.")]
+    public bool ladderStayStillWhenIdle = true;
+
+    [Header("Ladder Top Exit")]
+    [Tooltip("Empurrão pra frente ao sair pelo topo.")]
+    public float ladderTopExitForwardOffset = 0.55f;
+
+    [Tooltip("Altura extra ao sair pelo topo.")]
+    public float ladderTopExitUpOffset = 0.15f;
+
+    [Tooltip("Velocidade de encaixe ao subir por cima da escada.")]
+    public float ladderTopExitMoveSpeed = 6f;
+
+    [Tooltip("Bloqueio de reentrada após sair pelo topo.")]
+    public float ladderTopExitReenterBlockTime = 0.35f;
+
+    private float ladderReenterTimer;
 
     private Ladder currentLadder;
     private bool isOnLadder;
     private bool isInsideLadder;
+
+    private bool isExitingLadderTop;
+    private Vector3 ladderTopExitTarget;
 
     void Awake()
     {
@@ -110,9 +152,17 @@ public class PlayerMovement : MonoBehaviour
         stepTimer -= Time.deltaTime;
         hangTimer -= Time.deltaTime;
         ledgeBlockTimer -= Time.deltaTime;
+        ladderReenterTimer -= Time.deltaTime;
 
         HandleGroundCheck();
         HandleCrouch();
+        UpdateSprintState();
+
+        if (isExitingLadderTop)
+        {
+            HandleLadderTopExit();
+            return;
+        }
 
         if (isOnLadder)
         {
@@ -131,17 +181,30 @@ public class PlayerMovement : MonoBehaviour
         HandleMovement();
     }
 
+    void UpdateSprintState()
+    {
+        bool canSprint =
+            sprintHeld &&
+            !isCrouching &&
+            !isOnLadder &&
+            !isExitingLadderTop &&
+            !isClimbing &&
+            !isHanging &&
+            !isDroppingToHang &&
+            !isPullingUp &&
+            moveInput.magnitude > 0.1f;
+
+        isSprinting = canSprint;
+    }
+
     bool CanCheckLedge()
     {
         if (isGrounded) return false;
         if (isClimbing || isHanging || isDroppingToHang || isPullingUp) return false;
         if (isOnLadder) return false;
-
-        // ESSENCIAL: impede detectar borda quando estiver na área da escada
+        if (isExitingLadderTop) return false;
         if (isInsideLadder) return false;
         if (currentLadder != null) return false;
-
-        // pequeno cooldown ao sair da escada
         if (ledgeBlockTimer > 0f) return false;
 
         return true;
@@ -149,7 +212,7 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleGroundCheck()
     {
-        if (isOnLadder)
+        if (isOnLadder || isExitingLadderTop)
         {
             isGrounded = false;
             return;
@@ -172,7 +235,7 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleCrouch()
     {
-        bool canCrouchNow = !isClimbing && !isHanging && !isDroppingToHang && !isPullingUp && !isOnLadder;
+        bool canCrouchNow = !isClimbing && !isHanging && !isDroppingToHang && !isPullingUp && !isOnLadder && !isExitingLadderTop;
 
         if (crouchHeld && canCrouchNow)
         {
@@ -206,7 +269,7 @@ public class PlayerMovement : MonoBehaviour
 
     bool CanStandUp()
     {
-        if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder)
+        if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder || isExitingLadderTop)
             return true;
 
         float radius = controller.radius * 0.95f;
@@ -227,7 +290,7 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleMovement()
     {
-        if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder) return;
+        if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder || isExitingLadderTop) return;
 
         float targetSpeed = isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
 
@@ -259,7 +322,7 @@ public class PlayerMovement : MonoBehaviour
 
     void StepClimb(Vector3 moveDirection)
     {
-        if (!isGrounded || isCrouching || moveInput.magnitude < 0.1f || stepTimer > 0 || isOnLadder)
+        if (!isGrounded || isCrouching || moveInput.magnitude < 0.1f || stepTimer > 0 || isOnLadder || isExitingLadderTop)
             return;
 
         RaycastHit lowerHit;
@@ -276,7 +339,7 @@ public class PlayerMovement : MonoBehaviour
 
     void CheckLedge()
     {
-        // trava extra de segurança
+        if (isOnLadder || isExitingLadderTop) return;
         if (isInsideLadder || currentLadder != null || ledgeBlockTimer > 0f)
             return;
 
@@ -305,32 +368,60 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    Vector3 CalculateHangPosition(Vector3 ledgePoint)
+    {
+        Vector3 targetPosition = ledgePoint - transform.forward * hangBackOffset;
+
+        float targetHeadY = ledgePoint.y + hangHeadAboveLedge;
+        float headOffsetFromPivot = standingCenter.y + (standingHeight * 0.5f);
+
+        targetPosition.y = targetHeadY - headOffsetFromPivot;
+
+        return targetPosition;
+    }
+
     void StartHang(Vector3 ledgePoint)
     {
         if (isOnLadder) return;
+        if (isExitingLadderTop) return;
         if (isInsideLadder) return;
         if (currentLadder != null) return;
         if (ledgeBlockTimer > 0f) return;
 
         climbTarget = ledgePoint;
+        hangTargetPosition = CalculateHangPosition(ledgePoint);
 
         yVelocity = 0f;
         currentVelocity = Vector3.zero;
 
         hangTimer = hangInputDelay;
-        hangStartY = transform.position.y;
-
         isDroppingToHang = true;
+        isHanging = false;
+        isSprinting = false;
     }
 
     void HandleHang()
     {
         if (isDroppingToHang)
         {
-            controller.Move(Vector3.down * hangDropSpeed * Time.deltaTime);
+            float newX = Mathf.MoveTowards(transform.position.x, hangTargetPosition.x, hangHorizontalSnapSpeed * Time.deltaTime);
+            float newZ = Mathf.MoveTowards(transform.position.z, hangTargetPosition.z, hangHorizontalSnapSpeed * Time.deltaTime);
+            float newY = Mathf.MoveTowards(transform.position.y, hangTargetPosition.y, hangDropSpeed * Time.deltaTime);
 
-            if (transform.position.y <= hangStartY - hangDropDistance)
+            controller.enabled = false;
+            transform.position = new Vector3(newX, newY, newZ);
+            controller.enabled = true;
+
+            bool reachedX = Mathf.Abs(transform.position.x - hangTargetPosition.x) <= 0.02f;
+            bool reachedY = Mathf.Abs(transform.position.y - hangTargetPosition.y) <= 0.02f;
+            bool reachedZ = Mathf.Abs(transform.position.z - hangTargetPosition.z) <= 0.02f;
+
+            if (reachedX && reachedY && reachedZ)
             {
+                controller.enabled = false;
+                transform.position = hangTargetPosition;
+                controller.enabled = true;
+
                 isDroppingToHang = false;
                 isHanging = true;
             }
@@ -340,9 +431,14 @@ public class PlayerMovement : MonoBehaviour
 
         if (!isHanging) return;
 
+        controller.enabled = false;
+        transform.position = hangTargetPosition;
+        controller.enabled = true;
+
         if (moveInput.y < -0.1f)
         {
             isHanging = false;
+            ledgeBlockTimer = ledgeBlockAfterReleaseTime;
             yVelocity = -5f;
             return;
         }
@@ -363,6 +459,7 @@ public class PlayerMovement : MonoBehaviour
         climbTarget = ledgePoint;
         climbStartY = transform.position.y;
         yVelocity = 0f;
+        isSprinting = false;
     }
 
     void HandleClimb()
@@ -391,6 +488,7 @@ public class PlayerMovement : MonoBehaviour
     {
         isPullingUp = true;
         pullUpTarget = transform.position + transform.forward * pullUpForward + Vector3.up * pullUpUpward;
+        isSprinting = false;
     }
 
     void HandlePullUp()
@@ -409,8 +507,9 @@ public class PlayerMovement : MonoBehaviour
 
     void TryEnterLadder()
     {
+        if (ladderReenterTimer > 0f) return;
         if (!isInsideLadder || currentLadder == null) return;
-        if (isClimbing || isHanging || isDroppingToHang || isPullingUp) return;
+        if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isExitingLadderTop) return;
         if (isCrouching) return;
 
         if (Mathf.Abs(moveInput.y) > ladderEnterSpeedThreshold)
@@ -428,25 +527,23 @@ public class PlayerMovement : MonoBehaviour
         currentVelocity = Vector3.zero;
         yVelocity = 0f;
 
-        // enquanto entra na escada, bloqueia o ledge
         ledgeBlockTimer = ledgeBlockAfterLadderTime;
     }
 
     void ExitLadder(bool jumpedOff = false, bool exitedTop = false)
     {
-        if (currentLadder != null && exitedTop)
-        {
-            Vector3 targetTop = currentLadder.GetTopExitPosition(transform.position);
+        Ladder ladderBeforeExit = currentLadder;
 
-            controller.enabled = false;
-            transform.position = targetTop;
-            controller.enabled = true;
+        if (exitedTop && ladderBeforeExit != null)
+        {
+            StartLadderTopExit(ladderBeforeExit);
+            return;
         }
 
         isOnLadder = false;
-
-        // ESSENCIAL: bloqueia o ledge logo após sair da escada
+        isSprinting = false;
         ledgeBlockTimer = ledgeBlockAfterLadderTime;
+        ladderReenterTimer = ladderReenterBlockTime;
 
         if (jumpedOff)
         {
@@ -462,6 +559,55 @@ public class PlayerMovement : MonoBehaviour
             currentLadder = null;
     }
 
+    void StartLadderTopExit(Ladder ladder)
+    {
+        Vector3 up = ladder.GetUpDirection();
+        Vector3 forward = ladder.GetForwardDirection();
+        Vector3 topWorld = ladder.GetTopWorldPoint();
+
+        Vector3 target = topWorld
+                       + forward * ladderTopExitForwardOffset
+                       + up * ladderTopExitUpOffset;
+
+        isOnLadder = false;
+        isExitingLadderTop = true;
+
+        ladderTopExitTarget = target;
+
+        isInsideLadder = false;
+        currentLadder = null;
+
+        currentVelocity = Vector3.zero;
+        yVelocity = 0f;
+        isSprinting = false;
+
+        ledgeBlockTimer = ledgeBlockAfterLadderTime;
+        ladderReenterTimer = ladderTopExitReenterBlockTime;
+    }
+
+    void HandleLadderTopExit()
+    {
+        Vector3 toTarget = ladderTopExitTarget - transform.position;
+        float distance = toTarget.magnitude;
+
+        if (distance <= 0.03f)
+        {
+            controller.enabled = false;
+            transform.position = ladderTopExitTarget;
+            controller.enabled = true;
+
+            isExitingLadderTop = false;
+            yVelocity = -2f;
+            return;
+        }
+
+        Vector3 move = toTarget.normalized * ladderTopExitMoveSpeed * Time.deltaTime;
+        if (move.magnitude > distance)
+            move = toTarget;
+
+        controller.Move(move);
+    }
+
     void HandleLadderMovement()
     {
         if (currentLadder == null)
@@ -470,20 +616,34 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        Vector3 ladderUp = currentLadder.GetUpDirection();
+        isSprinting = false;
 
-        if (currentLadder.snapPlayerToLadder)
+        Vector3 ladderUp = currentLadder.GetUpDirection();
+        float verticalInput = moveInput.y;
+
+        if (currentLadder.snapPlayerToLadder && !currentLadder.IsAboveTop(transform.position))
         {
             Vector3 snapOffset = currentLadder.GetSnapOffset(transform.position);
             controller.Move(snapOffset * currentLadder.snapSpeed * Time.deltaTime);
         }
 
-        float verticalInput = moveInput.y;
-        Vector3 climbMotion = ladderUp * (verticalInput * currentLadder.climbSpeed);
+        float climbAmount = 0f;
 
-        if (Mathf.Abs(verticalInput) < 0.01f)
-            climbMotion += ladderUp * ladderIdleStickForce;
+        if (verticalInput > 0.01f)
+        {
+            climbAmount = ladderClimbUpSpeed;
+        }
+        else if (verticalInput < -0.01f)
+        {
+            bool fastSlideDown = sprintHeld;
+            climbAmount = fastSlideDown ? -ladderFastDownSpeed : -ladderClimbDownSpeed;
+        }
+        else
+        {
+            climbAmount = ladderStayStillWhenIdle ? 0f : 0f;
+        }
 
+        Vector3 climbMotion = ladderUp * climbAmount;
         controller.Move(climbMotion * Time.deltaTime);
 
         currentVelocity = Vector3.zero;
@@ -515,13 +675,15 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnSprint(InputAction.CallbackContext context)
     {
-        if (isCrouching || isOnLadder)
+        sprintHeld = context.ReadValueAsButton();
+
+        if (isOnLadder || isExitingLadderTop || isClimbing || isHanging || isDroppingToHang || isPullingUp || isCrouching)
         {
             isSprinting = false;
             return;
         }
 
-        isSprinting = context.ReadValueAsButton();
+        UpdateSprintState();
     }
 
     public void OnJump(InputAction.CallbackContext context)
@@ -542,7 +704,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnCrouch(InputAction.CallbackContext context)
     {
-        if (isOnLadder)
+        if (isOnLadder || isExitingLadderTop)
         {
             crouchHeld = false;
             return;
@@ -564,10 +726,11 @@ public class PlayerMovement : MonoBehaviour
 
         if (ladder != null)
         {
+            if (ladderReenterTimer > 0f)
+                return;
+
             currentLadder = ladder;
             isInsideLadder = true;
-
-            // prioridade total para a escada
             ledgeBlockTimer = ledgeBlockAfterLadderTime;
         }
     }
@@ -575,6 +738,9 @@ public class PlayerMovement : MonoBehaviour
     private void OnTriggerStay(Collider other)
     {
         if (!other.CompareTag(ladderTag)) return;
+
+        if (ladderReenterTimer > 0f)
+            return;
 
         if (currentLadder == null)
         {
@@ -601,8 +767,6 @@ public class PlayerMovement : MonoBehaviour
         if (ladder == currentLadder)
         {
             isInsideLadder = false;
-
-            // continua bloqueando por um tempinho ao sair
             ledgeBlockTimer = ledgeBlockAfterLadderTime;
 
             if (!isOnLadder)
@@ -612,7 +776,7 @@ public class PlayerMovement : MonoBehaviour
 
     public bool IsClimbing()
     {
-        return isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder;
+        return isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder || isExitingLadderTop;
     }
 
     public bool IsSprinting()

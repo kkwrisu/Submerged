@@ -54,22 +54,46 @@ public class Ladder : MonoBehaviour
         return Vector3.ProjectOnPlane(delta, up);
     }
 
-    public float GetTopPointAlongLadder()
+    private float GetExtentAlongDirection(Vector3 direction)
+    {
+        Bounds bounds = ladderCollider.bounds;
+        Vector3 extents = bounds.extents;
+
+        Vector3 dir = new Vector3(
+            Mathf.Abs(direction.x),
+            Mathf.Abs(direction.y),
+            Mathf.Abs(direction.z)
+        );
+
+        return extents.x * dir.x + extents.y * dir.y + extents.z * dir.z;
+    }
+
+    public Vector3 GetTopWorldPoint()
     {
         Vector3 up = GetUpDirection();
         Bounds bounds = ladderCollider.bounds;
 
-        Vector3 topWorld = bounds.center + Vector3.up * bounds.extents.y;
-        return Vector3.Dot(topWorld, up);
+        float extentAlongUp = GetExtentAlongDirection(up);
+        return bounds.center + up * extentAlongUp;
+    }
+
+    public Vector3 GetBottomWorldPoint()
+    {
+        Vector3 up = GetUpDirection();
+        Bounds bounds = ladderCollider.bounds;
+
+        float extentAlongUp = GetExtentAlongDirection(up);
+        return bounds.center - up * extentAlongUp;
+    }
+
+    public float GetTopPointAlongLadder()
+    {
+        return Vector3.Dot(GetTopWorldPoint(), GetUpDirection());
     }
 
     public float GetBottomPointAlongLadder()
     {
-        Vector3 up = GetUpDirection();
-        Bounds bounds = ladderCollider.bounds;
-
-        Vector3 bottomWorld = bounds.center - Vector3.up * bounds.extents.y;
-        return Vector3.Dot(bottomWorld, up);
+        return Vector3.Dot(GetBottomWorldPoint(), GetUpDirection());
     }
 
     public bool IsAboveTop(Vector3 worldPosition)
@@ -88,12 +112,10 @@ public class Ladder : MonoBehaviour
     {
         Vector3 up = GetUpDirection();
         Vector3 forward = GetForwardDirection();
-        Vector3 pos = currentPlayerPosition;
+        Vector3 topWorld = GetTopWorldPoint();
 
-        float currentAlong = Vector3.Dot(pos, up);
-        float targetAlong = GetTopPointAlongLadder() + topExitUpOffset;
-        float deltaAlong = targetAlong - currentAlong;
-
-        return pos + up * deltaAlong + forward * topExitForwardOffset;
+        return topWorld
+             + forward * topExitForwardOffset
+             + up * topExitUpOffset;
     }
 }
