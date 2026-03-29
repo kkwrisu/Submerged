@@ -2,8 +2,56 @@ using UnityEngine;
 
 public class Interactable : MonoBehaviour
 {
-    public virtual void Interact()
+    [System.Serializable]
+    public class DialogueChoice
     {
-        Debug.Log("Interagiu com: " + gameObject.name);
+        [TextArea(1, 2)]
+        public string choiceText;
+        public int nextNodeIndex = -1;
+        public bool closeDialogue = false;
+        public bool triggerAction = false;
+        public string actionDebugMessage;
+    }
+
+    [System.Serializable]
+    public class DialogueNode
+    {
+        [TextArea(2, 5)]
+        public string text;
+        public int nextNodeIndex = -1;
+        public bool endDialogueHere = false;
+        public DialogueChoice[] choices;
+    }
+
+    [Header("Dialogue")]
+    public DialogueNode[] dialogueNodes;
+
+    [Header("Action ao interagir (opcional)")]
+    public bool triggerActionOnInteract;
+    public string interactActionDebugMessage;
+
+    public void Interact()
+    {
+        Debug.Log("Interactable.Interact() chamado em: " + gameObject.name);
+
+        if (triggerActionOnInteract)
+        {
+            Debug.Log(interactActionDebugMessage);
+        }
+
+        if (dialogueNodes == null || dialogueNodes.Length == 0)
+        {
+            Debug.LogWarning("Este Interactable não possui dialogueNodes configurados.");
+            return;
+        }
+
+        if (DialogueManager.Instance == null)
+        {
+            Debug.LogError("DialogueManager.Instance está NULL.");
+            return;
+        }
+
+        Debug.Log("Iniciando diálogo...");
+        DialogueManager.Instance.StartDialogue(this);
     }
 }
