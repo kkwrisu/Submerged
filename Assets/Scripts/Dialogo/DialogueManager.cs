@@ -15,18 +15,23 @@ public class DialogueManager : MonoBehaviour
     public Transform choicesContainer;
     public GameObject choiceButtonPrefab;
 
+    [Header("Gameplay Lock")]
+    public GameObject crosshair;
+    public MonoBehaviour playerMovementScript;
+    public MonoBehaviour playerLookScript;
+    public float inputBlockAfterStart = 0.15f;
+
     private Interactable.DialogueNode[] nodes;
     private int currentNodeIndex;
 
     private bool isActive = false;
     private bool waitingForChoice = false;
+    private float nextInputAllowedTime = 0f;
 
     private readonly List<GameObject> spawnedChoices = new List<GameObject>();
 
     private void Awake()
     {
-        Debug.Log("DialogueManager Awake chamado.");
-
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -38,46 +43,42 @@ public class DialogueManager : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("DialogueManager Start chamado.");
-
         if (dialoguePanel != null)
             dialoguePanel.SetActive(false);
-        else
-            Debug.LogError("dialoguePanel não foi atribuído no Inspector.");
 
         ClearChoices();
     }
 
     public void StartDialogue(Interactable interactable)
     {
-        Debug.Log("StartDialogue chamado.");
-
         if (interactable == null)
-        {
-            Debug.LogError("Interactable veio nulo.");
             return;
-        }
 
         if (interactable.dialogueNodes == null || interactable.dialogueNodes.Length == 0)
-        {
-            Debug.LogError("dialogueNodes vazio.");
             return;
-        }
 
         nodes = interactable.dialogueNodes;
         currentNodeIndex = 0;
         isActive = true;
+        waitingForChoice = false;
+        nextInputAllowedTime = Time.time + inputBlockAfterStart;
 
         if (dialoguePanel != null)
-        {
             dialoguePanel.SetActive(true);
-            Debug.Log("DialoguePanel ativado.");
-        }
         else
-        {
-            Debug.LogError("dialoguePanel está NULL no DialogueManager.");
             return;
-        }
+
+        if (crosshair != null)
+            crosshair.SetActive(false);
+
+        if (playerMovementScript != null)
+            playerMovementScript.enabled = false;
+
+        if (playerLookScript != null)
+            playerLookScript.enabled = false;
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
         ShowNode(currentNodeIndex);
     }
@@ -86,7 +87,6 @@ public class DialogueManager : MonoBehaviour
     {
         if (nodes == null || nodeIndex < 0 || nodeIndex >= nodes.Length)
         {
-            Debug.LogError("Índice de nó inválido.");
             EndDialogue();
             return;
         }
@@ -98,14 +98,7 @@ public class DialogueManager : MonoBehaviour
         Interactable.DialogueNode node = nodes[currentNodeIndex];
 
         if (dialogueText != null)
-        {
             dialogueText.text = node.text;
-            Debug.Log("Texto exibido: " + node.text);
-        }
-        else
-        {
-            Debug.LogError("dialogueText está NULL no DialogueManager.");
-        }
 
         bool hasChoices = node.choices != null && node.choices.Length > 0;
 
@@ -119,10 +112,7 @@ public class DialogueManager : MonoBehaviour
     private void SpawnChoices(Interactable.DialogueChoice[] choices)
     {
         if (choicesContainer == null || choiceButtonPrefab == null)
-        {
-            Debug.LogWarning("choicesContainer ou choiceButtonPrefab não configurado.");
             return;
-        }
 
         for (int i = 0; i < choices.Length; i++)
         {
@@ -132,9 +122,7 @@ public class DialogueManager : MonoBehaviour
 
             DialogueChoiceButton choiceButton = choiceObj.GetComponent<DialogueChoiceButton>();
             if (choiceButton != null)
-            {
                 choiceButton.Setup(choiceData, this);
-            }
         }
     }
 
@@ -182,6 +170,9 @@ public class DialogueManager : MonoBehaviour
         if (choice.triggerAction)
             Debug.Log(choice.actionDebugMessage);
 
+        if (choice.onChoiceSelected != null)
+            choice.onChoiceSelected.Invoke();
+
         if (choice.closeDialogue)
         {
             EndDialogue();
@@ -208,6 +199,18 @@ public class DialogueManager : MonoBehaviour
 
         if (dialoguePanel != null)
             dialoguePanel.SetActive(false);
+
+        if (crosshair != null)
+            crosshair.SetActive(true);
+
+        if (playerMovementScript != null)
+            playerMovementScript.enabled = true;
+
+        if (playerLookScript != null)
+            playerLookScript.enabled = true;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     public bool IsActive()
@@ -221,6 +224,12 @@ public class DialogueManager : MonoBehaviour
             return;
 
         if (!isActive)
+            return;
+
+        if (waitingForChoice)
+            return;
+
+        if (Time.time < nextInputAllowedTime)
             return;
 
         Next();

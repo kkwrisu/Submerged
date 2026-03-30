@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Interactable : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class Interactable : MonoBehaviour
         public bool closeDialogue = false;
         public bool triggerAction = false;
         public string actionDebugMessage;
+        public UnityEvent onChoiceSelected;
     }
 
     [System.Serializable]
