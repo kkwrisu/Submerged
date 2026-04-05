@@ -31,6 +31,7 @@ public class Interactable : MonoBehaviour
     [Header("Action ao interagir (opcional)")]
     public bool triggerActionOnInteract;
     public string interactActionDebugMessage;
+    public UnityEvent onInteract;
 
     public void Interact()
     {
@@ -41,9 +42,10 @@ public class Interactable : MonoBehaviour
             Debug.Log(interactActionDebugMessage);
         }
 
+        onInteract?.Invoke();
+
         if (dialogueNodes == null || dialogueNodes.Length == 0)
         {
-            Debug.LogWarning("Este Interactable não possui dialogueNodes configurados.");
             return;
         }
 
