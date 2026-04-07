@@ -93,6 +93,8 @@ public class RepairPuzzleManager : MonoBehaviour
         Scene scene = SceneManager.GetSceneByName(sceneName);
         if (scene.IsValid())
             SceneManager.SetActiveScene(scene);
+
+        Debug.Log("Cena do puzzle carregada: " + sceneName);
     }
 
     public void FinishPuzzle(RepairPuzzleResult result)
@@ -145,18 +147,10 @@ public class RepairPuzzleManager : MonoBehaviour
 
         switch (difficulty)
         {
-            case RepairPuzzleDifficulty.Difficulty1:
-                pool = difficulty1Scenes;
-                break;
-            case RepairPuzzleDifficulty.Difficulty2:
-                pool = difficulty2Scenes;
-                break;
-            case RepairPuzzleDifficulty.Difficulty3:
-                pool = difficulty3Scenes;
-                break;
-            case RepairPuzzleDifficulty.Difficulty4:
-                pool = difficulty4Scenes;
-                break;
+            case RepairPuzzleDifficulty.Difficulty1: pool = difficulty1Scenes; break;
+            case RepairPuzzleDifficulty.Difficulty2: pool = difficulty2Scenes; break;
+            case RepairPuzzleDifficulty.Difficulty3: pool = difficulty3Scenes; break;
+            case RepairPuzzleDifficulty.Difficulty4: pool = difficulty4Scenes; break;
         }
 
         if (pool == null || pool.Length == 0)

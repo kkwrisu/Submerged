@@ -12,6 +12,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
     public LineRenderer wireRendererA;
     public LineRenderer wireRendererB;
 
+    [Header("Input Actions")]
+    public InputActionReference clickAction;
+    public InputActionReference resetAction;
+
     [Header("Visual")]
     public float wireZOffset = -0.1f;
 
@@ -30,10 +34,60 @@ public class RepairPuzzleRuntime : MonoBehaviour
     private bool wireBComplete;
     private int activeWire = 1;
 
+    private InputAction click;
+    private InputAction reset;
+
+    private void Awake()
+    {
+        Debug.Log("RepairPuzzleRuntime Awake");
+    }
+
+    private void OnEnable()
+    {
+        Debug.Log("RepairPuzzleRuntime OnEnable");
+
+        click = clickAction != null ? clickAction.action : null;
+        reset = resetAction != null ? resetAction.action : null;
+
+        if (click != null)
+        {
+            click.Enable();
+            Debug.Log("Click action enabled: " + click.name);
+        }
+        else
+        {
+            Debug.LogError("ClickAction não atribuída no RepairPuzzleRuntime.");
+        }
+
+        if (reset != null)
+        {
+            reset.Enable();
+            Debug.Log("Reset action enabled: " + reset.name);
+        }
+        else
+        {
+            Debug.LogError("ResetAction não atribuída no RepairPuzzleRuntime.");
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (click != null)
+            click.Disable();
+
+        if (reset != null)
+            reset.Disable();
+    }
+
     private void Start()
     {
+        Debug.Log("RepairPuzzleRuntime Start");
+
         if (puzzleCamera == null)
             puzzleCamera = Camera.main;
+
+        if (puzzleCamera == null)
+            Debug.LogError("PuzzleCamera está null.");
 
         BuildMap();
         FindSpecialNodes();
@@ -42,12 +96,44 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     private void Update()
     {
-        if (!isDragging)
+        if (reset != null && reset.WasPressedThisFrame())
+        {
+            Debug.Log("RESET PRESSIONADO");
+            ResetPuzzle();
+            return;
+        }
+
+        if (click == null)
             return;
 
-        RepairPuzzleNode node = GetNodeUnderPointer();
-        if (node != null)
-            TryExtendPath(node);
+        if (click.WasPressedThisFrame())
+        {
+            Debug.Log("CLICK PRESSIONADO");
+            RepairPuzzleNode node = GetNodeUnderPointer();
+            if (node == null)
+            {
+                Debug.Log("Nenhum node detectado no clique.");
+            }
+            else
+            {
+                Debug.Log("Node clicado: " + node.name + " | X=" + node.x + " Y=" + node.y + " | Tipo=" + node.nodeType);
+            }
+
+            TryStartDrag(node);
+        }
+
+        if (click.IsPressed() && isDragging)
+        {
+            RepairPuzzleNode node = GetNodeUnderPointer();
+            if (node != null)
+                TryExtendPath(node);
+        }
+
+        if (click.WasReleasedThisFrame())
+        {
+            Debug.Log("CLICK SOLTO");
+            isDragging = false;
+        }
     }
 
     private void BuildMap()
@@ -55,6 +141,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
         nodes.Clear();
 
         RepairPuzzleNode[] allNodes = FindObjectsByType<RepairPuzzleNode>(FindObjectsSortMode.None);
+
         for (int i = 0; i < allNodes.Length; i++)
         {
             if (allNodes[i].gameObject.scene != gameObject.scene)
@@ -65,8 +152,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
             if (!nodes.ContainsKey(pos))
                 nodes.Add(pos, allNodes[i]);
             else
-                Debug.LogWarning("Node duplicado em: " + pos);
+                Debug.LogWarning("Node duplicado em: " + pos + " | " + allNodes[i].name);
         }
+
+        Debug.Log("Nodes carregados: " + nodes.Count);
     }
 
     private void FindSpecialNodes()
@@ -82,20 +171,17 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
             switch (node.nodeType)
             {
-                case RepairPuzzleNodeType.StartA:
-                    startA = node;
-                    break;
-                case RepairPuzzleNodeType.EndA:
-                    endA = node;
-                    break;
-                case RepairPuzzleNodeType.StartB:
-                    startB = node;
-                    break;
-                case RepairPuzzleNodeType.EndB:
-                    endB = node;
-                    break;
+                case RepairPuzzleNodeType.StartA: startA = node; break;
+                case RepairPuzzleNodeType.EndA: endA = node; break;
+                case RepairPuzzleNodeType.StartB: startB = node; break;
+                case RepairPuzzleNodeType.EndB: endB = node; break;
             }
         }
+
+        Debug.Log("StartA: " + (startA != null ? startA.name : "NULL"));
+        Debug.Log("EndA: " + (endA != null ? endA.name : "NULL"));
+        Debug.Log("StartB: " + (startB != null ? startB.name : "NULL"));
+        Debug.Log("EndB: " + (endB != null ? endB.name : "NULL"));
     }
 
     public void ResetPuzzle()
@@ -111,38 +197,21 @@ public class RepairPuzzleRuntime : MonoBehaviour
         RefreshVisuals();
     }
 
-    public void OnClick(InputAction.CallbackContext context)
-    {
-        if (context.performed)
-        {
-            RepairPuzzleNode node = GetNodeUnderPointer();
-            TryStartDrag(node);
-        }
-
-        if (context.canceled)
-        {
-            isDragging = false;
-        }
-    }
-
-    public void OnResetPuzzle(InputAction.CallbackContext context)
-    {
-        if (!context.performed)
-            return;
-
-        ResetPuzzle();
-    }
-
     private RepairPuzzleNode GetNodeUnderPointer()
     {
-        if (puzzleCamera == null || Mouse.current == null)
+        if (puzzleCamera == null)
+            return null;
+
+        if (Mouse.current == null)
             return null;
 
         Vector2 screenPos = Mouse.current.position.ReadValue();
-        Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f));
-        Vector2 point = new Vector2(worldPos.x, worldPos.y);
+        Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(
+            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z))
+        );
 
-        Collider2D hit = Physics2D.OverlapPoint(point);
+        Collider2D hit = Physics2D.OverlapPoint(new Vector2(worldPos.x, worldPos.y));
+
         if (hit == null)
             return null;
 
@@ -162,7 +231,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
             if (pathA.Count == 0)
             {
                 if (node != startA)
+                {
+                    Debug.Log("Clique não foi no StartA.");
                     return;
+                }
 
                 pathA.Add(node);
                 isDragging = true;
@@ -181,7 +253,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
             if (pathB.Count == 0)
             {
                 if (node != startB)
+                {
+                    Debug.Log("Clique não foi no StartB.");
                     return;
+                }
 
                 pathB.Add(node);
                 isDragging = true;
@@ -230,11 +305,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (activeWire == 2 && targetNode.nodeType == RepairPuzzleNodeType.EndA)
             return;
 
-        if (difficulty == RepairPuzzleDifficulty.Difficulty4)
-        {
-            if (activeWire == 2 && pathA.Contains(targetNode))
-                return;
-        }
+        if (difficulty == RepairPuzzleDifficulty.Difficulty4 && activeWire == 2 && pathA.Contains(targetNode))
+            return;
 
         if (IsDangerForStep(targetNode))
         {
@@ -299,14 +371,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
             return false;
 
         Vector2Int pos = new Vector2Int(node.x, node.y);
-
-        Vector2Int[] offsets =
-        {
-            Vector2Int.up,
-            Vector2Int.down,
-            Vector2Int.left,
-            Vector2Int.right
-        };
+        Vector2Int[] offsets = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
         for (int i = 0; i < offsets.Length; i++)
         {
@@ -377,12 +442,14 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     public void FailPuzzle()
     {
+        Debug.Log("PUZZLE FAIL");
         if (RepairPuzzleManager.Instance != null)
             RepairPuzzleManager.Instance.FinishPuzzle(RepairPuzzleResult.Fail);
     }
 
     public void SuccessPuzzle()
     {
+        Debug.Log("PUZZLE SUCCESS");
         if (RepairPuzzleManager.Instance != null)
             RepairPuzzleManager.Instance.FinishPuzzle(RepairPuzzleResult.Success);
     }

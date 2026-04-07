@@ -2955,6 +2955,9 @@ MonoBehaviour:
   playerMovement: {fileID: 2001152426}
   playerLook: {fileID: 330585548}
   playerInteract: {fileID: 2001152429}
+  playerInput: {fileID: 0}
+  playerActionMapName: Player
+  puzzleActionMapName: Puzzle
 --- !u!1 &1542772675
 GameObject:
   m_ObjectHideFlags: 0
@@ -3422,7 +3425,7 @@ GameObject:
   - component: {fileID: 1649144559}
   m_Layer: 0
   m_Name: Electric_Puzzle
-  m_TagString: Untagged
+  m_TagString: Interactable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3454,11 +3457,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85336f56676baaf4a9bd39d694bfba0c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RepairPuzzleInteractable
-  useSpecificScene: 0
-  specificSceneName: 
+  useSpecificScene: 1
+  specificSceneName: Repair_D1_01
   difficulty: 1
   completed: 0
-  blockIfCompleted: 0
+  blockIfCompleted: 1
 --- !u!114 &1649144560
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4376,6 +4379,14 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 9caa3d8a-6b2f-4e8e-8bad-6ede561bd9be
     m_ActionName: UI/TrackedDeviceOrientation
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 510b402d-d722-4fa7-a6a6-ef086348e51b
+    m_ActionName: 'Puzzle/Click[/Mouse/leftButton]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 2777fa50-e72a-4856-8050-490d93523ef3
+    m_ActionName: 'Puzzle/Reset[/Keyboard/r]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
