@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class RepairPuzzleRuntime : MonoBehaviour
 {
@@ -41,16 +42,24 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     private void Update()
     {
-        HandleInput();
+        if (!isDragging)
+            return;
+
+        RepairPuzzleNode node = GetNodeUnderPointer();
+        if (node != null)
+            TryExtendPath(node);
     }
 
     private void BuildMap()
     {
         nodes.Clear();
 
-        RepairPuzzleNode[] allNodes = FindObjectsByType<RepairPuzzleNode>(FindObjectsSortMode.None); ;
+        RepairPuzzleNode[] allNodes = FindObjectsByType<RepairPuzzleNode>(FindObjectsSortMode.None);
         for (int i = 0; i < allNodes.Length; i++)
         {
+            if (allNodes[i].gameObject.scene != gameObject.scene)
+                continue;
+
             Vector2Int pos = new Vector2Int(allNodes[i].x, allNodes[i].y);
 
             if (!nodes.ContainsKey(pos))
@@ -102,40 +111,36 @@ public class RepairPuzzleRuntime : MonoBehaviour
         RefreshVisuals();
     }
 
-    private void HandleInput()
+    public void OnClick(InputAction.CallbackContext context)
     {
-        if (Input.GetKeyDown(KeyCode.R))
+        if (context.performed)
         {
-            ResetPuzzle();
-            return;
-        }
-
-        if (Input.GetMouseButtonDown(0))
-        {
-            RepairPuzzleNode node = GetNodeUnderMouse();
+            RepairPuzzleNode node = GetNodeUnderPointer();
             TryStartDrag(node);
         }
 
-        if (Input.GetMouseButton(0) && isDragging)
-        {
-            RepairPuzzleNode node = GetNodeUnderMouse();
-            if (node != null)
-                TryExtendPath(node);
-        }
-
-        if (Input.GetMouseButtonUp(0))
+        if (context.canceled)
         {
             isDragging = false;
         }
     }
 
-    private RepairPuzzleNode GetNodeUnderMouse()
+    public void OnResetPuzzle(InputAction.CallbackContext context)
     {
-        if (puzzleCamera == null)
+        if (!context.performed)
+            return;
+
+        ResetPuzzle();
+    }
+
+    private RepairPuzzleNode GetNodeUnderPointer()
+    {
+        if (puzzleCamera == null || Mouse.current == null)
             return null;
 
-        Vector3 mouseWorld = puzzleCamera.ScreenToWorldPoint(Input.mousePosition);
-        Vector2 point = new Vector2(mouseWorld.x, mouseWorld.y);
+        Vector2 screenPos = Mouse.current.position.ReadValue();
+        Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f));
+        Vector2 point = new Vector2(worldPos.x, worldPos.y);
 
         Collider2D hit = Physics2D.OverlapPoint(point);
         if (hit == null)

@@ -8,6 +8,42 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Prototype.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 1/Repair_D1_01.unity
+    guid: bdd3173127f0ac64f80c7b58c611e008
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 1/Repair_D1_02.unity
+    guid: 325914611671ea242863eec7bf00866b
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 1/Repair_D1_03.unity
+    guid: af0ed8881a74e08438b8082a9958c05e
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 2/Repair_D2_01.unity
+    guid: df28231c8b4dd5b4cae30fdc1ee0ea05
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 2/Repair_D2_02.unity
+    guid: ede95308db250ef4f8c5844ba7ea1c7a
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 2/Repair_D2_03.unity
+    guid: 23f90189dd9b51144a3b4dc5b9b8ee92
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 3/Repair_D3_01.unity
+    guid: 83e701d3cf86e8f4b89c79db8184981d
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 3/Repair_D3_02.unity
+    guid: 58b3505e9418abd4dabcc13a071f21d3
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 3/Repair_D3_03.unity
+    guid: a410f303ee3e0a94ba00a9af27ab93e7
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 4/Repair_D4_01.unity
+    guid: f92e4398af260964b9599e2796887d4d
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 4/Repair_D4_02.unity
+    guid: 3433fd1f56ea7954080fff4afc16621e
+  - enabled: 1
+    path: Assets/Scenes/Dificuldade 4/Repair_D4_03.unity
+    guid: 053140c1488b2154794c4caa17dde7f4
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 40b848556b70fc94092c9749dc261f34, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
