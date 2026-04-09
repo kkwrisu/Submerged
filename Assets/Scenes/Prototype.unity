@@ -2955,9 +2955,8 @@ MonoBehaviour:
   playerMovement: {fileID: 2001152426}
   playerLook: {fileID: 330585548}
   playerInteract: {fileID: 2001152429}
-  playerInput: {fileID: 0}
-  playerActionMapName: Player
-  puzzleActionMapName: Puzzle
+  playerCamera: {fileID: 330585545}
+  playerAudioListener: {fileID: 330585544}
 --- !u!1 &1542772675
 GameObject:
   m_ObjectHideFlags: 0

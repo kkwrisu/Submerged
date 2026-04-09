@@ -52,21 +52,21 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (click != null)
         {
             click.Enable();
-            Debug.Log("Click action enabled: " + click.name);
+            Debug.Log("Click action enabled: " + click.name + " | map: " + click.actionMap.name);
         }
         else
         {
-            Debug.LogError("ClickAction não atribuída no RepairPuzzleRuntime.");
+            Debug.LogWarning("ClickAction não atribuída. Usando fallback direto do mouse.");
         }
 
         if (reset != null)
         {
             reset.Enable();
-            Debug.Log("Reset action enabled: " + reset.name);
+            Debug.Log("Reset action enabled: " + reset.name + " | map: " + reset.actionMap.name);
         }
         else
         {
-            Debug.LogError("ResetAction não atribuída no RepairPuzzleRuntime.");
+            Debug.LogWarning("ResetAction não atribuída. Usando fallback do teclado.");
         }
     }
 
@@ -84,10 +84,13 @@ public class RepairPuzzleRuntime : MonoBehaviour
         Debug.Log("RepairPuzzleRuntime Start");
 
         if (puzzleCamera == null)
-            puzzleCamera = Camera.main;
+            puzzleCamera = FindPuzzleCameraInMyScene();
 
         if (puzzleCamera == null)
+        {
             Debug.LogError("PuzzleCamera está null.");
+            return;
+        }
 
         BuildMap();
         FindSpecialNodes();
@@ -96,44 +99,71 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     private void Update()
     {
-        if (reset != null && reset.WasPressedThisFrame())
+        bool resetPressed =
+            (reset != null && reset.WasPressedThisFrame()) ||
+            (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame);
+
+        if (resetPressed)
         {
             Debug.Log("RESET PRESSIONADO");
             ResetPuzzle();
             return;
         }
 
-        if (click == null)
-            return;
+        bool clickPressed =
+            (click != null && click.WasPressedThisFrame()) ||
+            (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
 
-        if (click.WasPressedThisFrame())
+        bool clickHeld =
+            (click != null && click.IsPressed()) ||
+            (Mouse.current != null && Mouse.current.leftButton.isPressed);
+
+        bool clickReleased =
+            (click != null && click.WasReleasedThisFrame()) ||
+            (Mouse.current != null && Mouse.current.leftButton.wasReleasedThisFrame);
+
+        if (clickPressed)
         {
             Debug.Log("CLICK PRESSIONADO");
+
             RepairPuzzleNode node = GetNodeUnderPointer();
+
             if (node == null)
-            {
                 Debug.Log("Nenhum node detectado no clique.");
-            }
             else
-            {
                 Debug.Log("Node clicado: " + node.name + " | X=" + node.x + " Y=" + node.y + " | Tipo=" + node.nodeType);
-            }
 
             TryStartDrag(node);
         }
 
-        if (click.IsPressed() && isDragging)
+        if (clickHeld && isDragging)
         {
             RepairPuzzleNode node = GetNodeUnderPointer();
             if (node != null)
                 TryExtendPath(node);
+
+            RefreshVisuals();
         }
 
-        if (click.WasReleasedThisFrame())
+        if (clickReleased)
         {
             Debug.Log("CLICK SOLTO");
             isDragging = false;
+            RefreshVisuals();
         }
+    }
+
+    private Camera FindPuzzleCameraInMyScene()
+    {
+        Camera[] allCameras = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+
+        for (int i = 0; i < allCameras.Length; i++)
+        {
+            if (allCameras[i].gameObject.scene == gameObject.scene)
+                return allCameras[i];
+        }
+
+        return null;
     }
 
     private void BuildMap()
@@ -197,25 +227,44 @@ public class RepairPuzzleRuntime : MonoBehaviour
         RefreshVisuals();
     }
 
-    private RepairPuzzleNode GetNodeUnderPointer()
+    private Vector3 GetPointerWorldPosition()
     {
-        if (puzzleCamera == null)
-            return null;
-
-        if (Mouse.current == null)
-            return null;
+        if (puzzleCamera == null || Mouse.current == null)
+            return Vector3.zero;
 
         Vector2 screenPos = Mouse.current.position.ReadValue();
         Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(
             new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z))
         );
 
-        Collider2D hit = Physics2D.OverlapPoint(new Vector2(worldPos.x, worldPos.y));
+        worldPos.z = wireZOffset;
+        return worldPos;
+    }
 
-        if (hit == null)
+    private RepairPuzzleNode GetNodeUnderPointer()
+    {
+        if (puzzleCamera == null || Mouse.current == null)
             return null;
 
-        return hit.GetComponent<RepairPuzzleNode>();
+        Vector2 screenPos = Mouse.current.position.ReadValue();
+
+        Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(
+            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z))
+        );
+
+        Collider2D[] hits = Physics2D.OverlapPointAll(new Vector2(worldPos.x, worldPos.y));
+
+        if (hits == null || hits.Length == 0)
+            return null;
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RepairPuzzleNode node = hits[i].GetComponent<RepairPuzzleNode>();
+            if (node != null && node.gameObject.scene == gameObject.scene)
+                return node;
+        }
+
+        return null;
     }
 
     private void TryStartDrag(RepairPuzzleNode node)
@@ -371,7 +420,13 @@ public class RepairPuzzleRuntime : MonoBehaviour
             return false;
 
         Vector2Int pos = new Vector2Int(node.x, node.y);
-        Vector2Int[] offsets = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        Vector2Int[] offsets =
+        {
+            Vector2Int.up,
+            Vector2Int.down,
+            Vector2Int.left,
+            Vector2Int.right
+        };
 
         for (int i = 0; i < offsets.Length; i++)
         {
@@ -421,22 +476,35 @@ public class RepairPuzzleRuntime : MonoBehaviour
             }
         }
 
-        UpdateLineRenderer(wireRendererA, pathA);
-        UpdateLineRenderer(wireRendererB, pathB);
+        UpdateLineRenderer(wireRendererA, pathA, activeWire == 1 && isDragging && !wireAComplete);
+        UpdateLineRenderer(wireRendererB, pathB, activeWire == 2 && isDragging && !wireBComplete);
     }
 
-    private void UpdateLineRenderer(LineRenderer lr, List<RepairPuzzleNode> path)
+    private void UpdateLineRenderer(LineRenderer lr, List<RepairPuzzleNode> path, bool drawPreviewToMouse)
     {
         if (lr == null)
             return;
 
-        lr.positionCount = path.Count;
+        if (path.Count == 0)
+        {
+            lr.positionCount = 0;
+            return;
+        }
+
+        int extraPoint = drawPreviewToMouse ? 1 : 0;
+        lr.positionCount = path.Count + extraPoint;
 
         for (int i = 0; i < path.Count; i++)
         {
             Vector3 pos = path[i].transform.position;
             pos.z += wireZOffset;
             lr.SetPosition(i, pos);
+        }
+
+        if (drawPreviewToMouse)
+        {
+            Vector3 pointerPos = GetPointerWorldPosition();
+            lr.SetPosition(path.Count, pointerPos);
         }
     }
 

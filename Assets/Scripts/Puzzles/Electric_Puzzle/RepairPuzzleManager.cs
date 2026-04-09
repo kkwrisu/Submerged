@@ -31,6 +31,8 @@ public class RepairPuzzleManager : MonoBehaviour
     public MonoBehaviour playerMovement;
     public MonoBehaviour playerLook;
     public PlayerInteract playerInteract;
+    public Camera playerCamera;
+    public AudioListener playerAudioListener;
 
     private string loadedScene;
     private RepairPuzzleInteractable currentInteractable;
@@ -136,6 +138,12 @@ public class RepairPuzzleManager : MonoBehaviour
 
         if (playerInteract != null)
             playerInteract.enabled = !locked;
+
+        if (playerCamera != null)
+            playerCamera.enabled = !locked;
+
+        if (playerAudioListener != null)
+            playerAudioListener.enabled = !locked;
 
         Cursor.lockState = locked ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = locked;

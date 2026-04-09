@@ -15,8 +15,11 @@ public enum RepairPuzzleNodeType
 [RequireComponent(typeof(Collider2D))]
 public class RepairPuzzleNode : MonoBehaviour
 {
+    [Header("Grid (auto)")]
     public int x;
     public int y;
+    public float cellSize = 1f;
+
     public RepairPuzzleNodeType nodeType = RepairPuzzleNodeType.Empty;
     public RepairPuzzleNode portalTarget;
 
@@ -25,6 +28,26 @@ public class RepairPuzzleNode : MonoBehaviour
     public Color normalColor = Color.white;
     public Color pathColor = Color.green;
     public Color blockedColor = Color.gray;
+
+    private void Awake()
+    {
+        UpdateGridPosition();
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        UpdateGridPosition();
+    }
+#endif
+
+    private void UpdateGridPosition()
+    {
+        Vector3 pos = transform.position;
+
+        x = Mathf.RoundToInt(pos.x / cellSize);
+        y = Mathf.RoundToInt(pos.y / cellSize);
+    }
 
     private void Reset()
     {
