@@ -7,6 +7,9 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController controller;
     private Vector2 moveInput;
 
+    [Header("References")]
+    public Player_Status stealthStatus;
+
     [Header("Movement")]
     public float walkSpeed = 5f;
     public float sprintSpeed = 8f;
@@ -34,6 +37,7 @@ public class PlayerMovement : MonoBehaviour
     public float groundDistance = 0.3f;
     public LayerMask groundMask;
     private bool isGrounded;
+    private bool wasGroundedLastFrame;
 
     [Header("Step Climb")]
     public Transform lowerStepCheck;
@@ -140,6 +144,9 @@ public class PlayerMovement : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
 
+        if (stealthStatus == null)
+            stealthStatus = GetComponent<Player_Status>();
+
         standingHeight = controller.height;
         standingCenter = controller.center;
 
@@ -161,12 +168,14 @@ public class PlayerMovement : MonoBehaviour
         if (isExitingLadderTop)
         {
             HandleLadderTopExit();
+            UpdateStealthStatus();
             return;
         }
 
         if (isOnLadder)
         {
             HandleLadderMovement();
+            UpdateStealthStatus();
             return;
         }
 
@@ -179,6 +188,8 @@ public class PlayerMovement : MonoBehaviour
         HandleClimb();
         HandlePullUp();
         HandleMovement();
+
+        UpdateStealthStatus();
     }
 
     void UpdateSprintState()
@@ -212,6 +223,8 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleGroundCheck()
     {
+        wasGroundedLastFrame = isGrounded;
+
         if (isOnLadder || isExitingLadderTop)
         {
             isGrounded = false;
@@ -231,6 +244,9 @@ public class PlayerMovement : MonoBehaviour
 
         if (isGrounded && yVelocity < 0)
             yVelocity = -2f;
+
+        if (!wasGroundedLastFrame && isGrounded && stealthStatus != null)
+            stealthStatus.TriggerLandingNoise();
     }
 
     void HandleCrouch()
@@ -668,6 +684,22 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    void UpdateStealthStatus()
+    {
+        if (stealthStatus == null)
+            return;
+
+        bool shouldCountAsMoving =
+            moveInput.magnitude > 0.1f &&
+            !isHanging &&
+            !isDroppingToHang;
+
+        stealthStatus.SetMoving(shouldCountAsMoving);
+        stealthStatus.SetSprint(isSprinting);
+        stealthStatus.SetCrouch(isCrouching);
+        stealthStatus.SetGrounded(isGrounded);
+    }
+
     public void OnMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
@@ -693,12 +725,19 @@ public class PlayerMovement : MonoBehaviour
         if (isOnLadder)
         {
             ExitLadder(true, false);
+
+            if (stealthStatus != null)
+                stealthStatus.TriggerJumpNoise();
+
             return;
         }
 
         if (isGrounded && !isCrouching)
         {
             yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+
+            if (stealthStatus != null)
+                stealthStatus.TriggerJumpNoise();
         }
     }
 
