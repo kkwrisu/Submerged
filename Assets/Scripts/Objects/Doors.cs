@@ -1,7 +1,10 @@
 using UnityEngine;
 
-public class Doors : MonoBehaviour
+public class Doors : MonoBehaviour, ISaveable
 {
+    [Header("Save")]
+    [SerializeField] private string saveID;
+
     [Header("Locks")]
     [Range(1, 2)]
     public int totalLocks = 2;
@@ -35,11 +38,11 @@ public class Doors : MonoBehaviour
         if (doorVisual == null)
             doorVisual = transform;
 
-        targetPosition = closedPosition;
-        doorVisual.localPosition = targetPosition;
-
         if (unlockedLocks == null || unlockedLocks.Length != 2)
             unlockedLocks = new bool[2];
+
+        targetPosition = isOpen ? openPosition : closedPosition;
+        doorVisual.localPosition = targetPosition;
     }
 
     void Update()
@@ -96,9 +99,10 @@ public class Doors : MonoBehaviour
         Debug.Log("Trava " + lockIndex + " liberada.");
 
         if (AllLocksReleased())
-        {
             Debug.Log("Todas as travas da porta foram liberadas.");
-        }
+
+        if (SaveManager.Instance != null)
+            SaveManager.Instance.SaveGame();
     }
 
     public bool IsLockReleased(int lockIndex)
@@ -124,6 +128,9 @@ public class Doors : MonoBehaviour
     {
         isOpen = !isOpen;
         targetPosition = isOpen ? openPosition : closedPosition;
+
+        if (SaveManager.Instance != null)
+            SaveManager.Instance.SaveGame();
     }
 
     public void OpenDoor()
@@ -159,6 +166,44 @@ public class Doors : MonoBehaviour
         {
             Gizmos.color = Color.cyan;
             Gizmos.DrawLine(transform.position, doorVisual.position);
+        }
+    }
+
+    public string GetSaveID()
+    {
+        return saveID;
+    }
+
+    public void SaveToData(SaveData data)
+    {
+        DoorSaveRecord record = new DoorSaveRecord
+        {
+            id = saveID,
+            isOpen = isOpen,
+            unlockedLocks = (bool[])unlockedLocks.Clone()
+        };
+
+        data.doors.Add(record);
+    }
+
+    public void LoadFromSave(SaveData data)
+    {
+        for (int i = 0; i < data.doors.Count; i++)
+        {
+            if (data.doors[i].id == saveID)
+            {
+                isOpen = data.doors[i].isOpen;
+
+                if (data.doors[i].unlockedLocks != null)
+                    unlockedLocks = (bool[])data.doors[i].unlockedLocks.Clone();
+
+                targetPosition = isOpen ? openPosition : closedPosition;
+
+                if (doorVisual != null)
+                    doorVisual.localPosition = targetPosition;
+
+                return;
+            }
         }
     }
 }

@@ -34,6 +34,9 @@ public class RepairPuzzleManager : MonoBehaviour
     public Camera playerCamera;
     public AudioListener playerAudioListener;
 
+    [Header("Pause World")]
+    public bool pauseGameWhilePuzzleIsOpen = true;
+
     private string loadedScene;
     private RepairPuzzleInteractable currentInteractable;
     private bool isOpen;
@@ -88,6 +91,9 @@ public class RepairPuzzleManager : MonoBehaviour
 
         LockPlayer(true);
 
+        if (pauseGameWhilePuzzleIsOpen)
+            Time.timeScale = 0f;
+
         AsyncOperation op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
         while (!op.isDone)
             yield return null;
@@ -118,6 +124,9 @@ public class RepairPuzzleManager : MonoBehaviour
 
         loadedScene = null;
         isOpen = false;
+
+        if (pauseGameWhilePuzzleIsOpen)
+            Time.timeScale = 1f;
 
         LockPlayer(false);
 
@@ -182,5 +191,10 @@ public class RepairPuzzleManager : MonoBehaviour
         while (string.IsNullOrWhiteSpace(pool[randomIndex]));
 
         return pool[randomIndex];
+    }
+
+    public bool IsPuzzleOpen()
+    {
+        return isOpen;
     }
 }

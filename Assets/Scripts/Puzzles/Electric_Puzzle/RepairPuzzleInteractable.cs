@@ -1,7 +1,10 @@
 using UnityEngine;
 
-public class RepairPuzzleInteractable : MonoBehaviour
+public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
 {
+    [Header("Save")]
+    [SerializeField] private string saveID;
+
     [Header("Puzzle Config")]
     public bool useSpecificScene = false;
     public string specificSceneName;
@@ -34,10 +37,41 @@ public class RepairPuzzleInteractable : MonoBehaviour
         {
             completed = true;
             Debug.Log("Puzzle concluído: " + gameObject.name);
+
+            if (SaveManager.Instance != null)
+                SaveManager.Instance.SaveGame();
         }
         else
         {
             Debug.Log("Puzzle falhou: " + gameObject.name);
+        }
+    }
+
+    public string GetSaveID()
+    {
+        return saveID;
+    }
+
+    public void SaveToData(SaveData data)
+    {
+        PuzzleSaveRecord record = new PuzzleSaveRecord
+        {
+            id = saveID,
+            completed = completed
+        };
+
+        data.puzzles.Add(record);
+    }
+
+    public void LoadFromSave(SaveData data)
+    {
+        for (int i = 0; i < data.puzzles.Count; i++)
+        {
+            if (data.puzzles[i].id == saveID)
+            {
+                completed = data.puzzles[i].completed;
+                return;
+            }
         }
     }
 }

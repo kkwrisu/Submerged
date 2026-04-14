@@ -1,7 +1,10 @@
 using UnityEngine;
 
-public class Levers : MonoBehaviour
+public class Levers : MonoBehaviour, ISaveable
 {
+    [Header("Save")]
+    [SerializeField] private string saveID;
+
     [Header("Door")]
     public Doors targetDoor;
     public int lockIndex = 0;
@@ -61,13 +64,12 @@ public class Levers : MonoBehaviour
         UpdateLeverColor();
 
         if (targetDoor != null)
-        {
             targetDoor.UnlockLock(lockIndex);
-        }
         else
-        {
             Debug.LogWarning("DoorLever sem targetDoor.");
-        }
+
+        if (SaveManager.Instance != null)
+            SaveManager.Instance.SaveGame();
 
         Debug.Log("Alavanca ativada.");
     }
@@ -78,5 +80,35 @@ public class Levers : MonoBehaviour
             return;
 
         changeColor.SetColor(activated ? activatedColor : deactivatedColor);
+    }
+
+    public string GetSaveID()
+    {
+        return saveID;
+    }
+
+    public void SaveToData(SaveData data)
+    {
+        LeverSaveRecord record = new LeverSaveRecord
+        {
+            id = saveID,
+            activated = activated
+        };
+
+        data.levers.Add(record);
+    }
+
+    public void LoadFromSave(SaveData data)
+    {
+        for (int i = 0; i < data.levers.Count; i++)
+        {
+            if (data.levers[i].id == saveID)
+            {
+                activated = data.levers[i].activated;
+                targetRotation = Quaternion.Euler(activated ? onRotation : offRotation);
+                UpdateLeverColor();
+                return;
+            }
+        }
     }
 }

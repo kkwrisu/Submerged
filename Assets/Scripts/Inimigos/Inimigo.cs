@@ -57,6 +57,7 @@ public class Inimigo : MonoBehaviour
     [Header("Catch")]
     public float catchRange = 1.8f;
     public float catchCooldown = 1.2f;
+    public float respawnDelay = 0.15f;
 
     [Header("Audio")]
     public AudioSource detectAudio;
@@ -78,11 +79,13 @@ public class Inimigo : MonoBehaviour
     private float searchTimer;
     private float searchPointTimer;
     private float suspiciousTimer;
+    private float respawnTimer;
 
     private Vector3 lastKnownPlayerPosition;
     private Vector3 heardPosition;
     private bool hasHeardSomething;
     private bool hadPlayerInSightLastFrame;
+    private bool isHandlingCapture;
 
     private void Reset()
     {
@@ -123,6 +126,19 @@ public class Inimigo : MonoBehaviour
 
         if (!agent.enabled || !agent.isOnNavMesh)
             return;
+
+        if (isHandlingCapture)
+        {
+            respawnTimer -= Time.deltaTime;
+
+            if (respawnTimer <= 0f)
+            {
+                DoRespawn();
+                isHandlingCapture = false;
+            }
+
+            return;
+        }
 
         if (catchTimer > 0f)
             catchTimer -= Time.deltaTime;
@@ -622,9 +638,57 @@ public class Inimigo : MonoBehaviour
 
     private void CatchPlayer()
     {
+        if (isHandlingCapture)
+            return;
+
         StopChaseAudio();
         onPlayerCaught?.Invoke();
+
         Debug.Log("Inimigo: Player capturado.");
+
+        isHandlingCapture = true;
+        respawnTimer = respawnDelay;
+    }
+
+    private void DoRespawn()
+    {
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.RespawnPlayerAtCheckpoint();
+        }
+        else
+        {
+            Debug.LogWarning("SaveManager não encontrado. Respawn não executado.");
+        }
+
+        ResetEnemyAfterRespawn();
+    }
+
+    private void ResetEnemyAfterRespawn()
+    {
+        detectionMeter = 0f;
+        lostSightTimer = 0f;
+        catchTimer = 0f;
+        searchTimer = 0f;
+        searchPointTimer = 0f;
+        suspiciousTimer = 0f;
+
+        hasHeardSomething = false;
+        hadPlayerInSightLastFrame = false;
+
+        StopChaseAudio();
+
+        ChangeState(EnemyState.ReturnToPatrol);
+
+        if (patrolPoints != null && patrolPoints.Length > 0)
+        {
+            SetDestination(patrolPoints[currentPatrolIndex].position);
+        }
+        else
+        {
+            agent.ResetPath();
+            ChangeState(EnemyState.Patrol);
+        }
     }
 
     private void StopChaseAudio()

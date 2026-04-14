@@ -99,6 +99,9 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     private void Update()
     {
+        if (RepairPuzzleManager.Instance == null || !RepairPuzzleManager.Instance.IsPuzzleOpen())
+            return;
+
         bool resetPressed =
             (reset != null && reset.WasPressedThisFrame()) ||
             (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame);
