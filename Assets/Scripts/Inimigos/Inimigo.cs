@@ -59,6 +59,10 @@ public class Inimigo : MonoBehaviour
     public float catchCooldown = 1.2f;
     public float respawnDelay = 0.15f;
 
+    [Header("Dungeon Alert")]
+    public bool useDungeonAlert = true;
+    [Range(0f, 100f)] public float alertIncreaseOnDetection = 15f;
+
     [Header("Audio")]
     public AudioSource detectAudio;
     public AudioSource chaseLoopAudio;
@@ -86,6 +90,34 @@ public class Inimigo : MonoBehaviour
     private bool hasHeardSomething;
     private bool hadPlayerInSightLastFrame;
     private bool isHandlingCapture;
+
+    private float CurrentSpeedMultiplier
+    {
+        get
+        {
+            if (!useDungeonAlert || DungeonAlertSystem.Instance == null)
+                return 1f;
+
+            return DungeonAlertSystem.Instance.SpeedMultiplier;
+        }
+    }
+
+    private float CurrentTimeMultiplier
+    {
+        get
+        {
+            if (!useDungeonAlert || DungeonAlertSystem.Instance == null)
+                return 1f;
+
+            return DungeonAlertSystem.Instance.TimeMultiplier;
+        }
+    }
+
+    private float EffectivePatrolWaitTime => patrolWaitTime / CurrentTimeMultiplier;
+    private float EffectiveInvestigateSoundDuration => investigateSoundDuration / CurrentTimeMultiplier;
+    private float EffectiveSearchDuration => searchDuration / CurrentTimeMultiplier;
+    private float EffectiveSearchPointInterval => searchPointInterval / CurrentTimeMultiplier;
+    private float EffectiveLostSightGraceTime => lostSightGraceTime / CurrentTimeMultiplier;
 
     private void Reset()
     {
@@ -147,6 +179,7 @@ public class Inimigo : MonoBehaviour
         bool canHearPlayer = CanHearPlayer();
 
         UpdateDetectionMeter(canSeePlayer);
+        SetSpeedForState();
 
         switch (currentState)
         {
@@ -206,7 +239,7 @@ public class Inimigo : MonoBehaviour
         {
             patrolWaitTimer += Time.deltaTime;
 
-            if (patrolWaitTimer >= patrolWaitTime)
+            if (patrolWaitTimer >= EffectivePatrolWaitTime)
             {
                 patrolWaitTimer = 0f;
                 currentPatrolIndex = (currentPatrolIndex + 1) % patrolPoints.Length;
@@ -242,7 +275,7 @@ public class Inimigo : MonoBehaviour
             return;
         }
 
-        if (suspiciousTimer >= investigateSoundDuration)
+        if (suspiciousTimer >= EffectiveInvestigateSoundDuration)
         {
             EnterInvestigate(hasHeardSomething ? heardPosition : transform.position);
         }
@@ -262,14 +295,14 @@ public class Inimigo : MonoBehaviour
         searchTimer += Time.deltaTime;
         searchPointTimer += Time.deltaTime;
 
-        if (searchPointTimer >= searchPointInterval)
+        if (searchPointTimer >= EffectiveSearchPointInterval)
         {
             searchPointTimer = 0f;
             Vector3 randomPoint = GetRandomPointNear(lastKnownPlayerPosition, searchRadius);
             SetDestination(randomPoint);
         }
 
-        if (searchTimer >= searchDuration)
+        if (searchTimer >= EffectiveSearchDuration)
         {
             EnterReturnToPatrol();
         }
@@ -302,7 +335,7 @@ public class Inimigo : MonoBehaviour
 
             lostSightTimer += Time.deltaTime;
 
-            if (lostSightTimer >= lostSightGraceTime)
+            if (lostSightTimer >= EffectiveLostSightGraceTime)
             {
                 EnterSearch(lastKnownPlayerPosition);
             }
@@ -368,14 +401,14 @@ public class Inimigo : MonoBehaviour
         searchTimer += Time.deltaTime;
         searchPointTimer += Time.deltaTime;
 
-        if (searchPointTimer >= searchPointInterval)
+        if (searchPointTimer >= EffectiveSearchPointInterval)
         {
             searchPointTimer = 0f;
             Vector3 randomPoint = GetRandomPointNear(lastKnownPlayerPosition, searchRadius);
             SetDestination(randomPoint);
         }
 
-        if (searchTimer >= searchDuration)
+        if (searchTimer >= EffectiveSearchDuration)
         {
             EnterReturnToPatrol();
         }
@@ -531,6 +564,9 @@ public class Inimigo : MonoBehaviour
 
         if (!wasAlreadyChasing)
         {
+            if (useDungeonAlert && DungeonAlertSystem.Instance != null)
+                DungeonAlertSystem.Instance.AddAlert(alertIncreaseOnDetection);
+
             if (detectAudio != null)
                 detectAudio.Play();
 
@@ -578,25 +614,27 @@ public class Inimigo : MonoBehaviour
 
     private void SetSpeedForState()
     {
+        float speedMultiplier = CurrentSpeedMultiplier;
+
         switch (currentState)
         {
             case EnemyState.Patrol:
             case EnemyState.ReturnToPatrol:
-                agent.speed = patrolSpeed;
+                agent.speed = patrolSpeed * speedMultiplier;
                 break;
 
             case EnemyState.Suspicious:
             case EnemyState.Investigate:
-                agent.speed = suspiciousSpeed;
+                agent.speed = suspiciousSpeed * speedMultiplier;
                 break;
 
             case EnemyState.Search:
-                agent.speed = searchSpeed;
+                agent.speed = searchSpeed * speedMultiplier;
                 break;
 
             case EnemyState.Chase:
             case EnemyState.Catch:
-                agent.speed = chaseSpeed;
+                agent.speed = chaseSpeed * speedMultiplier;
                 break;
         }
     }
@@ -672,6 +710,7 @@ public class Inimigo : MonoBehaviour
         searchTimer = 0f;
         searchPointTimer = 0f;
         suspiciousTimer = 0f;
+        patrolWaitTimer = 0f;
 
         hasHeardSomething = false;
         hadPlayerInSightLastFrame = false;
