@@ -153,6 +153,7 @@ MonoBehaviour:
   continueButton: {fileID: 1995112929}
   settingsButton: {fileID: 854872736}
   quitButton: {fileID: 1392345421}
+  continueButtonComponent: {fileID: 1995112931}
   settingsPanel: {fileID: 1384984070}
   firstSceneName: Prototype
 --- !u!4 &16734984

@@ -14,6 +14,11 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
     public bool completed;
     public bool blockIfCompleted = false;
 
+    [Header("Fail Alert")]
+    public float failAlertRadius = 12f;
+    public LayerMask enemyLayer = ~0;
+    public AudioSource failAudio;
+
     public void StartRepairPuzzle()
     {
         if (blockIfCompleted && completed)
@@ -44,6 +49,29 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
         else
         {
             Debug.Log("Puzzle falhou: " + gameObject.name);
+            HandlePuzzleFail();
+        }
+    }
+
+    private void HandlePuzzleFail()
+    {
+        if (failAudio != null)
+            failAudio.Play();
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, failAlertRadius, enemyLayer, QueryTriggerInteraction.Ignore);
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Inimigo inimigo = hits[i].GetComponent<Inimigo>();
+
+            if (inimigo == null)
+                inimigo = hits[i].GetComponentInParent<Inimigo>();
+
+            if (inimigo == null)
+                inimigo = hits[i].GetComponentInChildren<Inimigo>();
+
+            if (inimigo != null)
+                inimigo.ForceChaseFromExternalAlert();
         }
     }
 
@@ -73,5 +101,11 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
                 return;
             }
         }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, failAlertRadius);
     }
 }

@@ -674,6 +674,22 @@ public class Inimigo : MonoBehaviour
         return center;
     }
 
+    public void ForceChaseFromExternalAlert()
+    {
+        if (player == null || agent == null)
+            return;
+
+        if (!agent.enabled || !agent.isOnNavMesh)
+            return;
+
+        lastKnownPlayerPosition = GetPlayerPosition();
+        heardPosition = GetPlayerPosition();
+        hasHeardSomething = true;
+        detectionMeter = detectionThreshold;
+
+        EnterChase();
+    }
+
     private void CatchPlayer()
     {
         if (isHandlingCapture)

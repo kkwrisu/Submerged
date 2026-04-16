@@ -41,10 +41,9 @@ public class RepairPuzzleNode : MonoBehaviour
     }
 #endif
 
-    private void UpdateGridPosition()
+    public void UpdateGridPosition()
     {
         Vector3 pos = transform.position;
-
         x = Mathf.RoundToInt(pos.x / cellSize);
         y = Mathf.RoundToInt(pos.y / cellSize);
     }
@@ -56,7 +55,8 @@ public class RepairPuzzleNode : MonoBehaviour
 
     public bool IsWalkable()
     {
-        return nodeType != RepairPuzzleNodeType.Wall;
+        return nodeType != RepairPuzzleNodeType.Wall &&
+               nodeType != RepairPuzzleNodeType.RedHazard;
     }
 
     public void SetNormal()

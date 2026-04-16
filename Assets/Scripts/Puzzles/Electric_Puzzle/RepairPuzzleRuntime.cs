@@ -180,6 +180,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
             if (allNodes[i].gameObject.scene != gameObject.scene)
                 continue;
 
+            allNodes[i].UpdateGridPosition();
+
             Vector2Int pos = new Vector2Int(allNodes[i].x, allNodes[i].y);
 
             if (!nodes.ContainsKey(pos))
@@ -335,8 +337,18 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (!AreOrthogonallyAdjacent(currentEnd, targetNode))
             return;
 
+        // Hazard agora bloqueia igual wall
         if (!targetNode.IsWalkable())
+        {
+            // Se tentou entrar exatamente no hazard, falha
+            if (targetNode.nodeType == RepairPuzzleNodeType.RedHazard)
+            {
+                Debug.Log("Tentou passar por cima do RedHazard.");
+                FailPuzzle();
+            }
+
             return;
+        }
 
         if (currentPath.Count >= 2 && targetNode == currentPath[currentPath.Count - 2])
         {
@@ -360,8 +372,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (difficulty == RepairPuzzleDifficulty.Difficulty4 && activeWire == 2 && pathA.Contains(targetNode))
             return;
 
+        // Falha se entrar em casa adjacente ortogonal a hazard
         if (IsDangerForStep(targetNode))
         {
+            Debug.Log("Passou em casa adjacente a RedHazard.");
             FailPuzzle();
             return;
         }
@@ -374,6 +388,25 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
             if (difficulty == RepairPuzzleDifficulty.Difficulty4 && activeWire == 2 && pathA.Contains(exitPortal))
             {
+                FailPuzzle();
+                return;
+            }
+
+            // também verifica perigo ao sair do portal
+            if (!exitPortal.IsWalkable())
+            {
+                if (exitPortal.nodeType == RepairPuzzleNodeType.RedHazard)
+                {
+                    Debug.Log("Portal saiu em cima de RedHazard.");
+                    FailPuzzle();
+                }
+
+                return;
+            }
+
+            if (IsDangerForStep(exitPortal))
+            {
+                Debug.Log("Portal saiu adjacente a RedHazard.");
                 FailPuzzle();
                 return;
             }
@@ -422,6 +455,13 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (difficulty == RepairPuzzleDifficulty.Difficulty1)
             return false;
 
+        if (node == null)
+            return false;
+
+        // entrar no próprio hazard também falha
+        if (node.nodeType == RepairPuzzleNodeType.RedHazard)
+            return true;
+
         Vector2Int pos = new Vector2Int(node.x, node.y);
         Vector2Int[] offsets =
         {
@@ -434,9 +474,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
         for (int i = 0; i < offsets.Length; i++)
         {
             Vector2Int check = pos + offsets[i];
+
             if (nodes.TryGetValue(check, out RepairPuzzleNode neighbor))
             {
-                if (neighbor.nodeType == RepairPuzzleNodeType.RedHazard)
+                if (neighbor != null && neighbor.nodeType == RepairPuzzleNodeType.RedHazard)
                     return true;
             }
         }
@@ -514,6 +555,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
     public void FailPuzzle()
     {
         Debug.Log("PUZZLE FAIL");
+
+        if (DungeonAlertSystem.Instance != null)
+            DungeonAlertSystem.Instance.RegisterMinigameFailure();
+
         if (RepairPuzzleManager.Instance != null)
             RepairPuzzleManager.Instance.FinishPuzzle(RepairPuzzleResult.Fail);
     }
