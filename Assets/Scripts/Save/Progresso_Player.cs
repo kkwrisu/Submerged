@@ -7,4 +7,10 @@ public class Progresso_Player : MonoBehaviour
         if (SaveManager.Instance != null)
             SaveManager.Instance.RegisterPlayer(transform);
     }
+
+    private void OnEnable()
+    {
+        if (SaveManager.Instance != null)
+            SaveManager.Instance.RegisterPlayer(transform);
+    }
 }

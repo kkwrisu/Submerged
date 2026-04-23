@@ -61,7 +61,7 @@ public class DialogueManager : MonoBehaviour
         currentNodeIndex = 0;
         isActive = true;
         waitingForChoice = false;
-        nextInputAllowedTime = Time.time + inputBlockAfterStart;
+        nextInputAllowedTime = Time.unscaledTime + inputBlockAfterStart;
 
         if (dialoguePanel != null)
             dialoguePanel.SetActive(true);
@@ -76,6 +76,8 @@ public class DialogueManager : MonoBehaviour
 
         if (playerLookScript != null)
             playerLookScript.enabled = false;
+
+        Time.timeScale = 0f;
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -209,6 +211,8 @@ public class DialogueManager : MonoBehaviour
         if (playerLookScript != null)
             playerLookScript.enabled = true;
 
+        Time.timeScale = 1f;
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -229,7 +233,7 @@ public class DialogueManager : MonoBehaviour
         if (waitingForChoice)
             return;
 
-        if (Time.time < nextInputAllowedTime)
+        if (Time.unscaledTime < nextInputAllowedTime)
             return;
 
         Next();

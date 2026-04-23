@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Events;
@@ -50,7 +51,8 @@ public class Inimigo : MonoBehaviour
     public float lostSightGraceTime = 2f;
 
     [Header("Search")]
-    public float searchDuration = 5f;
+    public float investigateDuration = 5f;
+    public float searchDurationAfterChase = 9f;
     public float searchRadius = 3.5f;
     public float searchPointInterval = 1.2f;
 
@@ -59,6 +61,9 @@ public class Inimigo : MonoBehaviour
     public float catchCooldown = 1.2f;
     public float respawnDelay = 0.15f;
 
+    [Header("Respawn Reset")]
+    public float postRespawnIgnoreDuration = 2f;
+
     [Header("Dungeon Alert")]
     public bool useDungeonAlert = true;
     [Range(0f, 100f)] public float alertIncreaseOnDetection = 15f;
@@ -66,6 +71,11 @@ public class Inimigo : MonoBehaviour
     [Header("Audio")]
     public AudioSource detectAudio;
     public AudioSource chaseLoopAudio;
+    public float chaseLoopStartDelay = 0.4f;
+    public float chaseLoopFadeOutDuration = 0.8f;
+
+    [Header("Detection Pause")]
+    public float detectionPauseDuration = 0.35f;
 
     [Header("Events")]
     public UnityEvent onPlayerDetected;
@@ -84,12 +94,19 @@ public class Inimigo : MonoBehaviour
     private float searchPointTimer;
     private float suspiciousTimer;
     private float respawnTimer;
+    private float detectionPauseTimer;
+    private float currentSearchDuration;
+    private float postRespawnIgnoreTimer;
 
     private Vector3 lastKnownPlayerPosition;
     private Vector3 heardPosition;
     private bool hasHeardSomething;
     private bool hadPlayerInSightLastFrame;
     private bool isHandlingCapture;
+    private bool isInDetectionPause;
+    private Coroutine chaseLoopStartRoutine;
+    private Coroutine chaseLoopFadeRoutine;
+    private float chaseLoopOriginalVolume = 1f;
 
     private float CurrentSpeedMultiplier
     {
@@ -115,7 +132,8 @@ public class Inimigo : MonoBehaviour
 
     private float EffectivePatrolWaitTime => patrolWaitTime / CurrentTimeMultiplier;
     private float EffectiveInvestigateSoundDuration => investigateSoundDuration / CurrentTimeMultiplier;
-    private float EffectiveSearchDuration => searchDuration / CurrentTimeMultiplier;
+    private float EffectiveInvestigateDuration => investigateDuration / CurrentTimeMultiplier;
+    private float EffectiveSearchDurationAfterChase => searchDurationAfterChase / CurrentTimeMultiplier;
     private float EffectiveSearchPointInterval => searchPointInterval / CurrentTimeMultiplier;
     private float EffectiveLostSightGraceTime => lostSightGraceTime / CurrentTimeMultiplier;
 
@@ -145,6 +163,15 @@ public class Inimigo : MonoBehaviour
         if (playerStealth == null && player != null)
             playerStealth = player.GetComponent<Player_Status>();
 
+        if (detectAudio != null)
+            detectAudio.playOnAwake = false;
+
+        if (chaseLoopAudio != null)
+        {
+            chaseLoopAudio.playOnAwake = false;
+            chaseLoopOriginalVolume = chaseLoopAudio.volume;
+        }
+
         SetSpeedForState();
 
         if (agent != null && agent.enabled && agent.isOnNavMesh)
@@ -159,6 +186,9 @@ public class Inimigo : MonoBehaviour
         if (!agent.enabled || !agent.isOnNavMesh)
             return;
 
+        if (postRespawnIgnoreTimer > 0f)
+            postRespawnIgnoreTimer -= Time.deltaTime;
+
         if (isHandlingCapture)
         {
             respawnTimer -= Time.deltaTime;
@@ -172,11 +202,33 @@ public class Inimigo : MonoBehaviour
             return;
         }
 
+        if (isInDetectionPause)
+        {
+            detectionPauseTimer -= Time.deltaTime;
+            agent.isStopped = true;
+
+            if (detectionPauseTimer <= 0f)
+            {
+                isInDetectionPause = false;
+                agent.isStopped = false;
+
+                if (currentState == EnemyState.Chase)
+                {
+                    if (CanSeePlayer())
+                        SetDestination(GetPlayerPosition());
+                    else
+                        SetDestination(lastKnownPlayerPosition);
+                }
+            }
+
+            return;
+        }
+
         if (catchTimer > 0f)
             catchTimer -= Time.deltaTime;
 
-        bool canSeePlayer = CanSeePlayer();
-        bool canHearPlayer = CanHearPlayer();
+        bool canSeePlayer = postRespawnIgnoreTimer <= 0f && CanSeePlayer();
+        bool canHearPlayer = postRespawnIgnoreTimer <= 0f && CanHearPlayer();
 
         UpdateDetectionMeter(canSeePlayer);
         SetSpeedForState();
@@ -228,7 +280,7 @@ public class Inimigo : MonoBehaviour
 
         if (canHearPlayer)
         {
-            EnterSuspicious(GetPlayerPosition());
+            EnterSuspicious(heardPosition);
             return;
         }
 
@@ -262,12 +314,7 @@ public class Inimigo : MonoBehaviour
         suspiciousTimer += Time.deltaTime;
 
         if (canHearPlayer)
-        {
-            heardPosition = GetPlayerPosition();
-            hasHeardSomething = true;
             suspiciousTimer = 0f;
-            SetDestination(heardPosition);
-        }
 
         if (!agent.pathPending && agent.remainingDistance <= 1f)
         {
@@ -302,7 +349,7 @@ public class Inimigo : MonoBehaviour
             SetDestination(randomPoint);
         }
 
-        if (searchTimer >= EffectiveSearchDuration)
+        if (searchTimer >= currentSearchDuration)
         {
             EnterReturnToPatrol();
         }
@@ -313,7 +360,29 @@ public class Inimigo : MonoBehaviour
         if (!agent.enabled || !agent.isOnNavMesh)
             return;
 
-        SetDestination(GetPlayerPosition());
+        if (canSeePlayer)
+        {
+            lastKnownPlayerPosition = GetPlayerPosition();
+            SetDestination(lastKnownPlayerPosition);
+            lostSightTimer = 0f;
+        }
+        else if (canHearPlayer)
+        {
+            lastKnownPlayerPosition = heardPosition;
+            SetDestination(lastKnownPlayerPosition);
+            lostSightTimer = 0f;
+        }
+        else
+        {
+            lostSightTimer += Time.deltaTime;
+            SetDestination(lastKnownPlayerPosition);
+
+            if (lostSightTimer >= EffectiveLostSightGraceTime)
+            {
+                EnterSearch(lastKnownPlayerPosition);
+                return;
+            }
+        }
 
         float distanceToPlayer = Vector3.Distance(transform.position, GetPlayerPosition());
 
@@ -321,24 +390,6 @@ public class Inimigo : MonoBehaviour
         {
             EnterCatch();
             return;
-        }
-
-        if (canSeePlayer)
-        {
-            lastKnownPlayerPosition = GetPlayerPosition();
-            lostSightTimer = 0f;
-        }
-        else
-        {
-            if (canHearPlayer)
-                lastKnownPlayerPosition = GetPlayerPosition();
-
-            lostSightTimer += Time.deltaTime;
-
-            if (lostSightTimer >= EffectiveLostSightGraceTime)
-            {
-                EnterSearch(lastKnownPlayerPosition);
-            }
         }
     }
 
@@ -394,7 +445,7 @@ public class Inimigo : MonoBehaviour
 
         if (canHearPlayer)
         {
-            EnterSuspicious(GetPlayerPosition());
+            EnterSuspicious(heardPosition);
             return;
         }
 
@@ -408,7 +459,7 @@ public class Inimigo : MonoBehaviour
             SetDestination(randomPoint);
         }
 
-        if (searchTimer >= EffectiveSearchDuration)
+        if (searchTimer >= currentSearchDuration)
         {
             EnterReturnToPatrol();
         }
@@ -427,7 +478,7 @@ public class Inimigo : MonoBehaviour
 
         if (canHearPlayer)
         {
-            EnterSuspicious(GetPlayerPosition());
+            EnterSuspicious(heardPosition);
             return;
         }
 
@@ -550,6 +601,7 @@ public class Inimigo : MonoBehaviour
         lastKnownPlayerPosition = targetPosition;
         searchTimer = 0f;
         searchPointTimer = 0f;
+        currentSearchDuration = EffectiveInvestigateDuration;
 
         ChangeState(EnemyState.Investigate);
         SetDestination(targetPosition);
@@ -559,8 +611,8 @@ public class Inimigo : MonoBehaviour
     {
         bool wasAlreadyChasing = currentState == EnemyState.Chase;
 
+        CancelChaseAudioFade();
         ChangeState(EnemyState.Chase);
-        SetDestination(GetPlayerPosition());
 
         if (!wasAlreadyChasing)
         {
@@ -570,25 +622,38 @@ public class Inimigo : MonoBehaviour
             if (detectAudio != null)
                 detectAudio.Play();
 
-            if (chaseLoopAudio != null && !chaseLoopAudio.isPlaying)
-                chaseLoopAudio.Play();
+            isInDetectionPause = true;
+            detectionPauseTimer = detectionPauseDuration;
+            agent.isStopped = true;
+
+            StartChaseLoopWithDelay();
+        }
+        else
+        {
+            if (CanSeePlayer())
+                SetDestination(GetPlayerPosition());
+            else
+                SetDestination(lastKnownPlayerPosition);
         }
     }
 
     private void EnterCatch()
     {
-        StopChaseAudio();
+        isInDetectionPause = false;
+        FadeOutChaseAudio();
         ChangeState(EnemyState.Catch);
     }
 
     private void EnterSearch(Vector3 targetPosition)
     {
-        StopChaseAudio();
+        isInDetectionPause = false;
+        FadeOutChaseAudio();
         onPlayerLost?.Invoke();
 
         lastKnownPlayerPosition = targetPosition;
         searchTimer = 0f;
         searchPointTimer = 0f;
+        currentSearchDuration = EffectiveSearchDurationAfterChase;
 
         ChangeState(EnemyState.Search);
         SetDestination(targetPosition);
@@ -596,7 +661,8 @@ public class Inimigo : MonoBehaviour
 
     private void EnterReturnToPatrol()
     {
-        StopChaseAudio();
+        isInDetectionPause = false;
+        FadeOutChaseAudio();
         ChangeState(EnemyState.ReturnToPatrol);
 
         if (patrolPoints != null && patrolPoints.Length > 0)
@@ -608,7 +674,7 @@ public class Inimigo : MonoBehaviour
         currentState = newState;
         SetSpeedForState();
 
-        if (currentState != EnemyState.Catch)
+        if (currentState != EnemyState.Catch && !isInDetectionPause)
             agent.isStopped = false;
     }
 
@@ -650,6 +716,9 @@ public class Inimigo : MonoBehaviour
     private void SetDestination(Vector3 position)
     {
         if (!agent.enabled || !agent.isOnNavMesh)
+            return;
+
+        if (isInDetectionPause)
             return;
 
         agent.isStopped = false;
@@ -695,13 +764,14 @@ public class Inimigo : MonoBehaviour
         if (isHandlingCapture)
             return;
 
-        StopChaseAudio();
+        FadeOutChaseAudio();
         onPlayerCaught?.Invoke();
 
         Debug.Log("Inimigo: Player capturado.");
 
         isHandlingCapture = true;
         respawnTimer = respawnDelay;
+        agent.isStopped = true;
     }
 
     private void DoRespawn()
@@ -727,11 +797,18 @@ public class Inimigo : MonoBehaviour
         searchPointTimer = 0f;
         suspiciousTimer = 0f;
         patrolWaitTimer = 0f;
+        detectionPauseTimer = 0f;
+        currentSearchDuration = 0f;
+        postRespawnIgnoreTimer = postRespawnIgnoreDuration;
 
         hasHeardSomething = false;
         hadPlayerInSightLastFrame = false;
+        isInDetectionPause = false;
 
-        StopChaseAudio();
+        StopAllChaseAudioCoroutinesAndSilence();
+
+        if (agent.enabled && agent.isOnNavMesh)
+            agent.ResetPath();
 
         ChangeState(EnemyState.ReturnToPatrol);
 
@@ -741,15 +818,108 @@ public class Inimigo : MonoBehaviour
         }
         else
         {
-            agent.ResetPath();
+            if (agent.enabled && agent.isOnNavMesh)
+                agent.ResetPath();
+
             ChangeState(EnemyState.Patrol);
         }
     }
 
-    private void StopChaseAudio()
+    private void StartChaseLoopWithDelay()
     {
-        if (chaseLoopAudio != null && chaseLoopAudio.isPlaying)
+        if (chaseLoopAudio == null)
+            return;
+
+        CancelChaseAudioFade();
+
+        if (chaseLoopStartRoutine != null)
+            StopCoroutine(chaseLoopStartRoutine);
+
+        chaseLoopStartRoutine = StartCoroutine(DelayedStartChaseLoop());
+    }
+
+    private IEnumerator DelayedStartChaseLoop()
+    {
+        yield return new WaitForSeconds(chaseLoopStartDelay);
+
+        if (currentState == EnemyState.Chase && chaseLoopAudio != null)
+        {
+            chaseLoopAudio.volume = chaseLoopOriginalVolume;
+
+            if (!chaseLoopAudio.isPlaying)
+                chaseLoopAudio.Play();
+        }
+
+        chaseLoopStartRoutine = null;
+    }
+
+    private void FadeOutChaseAudio()
+    {
+        if (chaseLoopAudio == null)
+            return;
+
+        if (chaseLoopStartRoutine != null)
+        {
+            StopCoroutine(chaseLoopStartRoutine);
+            chaseLoopStartRoutine = null;
+        }
+
+        if (!chaseLoopAudio.isPlaying)
+            return;
+
+        CancelChaseAudioFade();
+        chaseLoopFadeRoutine = StartCoroutine(FadeOutChaseLoopRoutine());
+    }
+
+    private IEnumerator FadeOutChaseLoopRoutine()
+    {
+        float startVolume = chaseLoopAudio.volume;
+        float timer = 0f;
+
+        while (timer < chaseLoopFadeOutDuration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / chaseLoopFadeOutDuration;
+            chaseLoopAudio.volume = Mathf.Lerp(startVolume, 0f, t);
+            yield return null;
+        }
+
+        chaseLoopAudio.Stop();
+        chaseLoopAudio.volume = chaseLoopOriginalVolume;
+        chaseLoopFadeRoutine = null;
+    }
+
+    private void CancelChaseAudioFade()
+    {
+        if (chaseLoopFadeRoutine != null)
+        {
+            StopCoroutine(chaseLoopFadeRoutine);
+            chaseLoopFadeRoutine = null;
+        }
+
+        if (chaseLoopAudio != null)
+            chaseLoopAudio.volume = chaseLoopOriginalVolume;
+    }
+
+    private void StopAllChaseAudioCoroutinesAndSilence()
+    {
+        if (chaseLoopStartRoutine != null)
+        {
+            StopCoroutine(chaseLoopStartRoutine);
+            chaseLoopStartRoutine = null;
+        }
+
+        if (chaseLoopFadeRoutine != null)
+        {
+            StopCoroutine(chaseLoopFadeRoutine);
+            chaseLoopFadeRoutine = null;
+        }
+
+        if (chaseLoopAudio != null)
+        {
             chaseLoopAudio.Stop();
+            chaseLoopAudio.volume = chaseLoopOriginalVolume;
+        }
     }
 
     private void OnDrawGizmosSelected()

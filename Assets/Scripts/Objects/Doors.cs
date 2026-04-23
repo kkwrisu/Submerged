@@ -6,7 +6,7 @@ public class Doors : MonoBehaviour, ISaveable
     [SerializeField] private string saveID;
 
     [Header("Locks")]
-    [Range(1, 2)]
+    [Range(0, 2)]
     public int totalLocks = 2;
 
     [SerializeField] private bool[] unlockedLocks = new bool[2];
@@ -38,8 +38,8 @@ public class Doors : MonoBehaviour, ISaveable
         if (doorVisual == null)
             doorVisual = transform;
 
-        if (unlockedLocks == null || unlockedLocks.Length != 2)
-            unlockedLocks = new bool[2];
+        if (unlockedLocks == null || unlockedLocks.Length != totalLocks)
+            unlockedLocks = new bool[totalLocks];
 
         targetPosition = isOpen ? openPosition : closedPosition;
         doorVisual.localPosition = targetPosition;

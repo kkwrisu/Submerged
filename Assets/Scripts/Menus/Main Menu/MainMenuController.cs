@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainMenuController : MonoBehaviour
@@ -49,14 +48,23 @@ public class MainMenuController : MonoBehaviour
             return;
         }
 
-        Debug.Log("Carregando cena: " + firstSceneName);
-        SceneManager.LoadScene(firstSceneName);
+        if (SceneTransition.Instance == null)
+        {
+            Debug.LogError("SceneTransition.Instance está null.");
+            return;
+        }
+
+        Debug.Log("Carregando cena com transição: " + firstSceneName);
+        SceneTransition.Instance.TransitionToScene(firstSceneName);
     }
 
     public void ContinueGame()
     {
         if (SaveManager.Instance == null)
+        {
+            Debug.LogWarning("SaveManager.Instance está null.");
             return;
+        }
 
         if (!SaveManager.Instance.HasSave())
         {
@@ -65,7 +73,23 @@ public class MainMenuController : MonoBehaviour
         }
 
         SaveManager.Instance.LoadGameFromDisk();
-        SaveManager.Instance.LoadSavedScene();
+
+        string savedSceneName = SaveManager.Instance.GetSavedSceneName();
+
+        if (string.IsNullOrWhiteSpace(savedSceneName))
+        {
+            Debug.LogWarning("Nenhuma cena salva encontrada.");
+            return;
+        }
+
+        if (SceneTransition.Instance == null)
+        {
+            Debug.LogError("SceneTransition.Instance está null.");
+            return;
+        }
+
+        Debug.Log("Continuando jogo com transição para: " + savedSceneName);
+        SceneTransition.Instance.TransitionToScene(savedSceneName);
     }
 
     public void OpenSettings()

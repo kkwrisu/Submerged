@@ -11,6 +11,10 @@ public class SaveManager : MonoBehaviour
 
     private SaveData currentSave;
 
+    private string pendingSpawnId;
+    private string pendingSceneName;
+    private bool hasPendingSpawn;
+
     private string SavePath => Path.Combine(Application.persistentDataPath, "save.json");
 
     private void Awake()
@@ -36,6 +40,7 @@ public class SaveManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        ApplyPendingSpawnIfNeeded(scene.name);
         ApplySceneState();
         RestorePlayerAtCheckpointIfPossible();
     }
@@ -55,6 +60,59 @@ public class SaveManager : MonoBehaviour
         currentSave.currentSceneName = sceneName;
 
         SaveGame();
+    }
+
+    public void SetPendingSpawn(string sceneName, string spawnId)
+    {
+        pendingSceneName = sceneName;
+        pendingSpawnId = spawnId;
+        hasPendingSpawn = !string.IsNullOrWhiteSpace(sceneName) && !string.IsNullOrWhiteSpace(spawnId);
+    }
+
+    private void ApplyPendingSpawnIfNeeded(string loadedSceneName)
+    {
+        if (!hasPendingSpawn)
+            return;
+
+        if (loadedSceneName != pendingSceneName)
+            return;
+
+        SceneSpawnPoint[] spawnPoints = FindObjectsByType<SceneSpawnPoint>(FindObjectsSortMode.None);
+
+        SceneSpawnPoint selectedSpawn = null;
+
+        for (int i = 0; i < spawnPoints.Length; i++)
+        {
+            if (spawnPoints[i].spawnId == pendingSpawnId)
+            {
+                selectedSpawn = spawnPoints[i];
+                break;
+            }
+        }
+
+        if (selectedSpawn == null)
+        {
+            Debug.LogWarning("Spawn point não encontrado: " + pendingSpawnId);
+            ClearPendingSpawn();
+            return;
+        }
+
+        if (currentSave == null)
+            currentSave = new SaveData();
+
+        currentSave.checkpointPosition = new SerializableVector3(selectedSpawn.transform.position);
+        currentSave.checkpointYRotation = selectedSpawn.transform.eulerAngles.y;
+        currentSave.currentSceneName = loadedSceneName;
+
+        SaveGame();
+        ClearPendingSpawn();
+    }
+
+    private void ClearPendingSpawn()
+    {
+        hasPendingSpawn = false;
+        pendingSceneName = null;
+        pendingSpawnId = null;
     }
 
     public void SaveGame()
@@ -183,5 +241,6 @@ public class SaveManager : MonoBehaviour
             File.Delete(SavePath);
 
         currentSave = new SaveData();
+        ClearPendingSpawn();
     }
 }
