@@ -8,13 +8,18 @@ public class MainMenuController : MonoBehaviour
     public GameObject playButton;
     public GameObject continueButton;
     public GameObject settingsButton;
+    public GameObject creditsButton;
     public GameObject quitButton;
+    public GameObject menuBackground;
 
     [Header("Continue Button (Button Component)")]
     public Button continueButtonComponent;
 
     [Header("Settings Panel")]
     public GameObject settingsPanel;
+
+    [Header("Credits Panel")]
+    public GameObject creditsPanel;
 
     [Header("Primeira cena do jogo")]
     public string firstSceneName = "NomeDaSuaCena";
@@ -23,6 +28,9 @@ public class MainMenuController : MonoBehaviour
     {
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
+
+        if (creditsPanel != null)
+            creditsPanel.SetActive(false);
 
         ShowMainMenuElements(true);
         UpdateContinueButton();
@@ -73,7 +81,6 @@ public class MainMenuController : MonoBehaviour
         }
 
         SaveManager.Instance.LoadGameFromDisk();
-
         string savedSceneName = SaveManager.Instance.GetSavedSceneName();
 
         if (string.IsNullOrWhiteSpace(savedSceneName))
@@ -108,6 +115,22 @@ public class MainMenuController : MonoBehaviour
             settingsPanel.SetActive(false);
     }
 
+    public void OpenCredits()
+    {
+        ShowMainMenuElements(false);
+
+        if (creditsPanel != null)
+            creditsPanel.SetActive(true);
+    }
+
+    public void CloseCredits()
+    {
+        ShowMainMenuElements(true);
+
+        if (creditsPanel != null)
+            creditsPanel.SetActive(false);
+    }
+
     public void QuitGame()
     {
         Debug.Log("Saindo do jogo...");
@@ -120,7 +143,9 @@ public class MainMenuController : MonoBehaviour
         if (playButton != null) playButton.SetActive(show);
         if (continueButton != null) continueButton.SetActive(show);
         if (settingsButton != null) settingsButton.SetActive(show);
+        if (creditsButton != null) creditsButton.SetActive(show);
         if (quitButton != null) quitButton.SetActive(show);
+        if (menuBackground != null) menuBackground.SetActive(show);
     }
 
     private void UpdateContinueButton()
@@ -129,7 +154,6 @@ public class MainMenuController : MonoBehaviour
             return;
 
         bool hasSave = SaveManager.Instance != null && SaveManager.Instance.HasSave();
-
         continueButtonComponent.interactable = hasSave;
     }
 }

@@ -48,13 +48,22 @@ public class PauseMenu : MonoBehaviour
         if (!context.performed)
             return;
 
+        if (settingsPanel != null && settingsPanel.activeSelf)
+        {
+            CloseSettings();
+            return;
+        }
+
+        if (isPaused)
+        {
+            ResumeGame();
+            return;
+        }
+
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsActive())
             return;
 
-        if (isPaused)
-            ResumeGame();
-        else
-            PauseGame();
+        PauseGame();
     }
 
     public void PauseGame()

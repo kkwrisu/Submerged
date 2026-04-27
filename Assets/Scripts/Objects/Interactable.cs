@@ -33,7 +33,7 @@ public class Interactable : MonoBehaviour
     public string interactActionDebugMessage;
     public UnityEvent onInteract;
 
-    public void Interact()
+    public virtual void Interact()
     {
         Debug.Log("Interactable.Interact() chamado em: " + gameObject.name);
 
