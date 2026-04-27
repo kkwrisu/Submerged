@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Events;
@@ -616,8 +616,16 @@ public class Inimigo : MonoBehaviour
 
         if (!wasAlreadyChasing)
         {
+            Debug.Log("Inimigo entrou em CHASE");
+
             if (useDungeonAlert && DungeonAlertSystem.Instance != null)
+            {
                 DungeonAlertSystem.Instance.AddAlert(alertIncreaseOnDetection);
+            }
+            else
+            {
+                Debug.LogWarning("DungeonAlertSystem não encontrado ou desativado!");
+            }
 
             if (detectAudio != null)
                 detectAudio.Play();
@@ -782,7 +790,7 @@ public class Inimigo : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("SaveManager n�o encontrado. Respawn n�o executado.");
+            Debug.LogWarning("SaveManager não encontrado. Respawn não executado.");
         }
 
         ResetEnemyAfterRespawn();

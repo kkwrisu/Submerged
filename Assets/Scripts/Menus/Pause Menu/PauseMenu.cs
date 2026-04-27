@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
@@ -29,6 +31,132 @@ public class PauseMenu : MonoBehaviour
         }
 
         Instance = this;
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        StartCoroutine(ReconnectAfterFrame());
+    }
+
+    private IEnumerator ReconnectAfterFrame()
+    {
+        yield return null;
+
+        Debug.Log("GameUI.Instance: " + GameUI.Instance);
+
+        if (GameUI.Instance != null)
+        {
+            pauseMenuPanel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(t => t.name == "PauseMenu")?.gameObject;
+
+            settingsPanel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(t => t.name == "Settings")?.gameObject;
+        }
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        Debug.Log("Player encontrado: " + player);
+
+        if (player != null)
+        {
+            playerMovementScript = player.GetComponent<PlayerMovement>();
+            playerLookScript = player.GetComponent<PlayerLook>();
+            playerInteractScript = player.GetComponent<PlayerInteract>();
+
+            PlayerInteract interact = player.GetComponent<PlayerInteract>();
+            if (interact != null && GameUI.Instance != null)
+            {
+                UnityEngine.UI.Graphic crosshair = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Graphic>(true)
+                    .FirstOrDefault(g => g.name == "Crosshair");
+
+                if (crosshair != null)
+                    interact.crosshairGraphic = crosshair;
+            }
+
+            DialogueManager dialogue = player.GetComponentInChildren<DialogueManager>();
+            Debug.Log("DialogueManager encontrado: " + dialogue);
+
+            if (dialogue != null && GameUI.Instance != null)
+            {
+                var panel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
+                    .FirstOrDefault(t => t.name == "DialoguePanel");
+                Debug.Log("DialoguePanel encontrado: " + panel);
+
+                var text = GameUI.Instance.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true)
+                    .FirstOrDefault(t => t.name == "DialogueText");
+                Debug.Log("DialogueText encontrado: " + text);
+
+                var choices = GameUI.Instance.GetComponentsInChildren<Transform>(true)
+                    .FirstOrDefault(t => t.name == "ChoicesContainer");
+                Debug.Log("ChoicesContainer encontrado: " + choices);
+
+                var crosshairGraphic = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Graphic>(true)
+                    .FirstOrDefault(g => g.name == "Crosshair");
+                Debug.Log("Crosshair encontrado: " + crosshairGraphic);
+
+                dialogue.dialoguePanel = panel?.gameObject;
+                dialogue.dialogueText = text;
+                dialogue.choicesContainer = choices;
+
+                if (crosshairGraphic != null)
+                    dialogue.crosshair = crosshairGraphic.gameObject;
+
+                dialogue.playerMovementScript = player.GetComponent<PlayerMovement>();
+                dialogue.playerLookScript = player.GetComponent<PlayerLook>();
+            }
+        }
+
+        ReconnectButtons();
+    }
+
+    private void ReconnectButtons()
+    {
+        if (GameUI.Instance == null) return;
+
+        UnityEngine.UI.Button resumeButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
+            .FirstOrDefault(b => b.name == "Resume");
+
+        UnityEngine.UI.Button settingsButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
+            .FirstOrDefault(b => b.name == "SettingsButton");
+
+        UnityEngine.UI.Button backButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
+            .FirstOrDefault(b => b.name == "Back");
+
+        UnityEngine.UI.Button mainMenuButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
+            .FirstOrDefault(b => b.name == "MainMenu");
+
+        if (resumeButton != null)
+        {
+            resumeButton.onClick.RemoveAllListeners();
+            resumeButton.onClick.AddListener(ResumeGame);
+        }
+
+        if (settingsButton != null)
+        {
+            settingsButton.onClick.RemoveAllListeners();
+            settingsButton.onClick.AddListener(OpenSettings);
+        }
+
+        if (backButton != null)
+        {
+            backButton.onClick.RemoveAllListeners();
+            backButton.onClick.AddListener(CloseSettings);
+        }
+
+        if (mainMenuButton != null)
+        {
+            mainMenuButton.onClick.RemoveAllListeners();
+            mainMenuButton.onClick.AddListener(ReturnToMainMenu);
+        }
     }
 
     private void Start()

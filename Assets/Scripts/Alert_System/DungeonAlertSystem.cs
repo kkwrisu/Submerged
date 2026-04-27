@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.Events;
 
 public class DungeonAlertSystem : MonoBehaviour
@@ -14,12 +14,9 @@ public class DungeonAlertSystem : MonoBehaviour
     public float decayPerSecond = 2f;
 
     [Header("Gameplay Multipliers")]
-    [Tooltip("Com alerta 0 = multiplicador mínimo. Com alerta 100 = multiplicador máximo.")]
     public float minSpeedMultiplier = 1f;
     public float maxSpeedMultiplier = 1.75f;
 
-    [Tooltip("Com alerta 0 = multiplicador mínimo. Com alerta 100 = multiplicador máximo. " +
-             "Esse valor é usado para reduzir tempos de espera/intervalos.")]
     public float minTimeMultiplier = 1f;
     public float maxTimeMultiplier = 2f;
 
@@ -39,6 +36,7 @@ public class DungeonAlertSystem : MonoBehaviour
         }
 
         Instance = this;
+        DontDestroyOnLoad(gameObject); // ðŸ”¥ IMPORTANTE
     }
 
     private void Update()
@@ -61,6 +59,7 @@ public class DungeonAlertSystem : MonoBehaviour
 
         currentAlert += amount;
         currentAlert = Mathf.Clamp(currentAlert, 0f, maxAlert);
+
         onAlertChanged?.Invoke(currentAlert);
 
         Debug.Log($"[DungeonAlertSystem] Alerta aumentado. Valor atual: {currentAlert}%");
@@ -70,16 +69,12 @@ public class DungeonAlertSystem : MonoBehaviour
     {
         currentAlert = Mathf.Clamp(value, 0f, maxAlert);
         onAlertChanged?.Invoke(currentAlert);
-
-        Debug.Log($"[DungeonAlertSystem] Alerta definido para: {currentAlert}%");
     }
 
     public void ResetAlert()
     {
         currentAlert = 0f;
         onAlertChanged?.Invoke(currentAlert);
-
-        Debug.Log("[DungeonAlertSystem] Alerta resetado.");
     }
 
     public void RegisterMinigameFailure(float alertIncrease)

@@ -1,40 +1,67 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Alert_UI : MonoBehaviour
 {
-    [Header("References")]
-    public Slider alertSlider;
+    [Header("Fill Image")]
+    public Image fillImage;
+
+    [Header("Cenas onde deve ficar oculto")]
+    public string[] hiddenInScenes = { "MainMenu", "MinigameScene" };
 
     private void Start()
     {
-        if (alertSlider == null)
-            alertSlider = GetComponent<Slider>();
-
-        Refresh();
+        CheckVisibility(SceneManager.GetActiveScene().name);
+        SceneManager.sceneLoaded += OnSceneLoaded;
 
         if (DungeonAlertSystem.Instance != null)
-            DungeonAlertSystem.Instance.onAlertChanged.AddListener(OnAlertChanged);
+        {
+            DungeonAlertSystem.Instance.onAlertChanged.AddListener(UpdateFill);
+            Refresh();
+        }
+        else
+        {
+            if (fillImage != null)
+            {
+                Vector3 scale = fillImage.transform.localScale;
+                scale.x = 0f;
+                fillImage.transform.localScale = scale;
+            }
+        }
     }
 
     private void OnDestroy()
     {
         if (DungeonAlertSystem.Instance != null)
-            DungeonAlertSystem.Instance.onAlertChanged.RemoveListener(OnAlertChanged);
+            DungeonAlertSystem.Instance.onAlertChanged.RemoveListener(UpdateFill);
+
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    private void OnAlertChanged(float newValue)
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Refresh();
+        CheckVisibility(scene.name);
     }
+
+    private void CheckVisibility(string sceneName)
+    {
+        bool shouldHide = System.Array.Exists(hiddenInScenes, s => s == sceneName);
+        gameObject.SetActive(!shouldHide);
+    }
+
+    private void UpdateFill(float value) => Refresh();
 
     private void Refresh()
     {
-        if (alertSlider == null || DungeonAlertSystem.Instance == null)
-            return;
+        if (fillImage == null) return;
 
-        alertSlider.minValue = 0f;
-        alertSlider.maxValue = DungeonAlertSystem.Instance.maxAlert;
-        alertSlider.value = DungeonAlertSystem.Instance.currentAlert;
+        float normalized = DungeonAlertSystem.Instance != null
+            ? DungeonAlertSystem.Instance.AlertNormalized
+            : 0f;
+
+        Vector3 scale = fillImage.transform.localScale;
+        scale.x = normalized;
+        fillImage.transform.localScale = scale;
     }
 }
