@@ -8192,6 +8192,7 @@ GameObject:
   - component: {fileID: 2001152431}
   - component: {fileID: 2001152432}
   - component: {fileID: 2001152433}
+  - component: {fileID: 2001152434}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -8580,22 +8581,6 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 2777fa50-e72a-4856-8050-490d93523ef3
     m_ActionName: 'Puzzle/Reset[/Keyboard/r]'
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2001152431}
-        m_TargetAssemblyTypeName: PauseMenu, Assembly-CSharp
-        m_MethodName: PauseGame
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 092a42a4-af37-445d-9c88-fd9226e09424
-    m_ActionName: 'UI/Pause[/Keyboard/escape]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -8690,6 +8675,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b282d63cd6391044bbbd6bd62df68c54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Progresso_Player
+--- !u!114 &2001152434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2001152420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 857026b710cd8b44eb0b04d929d5e830, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoidFailsafe
+  fallTimeThreshold: 5
+  respawnDelay: 0.5
 --- !u!1 &2054042718
 GameObject:
   m_ObjectHideFlags: 0
@@ -8984,7 +8983,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.000061035156, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2115608681
