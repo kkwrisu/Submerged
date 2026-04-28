@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -49,13 +50,77 @@ public class DialogueManager : MonoBehaviour
         ClearChoices();
     }
 
+    private void TryReconnectUI()
+    {
+        if (GameUI.Instance == null) return;
+
+        if (dialoguePanel == null)
+        {
+            var panel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(t => t.name == "DialoguePanel");
+            dialoguePanel = panel?.gameObject;
+            Debug.Log("[DialogueManager] Reconectando dialoguePanel: " + dialoguePanel);
+        }
+
+        if (dialogueText == null)
+        {
+            dialogueText = GameUI.Instance.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true)
+                .FirstOrDefault(t => t.name == "DialogueText");
+            Debug.Log("[DialogueManager] Reconectando dialogueText: " + dialogueText);
+        }
+
+        if (choicesContainer == null)
+        {
+            var choices = GameUI.Instance.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(t => t.name == "ChoicesContainer");
+            choicesContainer = choices;
+            Debug.Log("[DialogueManager] Reconectando choicesContainer: " + choicesContainer);
+        }
+
+        if (crosshair == null)
+        {
+            var crosshairGraphic = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Graphic>(true)
+                .FirstOrDefault(g => g.name == "Crosshair");
+            if (crosshairGraphic != null)
+                crosshair = crosshairGraphic.gameObject;
+            Debug.Log("[DialogueManager] Reconectando crosshair: " + crosshair);
+        }
+
+        if (playerMovementScript == null || playerLookScript == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                if (playerMovementScript == null)
+                    playerMovementScript = player.GetComponent<PlayerMovement>();
+                if (playerLookScript == null)
+                    playerLookScript = player.GetComponent<PlayerLook>();
+                Debug.Log("[DialogueManager] Reconectando scripts do player: " + player.name);
+            }
+        }
+    }
+
     public void StartDialogue(Interactable interactable)
     {
+        TryReconnectUI();
+
         if (interactable == null)
+        {
+            Debug.LogWarning("[DialogueManager] interactable é null.");
             return;
+        }
 
         if (interactable.dialogueNodes == null || interactable.dialogueNodes.Length == 0)
+        {
+            Debug.LogWarning("[DialogueManager] Sem dialogue nodes.");
             return;
+        }
+
+        if (dialoguePanel == null)
+        {
+            Debug.LogError("[DialogueManager] dialoguePanel é NULL mesmo após reconexão. Verifique o nome do objeto no GameUI.");
+            return;
+        }
 
         nodes = interactable.dialogueNodes;
         currentNodeIndex = 0;
@@ -63,10 +128,7 @@ public class DialogueManager : MonoBehaviour
         waitingForChoice = false;
         nextInputAllowedTime = Time.unscaledTime + inputBlockAfterStart;
 
-        if (dialoguePanel != null)
-            dialoguePanel.SetActive(true);
-        else
-            return;
+        dialoguePanel.SetActive(true);
 
         if (crosshair != null)
             crosshair.SetActive(false);

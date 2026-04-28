@@ -51,6 +51,7 @@ public class PauseMenu : MonoBehaviour
     private IEnumerator ReconnectAfterFrame()
     {
         yield return null;
+        yield return null; // segundo frame de segurança para builds
 
         Debug.Log("GameUI.Instance: " + GameUI.Instance);
 

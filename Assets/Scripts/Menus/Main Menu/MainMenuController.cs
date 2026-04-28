@@ -50,6 +50,9 @@ public class MainMenuController : MonoBehaviour
             Debug.LogWarning("SaveManager.Instance está null.");
         }
 
+        if (DungeonAlertSystem.Instance != null)
+            DungeonAlertSystem.Instance.ResetAlert();
+
         if (string.IsNullOrWhiteSpace(firstSceneName))
         {
             Debug.LogError("firstSceneName está vazio.");

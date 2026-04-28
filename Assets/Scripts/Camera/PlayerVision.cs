@@ -8,12 +8,7 @@ public class PlayerLook : MonoBehaviour
     public Camera cam;
 
     [Header("Sensibilidade")]
-    public float sensitivity = 100f;
-
-    [Header("Smooth Look")]
-    public float smoothTime = 0.05f;
-    private Vector2 currentLook;
-    private Vector2 lookVelocity;
+    public float sensitivity = 0.15f;
 
     [Header("Head Bob")]
     public float bobFrequency = 6f;
@@ -56,8 +51,18 @@ public class PlayerLook : MonoBehaviour
 
     private PlayerMovement playerMovement;
 
-    private Vector2 lookInput;
     private float xRotation = 0f;
+    private Vector2 lookInput;
+
+    private void OnEnable()
+    {
+        lookInput = Vector2.zero;
+    }
+
+    private void OnDisable()
+    {
+        lookInput = Vector2.zero;
+    }
 
     void Start()
     {
@@ -73,6 +78,9 @@ public class PlayerLook : MonoBehaviour
 
     void Update()
     {
+        if (PauseMenu.Instance != null && PauseMenu.Instance.IsPaused())
+            return;
+
         Look();
         HandleCrouchCamera();
         HandleHeadBob();
@@ -85,10 +93,8 @@ public class PlayerLook : MonoBehaviour
     {
         if (playerBody == null) return;
 
-        currentLook = Vector2.SmoothDamp(currentLook, lookInput, ref lookVelocity, smoothTime);
-
-        float mouseX = currentLook.x * sensitivity * Time.deltaTime;
-        float mouseY = currentLook.y * sensitivity * Time.deltaTime;
+        float mouseX = lookInput.x * sensitivity;
+        float mouseY = lookInput.y * sensitivity;
 
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
@@ -101,7 +107,10 @@ public class PlayerLook : MonoBehaviour
     {
         if (playerMovement == null) return;
 
-        Vector3 targetOffset = playerMovement.IsCrouching() ? new Vector3(0f, crouchYOffset, 0f) : Vector3.zero;
+        Vector3 targetOffset = playerMovement.IsCrouching()
+            ? new Vector3(0f, crouchYOffset, 0f)
+            : Vector3.zero;
+
         crouchOffset = Vector3.Lerp(crouchOffset, targetOffset, Time.deltaTime * crouchSmooth);
     }
 
@@ -140,9 +149,7 @@ public class PlayerLook : MonoBehaviour
         bool isClimbing = playerMovement.IsClimbing();
 
         if (isClimbing && !wasClimbing)
-        {
             joltTimer = 1f;
-        }
 
         if (isClimbing)
         {
@@ -167,22 +174,18 @@ public class PlayerLook : MonoBehaviour
         {
             float jolt = Mathf.Sin(joltTimer * Mathf.PI * 0.5f) * climbJoltForce;
             transform.localPosition += Vector3.down * jolt;
-
             joltTimer -= Time.deltaTime * climbJoltSpeed;
         }
 
         bool isPullingUp = playerMovement.IsClimbing() && !wasClimbing;
 
         if (isPullingUp && !wasPullingUp)
-        {
             shakeTimer = 1f;
-        }
 
         if (shakeTimer > 0f)
         {
             float shake = Mathf.Sin(Time.time * pullUpShakeSpeed) * pullUpShakeAmount * shakeTimer;
             transform.localPosition += new Vector3(shake, -shake, 0f);
-
             shakeTimer -= Time.deltaTime * 6f;
         }
 
