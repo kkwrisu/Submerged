@@ -82,20 +82,20 @@ public class Levers : MonoBehaviour, ISaveable
         changeColor.SetColor(activated ? activatedColor : deactivatedColor);
     }
 
-    public string GetSaveID()
-    {
-        return saveID;
-    }
+    public string GetSaveID() => saveID;
 
     public void SaveToData(SaveData data)
     {
-        LeverSaveRecord record = new LeverSaveRecord
+        for (int i = 0; i < data.levers.Count; i++)
         {
-            id = saveID,
-            activated = activated
-        };
+            if (data.levers[i].id == saveID)
+            {
+                data.levers[i] = new LeverSaveRecord { id = saveID, activated = activated };
+                return;
+            }
+        }
 
-        data.levers.Add(record);
+        data.levers.Add(new LeverSaveRecord { id = saveID, activated = activated });
     }
 
     public void LoadFromSave(SaveData data)

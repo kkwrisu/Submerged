@@ -104,7 +104,8 @@ public class SaveManager : MonoBehaviour
         currentSave.checkpointYRotation = selectedSpawn.transform.eulerAngles.y;
         currentSave.currentSceneName = loadedSceneName;
 
-        SaveGame();
+        // só grava posição do spawn — não reescreve os ISaveables da cena
+        WriteToDisk();
         ClearPendingSpawn();
     }
 
@@ -121,10 +122,6 @@ public class SaveManager : MonoBehaviour
             currentSave = new SaveData();
 
         currentSave.currentSceneName = SceneManager.GetActiveScene().name;
-
-        currentSave.levers.Clear();
-        currentSave.doors.Clear();
-        currentSave.puzzles.Clear();
 
         MonoBehaviour[] allBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
 

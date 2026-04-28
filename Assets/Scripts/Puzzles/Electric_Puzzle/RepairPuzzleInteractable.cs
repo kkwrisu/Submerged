@@ -19,10 +19,18 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
     public LayerMask enemyLayer = ~0;
     public AudioSource failAudio;
 
+    private void Start()
+    {
+        Debug.Log($"[Puzzle] {saveID} | completed={completed}");
+    }
+
     public void StartRepairPuzzle()
     {
         if (blockIfCompleted && completed)
+        {
+            Debug.Log($"[Puzzle] {saveID} bloqueado — já completado.");
             return;
+        }
 
         if (RepairPuzzleManager.Instance == null)
         {
@@ -41,14 +49,14 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
         if (result == RepairPuzzleResult.Success)
         {
             completed = true;
-            Debug.Log("Puzzle concluído: " + gameObject.name);
+            Debug.Log($"[Puzzle] {saveID} concluído. Salvando...");
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.SaveGame();
         }
         else
         {
-            Debug.Log("Puzzle falhou: " + gameObject.name);
+            Debug.Log($"[Puzzle] {saveID} falhou.");
             HandlePuzzleFail();
         }
     }
@@ -75,20 +83,22 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
         }
     }
 
-    public string GetSaveID()
-    {
-        return saveID;
-    }
+    public string GetSaveID() => saveID;
 
     public void SaveToData(SaveData data)
     {
-        PuzzleSaveRecord record = new PuzzleSaveRecord
+        for (int i = 0; i < data.puzzles.Count; i++)
         {
-            id = saveID,
-            completed = completed
-        };
+            if (data.puzzles[i].id == saveID)
+            {
+                data.puzzles[i] = new PuzzleSaveRecord { id = saveID, completed = completed };
+                Debug.Log($"[Puzzle] {saveID} atualizado no save | completed={completed}");
+                return;
+            }
+        }
 
-        data.puzzles.Add(record);
+        data.puzzles.Add(new PuzzleSaveRecord { id = saveID, completed = completed });
+        Debug.Log($"[Puzzle] {saveID} adicionado ao save | completed={completed}");
     }
 
     public void LoadFromSave(SaveData data)
@@ -98,9 +108,12 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
             if (data.puzzles[i].id == saveID)
             {
                 completed = data.puzzles[i].completed;
+                Debug.Log($"[Puzzle] {saveID} carregado | completed={completed}");
                 return;
             }
         }
+
+        Debug.Log($"[Puzzle] {saveID} NÃO encontrado no save.");
     }
 
     private void OnDrawGizmosSelected()

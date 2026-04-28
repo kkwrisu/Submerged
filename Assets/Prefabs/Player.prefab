@@ -853,8 +853,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLook
   playerBody: {fileID: 8699847934946646076}
   cam: {fileID: 1281320848902720141}
-  sensitivity: 30
-  smoothTime: 0
+  sensitivity: 0.12
   bobFrequency: 6
   bobAmplitude: 0.05
   normalFOV: 60

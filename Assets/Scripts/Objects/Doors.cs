@@ -169,21 +169,30 @@ public class Doors : MonoBehaviour, ISaveable
         }
     }
 
-    public string GetSaveID()
-    {
-        return saveID;
-    }
+    public string GetSaveID() => saveID;
 
     public void SaveToData(SaveData data)
     {
-        DoorSaveRecord record = new DoorSaveRecord
+        for (int i = 0; i < data.doors.Count; i++)
+        {
+            if (data.doors[i].id == saveID)
+            {
+                data.doors[i] = new DoorSaveRecord
+                {
+                    id = saveID,
+                    isOpen = isOpen,
+                    unlockedLocks = (bool[])unlockedLocks.Clone()
+                };
+                return;
+            }
+        }
+
+        data.doors.Add(new DoorSaveRecord
         {
             id = saveID,
             isOpen = isOpen,
             unlockedLocks = (bool[])unlockedLocks.Clone()
-        };
-
-        data.doors.Add(record);
+        });
     }
 
     public void LoadFromSave(SaveData data)

@@ -81,6 +81,9 @@ public class PlayerLook : MonoBehaviour
         if (PauseMenu.Instance != null && PauseMenu.Instance.IsPaused())
             return;
 
+        if (DialogueManager.Instance != null && DialogueManager.Instance.IsActive())
+            return;
+
         Look();
         HandleCrouchCamera();
         HandleHeadBob();

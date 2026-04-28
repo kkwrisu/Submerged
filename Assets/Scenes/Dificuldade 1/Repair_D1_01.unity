@@ -313,7 +313,7 @@ MonoBehaviour:
   x: 5
   y: 0
   cellSize: 1
-  nodeType: 0
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 26363123}
   normalColor: {r: 0.6792453, g: 0.66322535, b: 0.66322535, a: 1}
@@ -473,10 +473,10 @@ MonoBehaviour:
   x: 4
   y: 2
   cellSize: 1
-  nodeType: 1
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 34070329}
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  normalColor: {r: 1, g: 0, b: 0, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!61 &34070328
@@ -575,7 +575,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -1894,7 +1894,7 @@ MonoBehaviour:
   x: 5
   y: 2
   cellSize: 1
-  nodeType: 0
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 504045913}
   normalColor: {r: 0.6792453, g: 0.66322535, b: 0.66322535, a: 1}
@@ -3385,7 +3385,7 @@ MonoBehaviour:
   x: 3
   y: 2
   cellSize: 1
-  nodeType: 0
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 868635535}
   normalColor: {r: 0.6792453, g: 0.66322535, b: 0.66322535, a: 1}
@@ -4665,7 +4665,7 @@ MonoBehaviour:
   x: 8
   y: 3
   cellSize: 1
-  nodeType: 0
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 1032123215}
   normalColor: {r: 0.6792453, g: 0.66322535, b: 0.66322535, a: 1}
@@ -4985,7 +4985,7 @@ MonoBehaviour:
   x: 8
   y: 1
   cellSize: 1
-  nodeType: 0
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 1116140622}
   normalColor: {r: 0.6792453, g: 0.66322535, b: 0.66322535, a: 1}
@@ -5785,7 +5785,7 @@ MonoBehaviour:
   x: 7
   y: 2
   cellSize: 1
-  nodeType: 0
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 1373232122}
   normalColor: {r: 0.6792453, g: 0.66322535, b: 0.66322535, a: 1}
@@ -6393,7 +6393,7 @@ MonoBehaviour:
   x: 4
   y: 3
   cellSize: 1
-  nodeType: 0
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 1482709187}
   normalColor: {r: 0.6792453, g: 0.66322535, b: 0.66322535, a: 1}
@@ -7193,7 +7193,7 @@ MonoBehaviour:
   x: 4
   y: 1
   cellSize: 1
-  nodeType: 0
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 1730584606}
   normalColor: {r: 0.6792453, g: 0.66322535, b: 0.66322535, a: 1}
@@ -8135,7 +8135,7 @@ MonoBehaviour:
   x: 3
   y: 0
   cellSize: 1
-  nodeType: 0
+  nodeType: 2
   portalTarget: {fileID: 0}
   spriteRenderer: {fileID: 1946213838}
   normalColor: {r: 0.6792453, g: 0.66322535, b: 0.66322535, a: 1}
