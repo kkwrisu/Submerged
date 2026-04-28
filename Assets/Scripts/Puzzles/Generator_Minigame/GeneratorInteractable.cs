@@ -6,9 +6,9 @@ public class GeneratorInteractable : Interactable
     [Header("Minigame")]
     public GeneratorMinigame minigame;
 
-    [Header("Input Actions")]
-    public InputActionReference holdAction;
-    public InputActionReference qteAction;
+    [Header("Input — nomes das actions no seu InputActions asset")]
+    public string holdActionName = "HoldInteract";
+    public string qteActionName = "QTEInput";
 
     [Header("Player References")]
     public Transform playerTransform;
@@ -24,15 +24,22 @@ public class GeneratorInteractable : Interactable
     {
         if (minigame == null)
             minigame = GetComponent<GeneratorMinigame>();
-
-        hold = holdAction?.action;
-        qte = qteAction?.action;
     }
 
     private void OnEnable()
     {
-        hold?.Enable();
-        qte?.Enable();
+        // Busca o PlayerInput no player (funciona igual aos seus outros scripts)
+        if (playerTransform != null)
+            BindActions(playerTransform.GetComponentInParent<PlayerInput>()
+                     ?? playerTransform.GetComponent<PlayerInput>());
+    }
+
+    private void BindActions(PlayerInput pi)
+    {
+        if (pi == null) return;
+
+        hold = pi.actions.FindAction(holdActionName, throwIfNotFound: false);
+        qte = pi.actions.FindAction(qteActionName, throwIfNotFound: false);
 
         if (hold != null)
         {
@@ -55,9 +62,6 @@ public class GeneratorInteractable : Interactable
         if (qte != null)
             qte.performed -= OnQTEPerformed;
 
-        hold?.Disable();
-        qte?.Disable();
-
         ForceExit();
     }
 
@@ -65,19 +69,12 @@ public class GeneratorInteractable : Interactable
     {
         if (!interactionStarted) return;
 
-        // Distância
         if (playerTransform != null)
         {
             float dist = Vector3.Distance(playerTransform.position, transform.position);
-
-            if (dist > maxDistance)
-            {
-                ForceExit();
-                return;
-            }
+            if (dist > maxDistance) { ForceExit(); return; }
         }
 
-        // Controle do minigame (único lugar que inicia)
         if (playerHolding && !minigame.IsActive() && !minigame.IsCompleted())
             minigame.StartMinigame();
 
@@ -88,7 +85,6 @@ public class GeneratorInteractable : Interactable
     public override void Interact()
     {
         if (minigame == null || minigame.IsCompleted()) return;
-
         interactionStarted = true;
         playerHolding = true;
     }
@@ -102,9 +98,7 @@ public class GeneratorInteractable : Interactable
     private void OnHoldCanceled(InputAction.CallbackContext ctx)
     {
         playerHolding = false;
-
-        if (interactionStarted)
-            minigame.PauseMinigame();
+        if (interactionStarted) minigame.PauseMinigame();
     }
 
     private void OnQTEPerformed(InputAction.CallbackContext ctx)
@@ -116,7 +110,6 @@ public class GeneratorInteractable : Interactable
     private void ForceExit()
     {
         if (!interactionStarted) return;
-
         interactionStarted = false;
         playerHolding = false;
         minigame?.ExitMinigame();

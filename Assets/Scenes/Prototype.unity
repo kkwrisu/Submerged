@@ -3348,6 +3348,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7594090185548431288, guid: b86c3653a7bddd54697f190a4b93b896, type: 3}
+      propertyPath: specificSceneName
+      value: Repair_D1_02
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
