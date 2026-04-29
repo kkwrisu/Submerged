@@ -483,6 +483,10 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: e1e3795f-1a58-4b29-9cd4-fdb03f6fa1f8
     m_ActionName: 'UI/Pause[/Keyboard/escape]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 61be3f11-774b-408f-b878-0948d15091d7
+    m_ActionName: 'Puzzle/QTE[/Keyboard/space]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player

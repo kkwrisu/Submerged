@@ -4,14 +4,21 @@ using UnityEngine.SceneManagement;
 
 public class Alert_UI : MonoBehaviour
 {
-    [Header("Fill Image")]
-    public Image fillImage;
+    [Header("Slider de Alerta")]
+    public Slider alertSlider;
 
     [Header("Cenas onde deve ficar oculto")]
     public string[] hiddenInScenes = { "MainMenu", "MinigameScene" };
 
     private void Start()
     {
+        if (alertSlider != null)
+        {
+            alertSlider.minValue = 0f;
+            alertSlider.maxValue = 1f;
+            alertSlider.interactable = false;
+        }
+
         CheckVisibility(SceneManager.GetActiveScene().name);
         SceneManager.sceneLoaded += OnSceneLoaded;
 
@@ -22,12 +29,8 @@ public class Alert_UI : MonoBehaviour
         }
         else
         {
-            if (fillImage != null)
-            {
-                Vector3 scale = fillImage.transform.localScale;
-                scale.x = 0f;
-                fillImage.transform.localScale = scale;
-            }
+            if (alertSlider != null)
+                alertSlider.value = 0f;
         }
     }
 
@@ -54,14 +57,10 @@ public class Alert_UI : MonoBehaviour
 
     private void Refresh()
     {
-        if (fillImage == null) return;
+        if (alertSlider == null) return;
 
-        float normalized = DungeonAlertSystem.Instance != null
+        alertSlider.value = DungeonAlertSystem.Instance != null
             ? DungeonAlertSystem.Instance.AlertNormalized
             : 0f;
-
-        Vector3 scale = fillImage.transform.localScale;
-        scale.x = normalized;
-        fillImage.transform.localScale = scale;
     }
 }
