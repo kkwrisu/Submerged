@@ -4,59 +4,41 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Gerencia toda a lógica do minigame de gerador estilo DBD.
-/// Rode na cena de gameplay principal — NÃO carrega cena adicional.
-/// 
-/// Fluxo:
-///   1. Jogador pressiona interagir → BeginInteract()
-///   2. Enquanto segura → HoldInteract() a cada frame
-///   3. Soltar → StopInteract()
-///   4. QTE aparece aleatoriamente → jogador deve pressionar a tecla exibida
-///   5. Sucesso = progresso continua | Falha = penalty (alerta + barulho)
-///   6. Barra cheia = OnPuzzleCompleted()
+/// Roda na cena de gameplay principal.
 /// </summary>
 public class GeneratorPuzzleRuntime : MonoBehaviour
 {
-    // ── Configurações ──────────────────────────────────────────────────────────
-
     [Header("Progresso")]
-    [Tooltip("Velocidade base de enchimento da barra (unidades por segundo, 0-1)")]
     public float fillSpeed = 0.06f;
-
-    [Tooltip("Quanto regride ao errar um QTE (0-1)")]
     public float failRegressAmount = 0.15f;
-
-    [Tooltip("Quanto regride ao soltar o gerador (por segundo)")]
     public float releaseRegressSpeed = 0.03f;
 
     [Header("QTE")]
-    [Tooltip("Intervalo mínimo entre QTEs (segundos de progresso acumulado)")]
     public float qteMinInterval = 0.2f;
-
-    [Tooltip("Intervalo máximo entre QTEs")]
     public float qteMaxInterval = 0.4f;
-
-    [Tooltip("Janela de tempo que o jogador tem para reagir ao QTE (segundos)")]
     public float qteWindowSeconds = 1.2f;
 
     [Header("Player Lock")]
     public MonoBehaviour playerMovement;
     public MonoBehaviour playerLook;
     public PlayerInteract playerInteract;
+    public UnityEngine.InputSystem.PlayerInput playerInput;
+    public PlayerMovement playerMovementFull;
 
     [Header("Input")]
-    public InputActionReference interactHoldAction;   // botão segurado para progredir
-    public InputActionReference qteInputAction;        // botão de QTE (ex: E ou F)
+    public InputActionReference interactHoldAction;
+    public InputActionReference qteInputAction;
 
-    // ── Estado interno ─────────────────────────────────────────────────────────
-
-    private GeneratorPuzzleInteractable _currentInteractable;
     private GeneratorPuzzleUI _ui;
 
-    private float _progress = 0f;          // 0 a 1
+    private GeneratorPuzzleInteractable _currentInteractable;
+
+    private float _progress = 0f;
     private bool _isInteracting = false;
+    private bool _isOpen = false;        // true enquanto a UI está visível
     private bool _qteActive = false;
     private float _qteTimer = 0f;
-    private float _nextQteThreshold = 0f;  // progresso em que o próximo QTE dispara
+    private float _nextQteThreshold = 0f;
     private bool _playerLocked = false;
 
     private InputAction _interactHold;
@@ -67,7 +49,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
     private void Awake()
     {
         _ui = FindFirstObjectByType<GeneratorPuzzleUI>();
-
         _interactHold = interactHoldAction != null ? interactHoldAction.action : null;
         _qteInput = qteInputAction != null ? qteInputAction.action : null;
     }
@@ -86,18 +67,26 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
 
     private void Update()
     {
-        if (_currentInteractable == null) return;
+        // Regressão silenciosa — UI fechada, apenas decai o progresso em memória
+        if (!_isOpen)
+        {
+            if (_progress > 0f)
+            {
+                _progress -= releaseRegressSpeed * Time.deltaTime;
+                _progress = Mathf.Clamp01(_progress);
+            }
+            return;
+        }
 
-        // ── Lógica de QTE ativo ────────────────────────────────────────────────
+        // ── QTE ativo ─────────────────────────────────────────────────────────
         if (_qteActive)
         {
             _qteTimer -= Time.deltaTime;
-
             _ui?.UpdateQteTimer(_qteTimer / qteWindowSeconds);
 
             bool qtePressed =
                 (_qteInput != null && _qteInput.WasPressedThisFrame()) ||
-                (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame);
+                (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame);
 
             if (qtePressed)
             {
@@ -111,79 +100,69 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
                 return;
             }
 
-            return; // pausa o progresso enquanto QTE está ativo
-        }
-
-        // ── Regressão ao soltar ────────────────────────────────────────────────
-        if (!_isInteracting)
-        {
-            if (_progress > 0f)
-            {
-                _progress -= releaseRegressSpeed * Time.deltaTime;
-                _progress = Mathf.Clamp01(_progress);
-                _ui?.SetProgress(_progress);
-            }
             return;
         }
 
-        // ── Progresso enquanto segura ──────────────────────────────────────────
+        // ── Não está segurando: fecha UI e regride ────────────────────────────
+        if (!_isInteracting)
+        {
+            CloseUI();
+            return;
+        }
+
+        // ── Progresso ─────────────────────────────────────────────────────────
         _progress += fillSpeed * Time.deltaTime;
         _progress = Mathf.Clamp01(_progress);
-
         _ui?.SetProgress(_progress);
 
-        // Verifica se atingiu o threshold do próximo QTE
-        if (_progress >= _nextQteThreshold && _nextQteThreshold < 1f)
+        if (_progress >= _nextQteThreshold && _nextQteThreshold < 2f)
         {
             TriggerQTE();
             return;
         }
 
-        // Puzzle completo
         if (_progress >= 1f)
-        {
             CompletePuzzle();
-        }
     }
 
     // ── API Pública ────────────────────────────────────────────────────────────
 
-    /// <summary>Chamado quando o jogador inicia a interação.</summary>
     public void BeginInteract(GeneratorPuzzleInteractable interactable)
     {
         if (_currentInteractable != null && _currentInteractable != interactable)
-            return; // já interagindo com outro
+            return;
 
         _currentInteractable = interactable;
         _isInteracting = true;
 
-        // Se é a primeira vez, inicializa threshold do QTE
         if (_nextQteThreshold == 0f)
             _nextQteThreshold = GetNextQteThreshold();
 
-        LockPlayer(true);
-        _ui?.Show(_progress);
-
+        OpenUI();
         Debug.Log("[GenPuzzle] Interação iniciada.");
     }
 
-    /// <summary>Chamado a cada frame enquanto o jogador segura.</summary>
     public void HoldInteract(GeneratorPuzzleInteractable interactable)
     {
         if (_currentInteractable != interactable) return;
         _isInteracting = true;
+
+        // Reabre a UI se o jogador voltou a segurar
+        if (!_isOpen && !_qteActive)
+            OpenUI();
     }
 
-    /// <summary>Chamado quando o jogador solta.</summary>
     public void StopInteract(GeneratorPuzzleInteractable interactable)
     {
         if (_currentInteractable != interactable) return;
         _isInteracting = false;
-
-        if (!_qteActive)
-            LockPlayer(false);
-
+        // A UI fecha no próximo Update (quando !_isInteracting e !_qteActive)
         Debug.Log("[GenPuzzle] Interação interrompida.");
+    }
+
+    public bool IsCurrentInteractable(GeneratorPuzzleInteractable interactable)
+    {
+        return _currentInteractable == interactable;
     }
 
     // ── QTE ───────────────────────────────────────────────────────────────────
@@ -192,11 +171,9 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
     {
         _qteActive = true;
         _qteTimer = qteWindowSeconds;
-        _isInteracting = false; // congela progresso
+        _isInteracting = false;
 
-        // Garante que o player está travado durante o QTE
         LockPlayer(true);
-
         _ui?.ShowQTE(qteWindowSeconds);
 
         Debug.Log("[GenPuzzle] QTE disparado!");
@@ -211,8 +188,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         {
             Debug.Log("[GenPuzzle] QTE bem-sucedido.");
 
-            // Se o progresso já estava em 100% quando o QTE foi resolvido,
-            // conclui imediatamente em vez de reagendar outro QTE.
             if (_progress >= 1f)
             {
                 CompletePuzzle();
@@ -220,7 +195,7 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
             }
 
             _nextQteThreshold = GetNextQteThreshold();
-            _isInteracting = true; // retoma progresso
+            _isInteracting = true;
         }
         else
         {
@@ -228,15 +203,29 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
 
             _progress -= failRegressAmount;
             _progress = Mathf.Clamp01(_progress);
-            _ui?.SetProgress(_progress);
 
-            // Recalcula threshold pois o progresso regrediu
             _nextQteThreshold = GetNextQteThreshold();
 
-            _currentInteractable.OnPuzzleFailed();
+            _currentInteractable?.OnPuzzleFailed();
             _isInteracting = false;
-            LockPlayer(false);
+            CloseUI();
         }
+    }
+
+    // ── UI Open/Close ─────────────────────────────────────────────────────────
+
+    private void OpenUI()
+    {
+        _isOpen = true;
+        LockPlayer(true);
+        _ui?.Show(_progress);
+    }
+
+    private void CloseUI()
+    {
+        _isOpen = false;
+        LockPlayer(false);
+        _ui?.Hide();
     }
 
     // ── Completar ─────────────────────────────────────────────────────────────
@@ -246,35 +235,49 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         _progress = 1f;
         _isInteracting = false;
         _qteActive = false;
+        _isOpen = false;
 
         _ui?.SetProgress(1f);
         _ui?.Hide();
 
-        LockPlayer(false);
-
-        _currentInteractable.OnPuzzleCompleted();
+        _currentInteractable?.OnPuzzleCompleted();
         _currentInteractable = null;
 
-        // Reseta para próximo uso (outro gerador)
         _progress = 0f;
         _nextQteThreshold = 0f;
 
         Debug.Log("[GenPuzzle] Puzzle completo!");
+
+        // Destravar no frame seguinte evita que o Space vaze para o pulo
+        StartCoroutine(UnlockNextFrame());
+    }
+
+    private System.Collections.IEnumerator UnlockNextFrame()
+    {
+        // Espera o Space ser solto antes de destravar
+        // evita que o performed do QTE vaze para o OnJump
+        float timeout = 1f;
+        while (timeout > 0f)
+        {
+            timeout -= Time.deltaTime;
+            if (Keyboard.current == null || !Keyboard.current.spaceKey.isPressed)
+                break;
+            yield return null;
+        }
+
+        yield return null; // 1 frame extra de segurança
+        LockPlayer(false);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private float GetNextQteThreshold()
     {
-        // Margem de segurança: nunca agenda QTE no trecho final da barra,
-        // evitando loop infinito quando o progresso está próximo de 1.
         const float safeMax = 0.92f;
 
         float min = _progress + qteMinInterval;
         float max = _progress + qteMaxInterval;
 
-        // Se até o mínimo já está fora da zona segura, não haverá mais QTEs —
-        // retorna 2f (nunca atingido) para a barra completar livremente.
         if (min >= safeMax)
             return 2f;
 
@@ -287,14 +290,29 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         if (_playerLocked == locked) return;
         _playerLocked = locked;
 
-        if (playerMovement != null)
-            playerMovement.enabled = !locked;
+        if (playerMovement != null) playerMovement.enabled = !locked;
+        if (playerLook != null) playerLook.enabled = !locked;
+        if (playerInteract != null) playerInteract.enabled = !locked;
 
-        if (playerLook != null)
-            playerLook.enabled = !locked;
+        if (playerInput != null)
+        {
+            var map = playerInput.actions.FindActionMap("Player");
+            if (map != null)
+            {
+                if (locked)
+                {
+                    map.Disable();
+                }
+                else
+                {
+                    // Zera movimento residual antes de reativar inputs
+                    if (playerMovementFull != null)
+                        playerMovementFull.ResetMovementState();
 
-        if (playerInteract != null)
-            playerInteract.enabled = !locked;
+                    map.Enable();
+                }
+            }
+        }
 
         Cursor.lockState = locked ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = locked;
@@ -302,21 +320,12 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         Debug.Log($"[GenPuzzle] Player {(locked ? "TRAVADO" : "DESTRAVADO")}.");
     }
 
-    /// <summary>Retorna true se o interactable passado é o que está ativo no momento.</summary>
-    public bool IsCurrentInteractable(GeneratorPuzzleInteractable interactable)
-    {
-        return _currentInteractable == interactable;
-    }
-
-    // ── Gizmos ────────────────────────────────────────────────────────────────
-
 #if UNITY_EDITOR
     private void OnGUI()
     {
         if (!Application.isPlaying) return;
-
         GUI.Label(new Rect(10, 10, 300, 20), $"[GenPuzzle] Progress: {_progress:P0}");
-        GUI.Label(new Rect(10, 30, 300, 20), $"[GenPuzzle] Interacting: {_isInteracting} | QTE: {_qteActive}");
+        GUI.Label(new Rect(10, 30, 300, 20), $"[GenPuzzle] Interacting: {_isInteracting} | Open: {_isOpen} | QTE: {_qteActive}");
         GUI.Label(new Rect(10, 50, 300, 20), $"[GenPuzzle] Next QTE at: {_nextQteThreshold:P0}");
     }
 #endif

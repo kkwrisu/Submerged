@@ -8,30 +8,28 @@ public class GameUI : MonoBehaviour
     [Header("Cenas onde a UI deve ficar oculta")]
     public string[] hiddenInScenes = { "MainMenu", "MinigameScene" };
 
-    [Header("Elementos que a UI controla")]
+    [Header("Ativados em gameplay, desativados nas cenas ocultas")]
     public GameObject[] uiElements;
 
-    private bool[] originalActiveStates;
+    [Header("Sempre desativados (controlados por outros scripts)")]
+    public GameObject[] managedElsewhere;
 
     private void Awake()
     {
+        Debug.Log($"[GameUI] Awake chamado. Instance existe: {Instance != null}");
+
         if (Instance != null && Instance != this)
         {
+            Debug.LogWarning("[GameUI] Duplicata destruída.");
             Destroy(gameObject);
             return;
         }
 
+        transform.SetParent(null);
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        originalActiveStates = new bool[uiElements.Length];
-        for (int i = 0; i < uiElements.Length; i++)
-        {
-            if (uiElements[i] != null)
-                originalActiveStates[i] = uiElements[i].activeSelf;
-        }
-
         SceneManager.sceneLoaded += OnSceneLoaded;
+        Debug.Log("[GameUI] Registrado no SceneManager.");
     }
 
     private void OnDestroy()
@@ -42,13 +40,31 @@ public class GameUI : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        bool shouldHide = System.Array.Exists(hiddenInScenes, s => s == scene.name);
+        RefreshForScene(scene.name);
+    }
 
-        for (int i = 0; i < uiElements.Length; i++)
+    public void RefreshForScene(string sceneName)
+    {
+        bool shouldHide = System.Array.Exists(hiddenInScenes, s => s == sceneName);
+        Debug.Log($"[GameUI] RefreshForScene: {sceneName} | shouldHide: {shouldHide}");
+
+        foreach (var el in uiElements)
         {
-            if (uiElements[i] == null) continue;
+            if (el != null)
+            {
+                el.SetActive(!shouldHide);
+                Debug.Log($"[GameUI] {el.name} -> {el.activeSelf}");
+            }
+            else
+            {
+                Debug.LogError("[GameUI] elemento nulo no uiElements!");
+            }
+        }
 
-            uiElements[i].SetActive(shouldHide ? false : originalActiveStates[i]);
+        foreach (var el in managedElsewhere)
+        {
+            if (el != null)
+                el.SetActive(false);
         }
     }
 }

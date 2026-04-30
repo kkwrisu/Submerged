@@ -38,6 +38,7 @@ public class RepairPuzzleManager : MonoBehaviour
     public bool pauseGameWhilePuzzleIsOpen = true;
 
     private string loadedScene;
+    private Scene previousScene;
     private RepairPuzzleInteractable currentInteractable;
     private bool isOpen;
 
@@ -89,6 +90,8 @@ public class RepairPuzzleManager : MonoBehaviour
         isOpen = true;
         loadedScene = sceneName;
 
+        previousScene = SceneManager.GetActiveScene();
+
         LockPlayer(true);
 
         if (pauseGameWhilePuzzleIsOpen)
@@ -115,6 +118,9 @@ public class RepairPuzzleManager : MonoBehaviour
 
     private IEnumerator CloseRoutine(RepairPuzzleResult result)
     {
+        if (previousScene.IsValid())
+            SceneManager.SetActiveScene(previousScene);
+
         if (!string.IsNullOrWhiteSpace(loadedScene))
         {
             AsyncOperation op = SceneManager.UnloadSceneAsync(loadedScene);
@@ -124,6 +130,9 @@ public class RepairPuzzleManager : MonoBehaviour
 
         loadedScene = null;
         isOpen = false;
+
+        if (GameUI.Instance != null)
+            GameUI.Instance.RefreshForScene(previousScene.name);
 
         if (pauseGameWhilePuzzleIsOpen)
             Time.timeScale = 1f;

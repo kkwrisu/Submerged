@@ -2422,6 +2422,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 340468354}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &977005296 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 172435973602307918, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+  m_PrefabInstance: {fileID: 2139597318}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1012465083
 GameObject:
   m_ObjectHideFlags: 0
@@ -3152,6 +3157,38 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 590800769204349447, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: uiElements.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 590800769204349447, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: 'uiElements.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2139597323}
+    - target: {fileID: 590800769204349447, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: 'uiElements.Array.data[1]'
+      value: 
+      objectReference: {fileID: 977005296}
+    - target: {fileID: 590800769204349447, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: 'uiElements.Array.data[2]'
+      value: 
+      objectReference: {fileID: 2139597323}
+    - target: {fileID: 590800769204349447, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: 'uiElements.Array.data[3]'
+      value: 
+      objectReference: {fileID: 977005296}
+    - target: {fileID: 590800769204349447, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: managedElsewhere.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 590800769204349447, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: 'managedElsewhere.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2139597319}
+    - target: {fileID: 590800769204349447, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: 'managedElsewhere.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2139597320}
     - target: {fileID: 1361366994001780204, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -3240,11 +3277,56 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7003006639717352066, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1481159042541029753}
+    - target: {fileID: 7003006639717352066, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: ReturnToMainMenu
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+--- !u!1 &2139597319 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9005518793010500715, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+  m_PrefabInstance: {fileID: 2139597318}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2139597320 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1146304339314054254, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+  m_PrefabInstance: {fileID: 2139597318}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2139597321 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1544049598032902975, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+  m_PrefabInstance: {fileID: 2139597318}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Slider
+--- !u!114 &2139597322 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5038198134934149882, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+  m_PrefabInstance: {fileID: 2139597318}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Slider
+--- !u!1 &2139597323 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1904754586776645668, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
+  m_PrefabInstance: {fileID: 2139597318}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &56241233356924353
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3382,19 +3464,19 @@ PrefabInstance:
     - target: {fileID: 283925532570333520, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: settingsPanel
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 2139597320}
     - target: {fileID: 283925532570333520, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: pauseMenuPanel
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 2139597319}
     - target: {fileID: 3323724222805700843, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: sfxSlider
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 2139597322}
     - target: {fileID: 3323724222805700843, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: musicSlider
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 2139597321}
     - target: {fileID: 6932248327732184117, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: m_Name
       value: Player
@@ -3460,6 +3542,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
+--- !u!114 &1481159042541029753 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 283925532570333520, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
+  m_PrefabInstance: {fileID: 1481159042541029752}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41101ebbf9d52147a245b76fb31c177, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
 --- !u!1001 &1624020604606721162
 PrefabInstance:
   m_ObjectHideFlags: 0

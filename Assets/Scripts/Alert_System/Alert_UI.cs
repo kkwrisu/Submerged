@@ -7,8 +7,10 @@ public class Alert_UI : MonoBehaviour
     [Header("Slider de Alerta")]
     public Slider alertSlider;
 
-    [Header("Cenas onde deve ficar oculto")]
-    public string[] hiddenInScenes = { "MainMenu", "MinigameScene" };
+    private void Awake()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
 
     private void Start()
     {
@@ -19,9 +21,25 @@ public class Alert_UI : MonoBehaviour
             alertSlider.interactable = false;
         }
 
-        CheckVisibility(SceneManager.GetActiveScene().name);
-        SceneManager.sceneLoaded += OnSceneLoaded;
+        ResetValueIfNoSystem();
+        ConnectAlertSystem();
+    }
 
+    private void OnDestroy()
+    {
+        DisconnectAlertSystem();
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        DisconnectAlertSystem();
+        ResetValueIfNoSystem();
+        ConnectAlertSystem();
+    }
+
+    private void ConnectAlertSystem()
+    {
         if (DungeonAlertSystem.Instance != null)
         {
             DungeonAlertSystem.Instance.onAlertChanged.AddListener(UpdateFill);
@@ -34,23 +52,18 @@ public class Alert_UI : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
+    private void DisconnectAlertSystem()
     {
         if (DungeonAlertSystem.Instance != null)
             DungeonAlertSystem.Instance.onAlertChanged.RemoveListener(UpdateFill);
-
-        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    // GameUI é responsável pelo SetActive deste objeto.
+    // Este script só zera o valor quando não há sistema de alerta na cena.
+    private void ResetValueIfNoSystem()
     {
-        CheckVisibility(scene.name);
-    }
-
-    private void CheckVisibility(string sceneName)
-    {
-        bool shouldHide = System.Array.Exists(hiddenInScenes, s => s == sceneName);
-        gameObject.SetActive(!shouldHide);
+        if (alertSlider != null && DungeonAlertSystem.Instance == null)
+            alertSlider.value = 0f;
     }
 
     private void UpdateFill(float value) => Refresh();

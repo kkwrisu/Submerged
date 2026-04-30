@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
@@ -64,7 +64,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Fixed Hang Position")]
     public float hangBackOffset = 0.35f;
 
-    [Tooltip("Quanto a cabeça do player fica acima da borda.")]
+    [Tooltip("Quanto a cabeÃ§a do player fica acima da borda.")]
     public float hangHeadAboveLedge = 0.15f;
 
     [Tooltip("Velocidade do encaixe horizontal ao agarrar a borda.")]
@@ -119,7 +119,7 @@ public class PlayerMovement : MonoBehaviour
     public bool ladderStayStillWhenIdle = true;
 
     [Header("Ladder Top Exit")]
-    [Tooltip("Empurrão pra frente ao sair pelo topo.")]
+    [Tooltip("EmpurrÃ£o pra frente ao sair pelo topo.")]
     public float ladderTopExitForwardOffset = 0.55f;
 
     [Tooltip("Altura extra ao sair pelo topo.")]
@@ -128,7 +128,7 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Velocidade de encaixe ao subir por cima da escada.")]
     public float ladderTopExitMoveSpeed = 6f;
 
-    [Tooltip("Bloqueio de reentrada após sair pelo topo.")]
+    [Tooltip("Bloqueio de reentrada apÃ³s sair pelo topo.")]
     public float ladderTopExitReenterBlockTime = 0.35f;
 
     private float ladderReenterTimer;
@@ -721,7 +721,6 @@ public class PlayerMovement : MonoBehaviour
     public void OnJump(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
-
         if (isOnLadder)
         {
             ExitLadder(true, false);
@@ -811,6 +810,17 @@ public class PlayerMovement : MonoBehaviour
             if (!isOnLadder)
                 currentLadder = null;
         }
+    }
+
+    /// <summary>
+    /// Zera velocidade e input â€” chamado pelo GeneratorPuzzleRuntime ao destravar o player.
+    /// </summary>
+    public void ResetMovementState()
+    {
+        moveInput = Vector2.zero;
+        currentVelocity = Vector3.zero;
+        sprintHeld = false;
+        isSprinting = false;
     }
 
     public bool IsClimbing()

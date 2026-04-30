@@ -51,7 +51,7 @@ public class PauseMenu : MonoBehaviour
     private IEnumerator ReconnectAfterFrame()
     {
         yield return null;
-        yield return null; // segundo frame de segurança para builds
+        yield return null;
 
         Debug.Log("GameUI.Instance: " + GameUI.Instance);
 
@@ -90,19 +90,15 @@ public class PauseMenu : MonoBehaviour
             {
                 var panel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
                     .FirstOrDefault(t => t.name == "DialoguePanel");
-                Debug.Log("DialoguePanel encontrado: " + panel);
 
                 var text = GameUI.Instance.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true)
                     .FirstOrDefault(t => t.name == "DialogueText");
-                Debug.Log("DialogueText encontrado: " + text);
 
                 var choices = GameUI.Instance.GetComponentsInChildren<Transform>(true)
                     .FirstOrDefault(t => t.name == "ChoicesContainer");
-                Debug.Log("ChoicesContainer encontrado: " + choices);
 
                 var crosshairGraphic = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Graphic>(true)
                     .FirstOrDefault(g => g.name == "Crosshair");
-                Debug.Log("Crosshair encontrado: " + crosshairGraphic);
 
                 dialogue.dialoguePanel = panel?.gameObject;
                 dialogue.dialogueText = text;
@@ -133,7 +129,13 @@ public class PauseMenu : MonoBehaviour
             .FirstOrDefault(b => b.name == "Back");
 
         UnityEngine.UI.Button mainMenuButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
-            .FirstOrDefault(b => b.name == "MainMenu");
+            .FirstOrDefault(b => b.name == "Main Menu");
+
+        // DEBUG — remove após confirmar que o botão é encontrado
+        Debug.Log("[PauseMenu] Resume: " + (resumeButton != null ? "OK" : "NULL"));
+        Debug.Log("[PauseMenu] SettingsButton: " + (settingsButton != null ? "OK" : "NULL"));
+        Debug.Log("[PauseMenu] Back: " + (backButton != null ? "OK" : "NULL"));
+        Debug.Log("[PauseMenu] MainMenu: " + (mainMenuButton != null ? mainMenuButton.gameObject.name : "NULL"));
 
         if (resumeButton != null)
         {
@@ -157,6 +159,31 @@ public class PauseMenu : MonoBehaviour
         {
             mainMenuButton.onClick.RemoveAllListeners();
             mainMenuButton.onClick.AddListener(ReturnToMainMenu);
+            Debug.Log("[PauseMenu] ReturnToMainMenu conectado.");
+        }
+        else
+        {
+            // Tenta variações do nome caso o objeto tenha nome diferente
+            string[] possibleNames = { "Main Menu", "MainMenu", "main menu", "main_menu", "BtnMainMenu" };
+            foreach (string name in possibleNames)
+            {
+                var btn = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
+                    .FirstOrDefault(b => b.name == name);
+
+                if (btn != null)
+                {
+                    btn.onClick.RemoveAllListeners();
+                    btn.onClick.AddListener(ReturnToMainMenu);
+                    Debug.Log($"[PauseMenu] MainMenu encontrado com nome alternativo: '{name}'");
+                    break;
+                }
+            }
+
+            // Lista todos os botões encontrados para debug
+            var allButtons = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+            Debug.Log($"[PauseMenu] Botões encontrados na UI ({allButtons.Length}):");
+            foreach (var b in allButtons)
+                Debug.Log($"  - '{b.name}'");
         }
     }
 
@@ -269,6 +296,7 @@ public class PauseMenu : MonoBehaviour
 
     public void ReturnToMainMenu()
     {
+        Debug.Log("[PauseMenu] ReturnToMainMenu chamado.");
         Time.timeScale = 1f;
         isPaused = false;
         SceneManager.LoadScene(mainMenuSceneName);
