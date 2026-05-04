@@ -1,4 +1,8 @@
 ﻿<Solution>
+  <Project Path="Unity.Postprocessing.Editor.csproj" />
+  <Project Path="Unity.Postprocessing.Runtime.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="com.ben-w.erp.csproj" />
+  <Project Path="Unity.Postprocessing.Runtime.Tests.csproj" />
+  <Project Path="Unity.Postprocessing.Editor.Tests.csproj" />
 </Solution>
