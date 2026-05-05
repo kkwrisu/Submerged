@@ -4934,8 +4934,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "Art & Environment\nGabriel Mezet \u2014 3D Modeler | Audio Designer |
     Level Designer\nIgor Silva \u2014 3D Modeler | Level Designer\nGiovana Couto
-    Rios \u2014 Concept Artist | Character Modeler | 3D Animator\n\nEngineering &
-    Design\nPedro Terezzino \u2014 Game Designer | Programmer\n\nNarrative\nGabriel
+    Rios \u2014 Concept Artist | 3D Modeler\n\nEngineering & Design\nPedro Terezzino
+    \u2014 Game Designer | Programmer\nGabriel Mezet \u2014 SFX Designer\n\nNarrative\nGabriel
     Mezet \u2014 Narrative Designer\nPedro Terezzino \u2014 Narrative Designer\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

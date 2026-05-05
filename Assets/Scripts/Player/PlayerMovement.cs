@@ -100,6 +100,45 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 standingCenter;
     private Vector3 crouchingCenter;
 
+    [Header("Slide")]
+    public float slideInitialSpeed = 10f;
+    public float slideDeceleration = 8f;
+    public float slideMinSpeed = 1.5f;
+    public float slideCooldown = 1f;
+
+    [Tooltip("Impulso horizontal preservado ao pular durante o slide (0 = nenhum, 1 = total).")]
+    [Range(0f, 1f)]
+    public float slideJumpMomentumRetain = 0.8f;
+
+    private bool isSliding;
+    private Vector3 slideDirection;
+    private float slideSpeed;
+    private float slideCooldownTimer;
+
+    [Header("Wall Jump")]
+    public float wallJumpUpForce = 7f;
+    public float wallJumpAwayForce = 5f;
+    public float wallCheckDistance = 0.65f;
+    public float wallJumpCooldown = 0.15f;
+    public LayerMask wallMask;
+
+    [Header("Wall Slide")]
+    [Tooltip("Velocidade de queda enquanto deslizando na parede.")]
+    public float wallSlideSpeed = 1.8f;
+    [Tooltip("Quão rápido o player desacelera até o wallSlideSpeed ao encostar na parede.")]
+    public float wallSlideGravityDamp = 12f;
+
+    [Tooltip("Dot product mínimo entre a normal atual e a última parede para considerar paredes DIFERENTES. " +
+             "0.3 = ~72° de diferença. Diminua para dutos mais estreitos.")]
+    public float wallNormalDifferenceThreshold = 0.3f;
+
+    private float wallJumpCooldownTimer;
+    // Diferencia paredes pelo ângulo da superfície (normal), não por instanceID.
+    // Resolve dutos onde lados opostos pertencem ao mesmo collider.
+    private Vector3 lastWallNormal = Vector3.zero;
+    private bool isWallSliding;
+    private Vector3 currentWallNormal;
+
     [Header("Ladder")]
     public string ladderTag = "Ladder";
     public float ladderEnterSpeedThreshold = 0.1f;
@@ -160,6 +199,8 @@ public class PlayerMovement : MonoBehaviour
         hangTimer -= Time.deltaTime;
         ledgeBlockTimer -= Time.deltaTime;
         ladderReenterTimer -= Time.deltaTime;
+        slideCooldownTimer -= Time.deltaTime;
+        wallJumpCooldownTimer -= Time.deltaTime;
 
         HandleGroundCheck();
         HandleCrouch();
@@ -187,6 +228,8 @@ public class PlayerMovement : MonoBehaviour
         HandleHang();
         HandleClimb();
         HandlePullUp();
+        HandleSlide();
+        HandleWallSlide();
         HandleMovement();
 
         UpdateStealthStatus();
@@ -203,6 +246,7 @@ public class PlayerMovement : MonoBehaviour
             !isHanging &&
             !isDroppingToHang &&
             !isPullingUp &&
+            !isSliding &&
             moveInput.magnitude > 0.1f;
 
         isSprinting = canSprint;
@@ -245,12 +289,33 @@ public class PlayerMovement : MonoBehaviour
         if (isGrounded && yVelocity < 0)
             yVelocity = -2f;
 
+        if (isGrounded)
+        {
+            lastWallNormal = Vector3.zero;
+            isWallSliding = false;
+        }
+
         if (!wasGroundedLastFrame && isGrounded && stealthStatus != null)
             stealthStatus.TriggerLandingNoise();
     }
 
     void HandleCrouch()
     {
+        // Durante o slide, força a altura de crouch sem alterar isCrouching nem crouchHeld
+        if (isSliding)
+        {
+            float oldHeight = controller.height;
+
+            controller.height = Mathf.Lerp(controller.height, crouchHeight, crouchTransitionSpeed * Time.deltaTime);
+            controller.center = Vector3.Lerp(controller.center, crouchingCenter, crouchTransitionSpeed * Time.deltaTime);
+
+            float heightDelta = controller.height - oldHeight;
+            if (Mathf.Abs(heightDelta) > 0.0001f)
+                controller.Move(Vector3.up * (heightDelta * 0.5f));
+
+            return;
+        }
+
         bool canCrouchNow = !isClimbing && !isHanging && !isDroppingToHang && !isPullingUp && !isOnLadder && !isExitingLadderTop;
 
         if (crouchHeld && canCrouchNow)
@@ -265,7 +330,7 @@ public class PlayerMovement : MonoBehaviour
                 isCrouching = true;
         }
 
-        float oldHeight = controller.height;
+        float oldH = controller.height;
 
         float targetHeight = isCrouching ? crouchHeight : standingHeight;
         Vector3 targetCenter = isCrouching ? crouchingCenter : standingCenter;
@@ -273,10 +338,10 @@ public class PlayerMovement : MonoBehaviour
         controller.height = Mathf.Lerp(controller.height, targetHeight, crouchTransitionSpeed * Time.deltaTime);
         controller.center = Vector3.Lerp(controller.center, targetCenter, crouchTransitionSpeed * Time.deltaTime);
 
-        float heightDelta = controller.height - oldHeight;
-        if (Mathf.Abs(heightDelta) > 0.0001f)
+        float heightDeltaNormal = controller.height - oldH;
+        if (Mathf.Abs(heightDeltaNormal) > 0.0001f)
         {
-            controller.Move(Vector3.up * (heightDelta * 0.5f));
+            controller.Move(Vector3.up * (heightDeltaNormal * 0.5f));
         }
 
         if (isCrouching)
@@ -304,9 +369,150 @@ public class PlayerMovement : MonoBehaviour
         );
     }
 
+    void StartSlide()
+    {
+        isSliding = true;
+        isCrouching = true;
+        crouchHeld = true;
+        isSprinting = false;
+
+        slideDirection = currentVelocity.magnitude > 0.1f
+            ? currentVelocity.normalized
+            : transform.forward;
+
+        slideDirection.y = 0f;
+        slideDirection.Normalize();
+
+        slideSpeed = slideInitialSpeed;
+        slideCooldownTimer = slideCooldown;
+    }
+
+    void StopSlide()
+    {
+        isSliding = false;
+        crouchHeld = false;
+    }
+
+    void HandleSlide()
+    {
+        if (!isSliding) return;
+
+        if (!isGrounded || isClimbing || isHanging || isDroppingToHang ||
+            isPullingUp || isOnLadder || isExitingLadderTop)
+        {
+            StopSlide();
+            return;
+        }
+
+        slideSpeed = Mathf.MoveTowards(slideSpeed, 0f, slideDeceleration * Time.deltaTime);
+
+        if (slideSpeed <= slideMinSpeed)
+        {
+            StopSlide();
+            return;
+        }
+
+        currentVelocity = slideDirection * slideSpeed;
+        controller.Move(currentVelocity * Time.deltaTime);
+
+        if (yVelocity < 0)
+            yVelocity += gravity * fallMultiplier * Time.deltaTime;
+        else
+            yVelocity += gravity * Time.deltaTime;
+
+        controller.Move(Vector3.up * yVelocity * Time.deltaTime);
+    }
+
+    // Pulo durante o slide: preserva o impulso horizontal do slide
+    void DoSlideJump()
+    {
+        // Velocidade horizontal = direção do slide * velocidade atual, blendada com o input do jogador
+        currentVelocity = slideDirection * (slideSpeed * slideJumpMomentumRetain);
+
+        // Aplica o impulso vertical normalmente
+        yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+
+        StopSlide();
+
+        if (stealthStatus != null)
+            stealthStatus.TriggerJumpNoise();
+    }
+
+    bool DetectWall(out Vector3 normal)
+    {
+        normal = Vector3.zero;
+
+        Vector3[] directions = new Vector3[]
+        {
+            transform.forward,
+            -transform.forward,
+            transform.right,
+            -transform.right
+        };
+
+        foreach (Vector3 dir in directions)
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, dir, out hit, wallCheckDistance, wallMask, QueryTriggerInteraction.Ignore))
+            {
+                normal = hit.normal;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void HandleWallSlide()
+    {
+        if (isGrounded || isCrouching || isClimbing || isHanging || isDroppingToHang ||
+            isPullingUp || isOnLadder || isExitingLadderTop || isSliding)
+        {
+            isWallSliding = false;
+            return;
+        }
+
+        Vector3 normal;
+        bool wallFound = DetectWall(out normal);
+
+        if (!wallFound)
+        {
+            isWallSliding = false;
+            return;
+        }
+
+        // Paredes são "diferentes" quando as normais apontam em direções suficientemente distintas.
+        // Dot < threshold significa que o ângulo entre elas é grande o bastante — funciona em dutos
+        // onde lados opostos têm normal oposta (dot ≈ -1) e no mesmo collider.
+        bool wallIsNew = lastWallNormal == Vector3.zero ||
+                         Vector3.Dot(normal, lastWallNormal) < wallNormalDifferenceThreshold;
+
+        if (!wallIsNew)
+        {
+            isWallSliding = false;
+            return;
+        }
+
+        isWallSliding = true;
+        currentWallNormal = normal;
+    }
+
+    void DoWallJump()
+    {
+        lastWallNormal = currentWallNormal;
+        wallJumpCooldownTimer = wallJumpCooldown;
+        isWallSliding = false;
+
+        currentVelocity = currentWallNormal * wallJumpAwayForce;
+        yVelocity = Mathf.Sqrt(wallJumpUpForce * -2f * gravity);
+
+        if (stealthStatus != null)
+            stealthStatus.TriggerJumpNoise();
+    }
+
     void HandleMovement()
     {
-        if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder || isExitingLadderTop) return;
+        if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder || isExitingLadderTop || isSliding) return;
 
         float targetSpeed = isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
 
@@ -326,12 +532,22 @@ public class PlayerMovement : MonoBehaviour
 
         controller.Move(currentVelocity * Time.deltaTime);
 
-        if (yVelocity < 0)
+        if (isWallSliding)
+        {
+            yVelocity = Mathf.MoveTowards(yVelocity, -wallSlideSpeed, wallSlideGravityDamp * Time.deltaTime);
+        }
+        else if (yVelocity < 0)
+        {
             yVelocity += gravity * fallMultiplier * Time.deltaTime;
+        }
         else if (yVelocity > 0)
+        {
             yVelocity += gravity * lowJumpMultiplier * Time.deltaTime;
+        }
         else
+        {
             yVelocity += gravity * Time.deltaTime;
+        }
 
         controller.Move(Vector3.up * yVelocity * Time.deltaTime);
     }
@@ -721,6 +937,7 @@ public class PlayerMovement : MonoBehaviour
     public void OnJump(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
+
         if (isOnLadder)
         {
             ExitLadder(true, false);
@@ -731,12 +948,26 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
+        // Pulo durante o slide — preserva o impulso horizontal (estilo Apex Legends)
+        if (isSliding && isGrounded)
+        {
+            DoSlideJump();
+            return;
+        }
+
         if (isGrounded && !isCrouching)
         {
             yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
             if (stealthStatus != null)
                 stealthStatus.TriggerJumpNoise();
+
+            return;
+        }
+
+        if (isWallSliding && wallJumpCooldownTimer <= 0f)
+        {
+            DoWallJump();
         }
     }
 
@@ -749,9 +980,23 @@ public class PlayerMovement : MonoBehaviour
         }
 
         if (context.performed)
-            crouchHeld = true;
+        {
+            if (isSprinting && isGrounded && !isSliding && slideCooldownTimer <= 0f)
+            {
+                StartSlide();
+            }
+            else
+            {
+                crouchHeld = true;
+            }
+        }
         else if (context.canceled)
+        {
             crouchHeld = false;
+
+            if (isSliding)
+                StopSlide();
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -812,9 +1057,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Zera velocidade e input — chamado pelo GeneratorPuzzleRuntime ao destravar o player.
-    /// </summary>
     public void ResetMovementState()
     {
         moveInput = Vector2.zero;
@@ -846,5 +1088,15 @@ public class PlayerMovement : MonoBehaviour
     public bool IsOnLadder()
     {
         return isOnLadder;
+    }
+
+    public bool IsSliding()
+    {
+        return isSliding;
+    }
+
+    public bool IsWallSliding()
+    {
+        return isWallSliding;
     }
 }
