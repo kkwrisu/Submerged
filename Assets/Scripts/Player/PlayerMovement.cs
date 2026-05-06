@@ -84,6 +84,9 @@ public class PlayerMovement : MonoBehaviour
     private bool isHanging;
     private bool isPullingUp;
 
+    // Flag para garantir que o climb tem prioridade sobre o wall slide no mesmo frame
+    private bool ledgeGrabThisFrame;
+
     private Vector3 climbTarget;
     private Vector3 hangTargetPosition;
     private float climbStartY;
@@ -133,8 +136,6 @@ public class PlayerMovement : MonoBehaviour
     public float wallNormalDifferenceThreshold = 0.3f;
 
     private float wallJumpCooldownTimer;
-    // Diferencia paredes pelo ângulo da superfície (normal), não por instanceID.
-    // Resolve dutos onde lados opostos pertencem ao mesmo collider.
     private Vector3 lastWallNormal = Vector3.zero;
     private bool isWallSliding;
     private Vector3 currentWallNormal;
@@ -222,6 +223,9 @@ public class PlayerMovement : MonoBehaviour
 
         TryEnterLadder();
 
+        // Reseta o flag a cada frame antes de CheckLedge
+        ledgeGrabThisFrame = false;
+
         if (CanCheckLedge())
             CheckLedge();
 
@@ -229,7 +233,7 @@ public class PlayerMovement : MonoBehaviour
         HandleClimb();
         HandlePullUp();
         HandleSlide();
-        HandleWallSlide();
+        HandleWallSlide(); // ledgeGrabThisFrame já estará correto aqui
         HandleMovement();
 
         UpdateStealthStatus();
@@ -301,7 +305,6 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleCrouch()
     {
-        // Durante o slide, força a altura de crouch sem alterar isCrouching nem crouchHeld
         if (isSliding)
         {
             float oldHeight = controller.height;
@@ -423,13 +426,9 @@ public class PlayerMovement : MonoBehaviour
         controller.Move(Vector3.up * yVelocity * Time.deltaTime);
     }
 
-    // Pulo durante o slide: preserva o impulso horizontal do slide
     void DoSlideJump()
     {
-        // Velocidade horizontal = direção do slide * velocidade atual, blendada com o input do jogador
         currentVelocity = slideDirection * (slideSpeed * slideJumpMomentumRetain);
-
-        // Aplica o impulso vertical normalmente
         yVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
         StopSlide();
@@ -465,8 +464,10 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleWallSlide()
     {
+        // ledgeGrabThisFrame garante que o climb sempre tem prioridade,
+        // mesmo que o raycast de parede e o de quina detectem no mesmo frame.
         if (isGrounded || isCrouching || isClimbing || isHanging || isDroppingToHang ||
-            isPullingUp || isOnLadder || isExitingLadderTop || isSliding)
+            isPullingUp || isOnLadder || isExitingLadderTop || isSliding || ledgeGrabThisFrame)
         {
             isWallSliding = false;
             return;
@@ -481,9 +482,6 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        // Paredes são "diferentes" quando as normais apontam em direções suficientemente distintas.
-        // Dot < threshold significa que o ângulo entre elas é grande o bastante — funciona em dutos
-        // onde lados opostos têm normal oposta (dot ≈ -1) e no mesmo collider.
         bool wallIsNew = lastWallNormal == Vector3.zero ||
                          Vector3.Dot(normal, lastWallNormal) < wallNormalDifferenceThreshold;
 
@@ -630,6 +628,10 @@ public class PlayerMovement : MonoBehaviour
         isDroppingToHang = true;
         isHanging = false;
         isSprinting = false;
+
+        // Sinaliza que uma quina foi detectada neste frame,
+        // bloqueando o wall slide antes que ele possa ativar.
+        ledgeGrabThisFrame = true;
     }
 
     void HandleHang()
@@ -948,7 +950,6 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        // Pulo durante o slide — preserva o impulso horizontal (estilo Apex Legends)
         if (isSliding && isGrounded)
         {
             DoSlideJump();

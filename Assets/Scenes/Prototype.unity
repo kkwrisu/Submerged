@@ -495,6 +495,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 65702495048144492, guid: 09b714e3abe68f6439206c6a41836ceb, type: 3}
+    - {fileID: -8700617353114198275, guid: 09b714e3abe68f6439206c6a41836ceb, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6548908425989618302, guid: 09b714e3abe68f6439206c6a41836ceb, type: 3}
@@ -14610,6 +14611,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 8416272007918961125, guid: c61951da319b00843aefbeb112fbd4bf, type: 3}
+      propertyPath: m_TagString
+      value: Ladder
+      objectReference: {fileID: 0}
     - target: {fileID: 8485173162082002552, guid: c61951da319b00843aefbeb112fbd4bf, type: 3}
       propertyPath: m_Layer
       value: 6
@@ -14644,7 +14649,7 @@ PrefabInstance:
       addedObject: {fileID: 913056743}
     - targetCorrespondingSourceObject: {fileID: 8416272007918961125, guid: c61951da319b00843aefbeb112fbd4bf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 913056742}
+      addedObject: {fileID: 913056750}
     - targetCorrespondingSourceObject: {fileID: -7146521406498821007, guid: c61951da319b00843aefbeb112fbd4bf, type: 3}
       insertIndex: -1
       addedObject: {fileID: 653837592}
@@ -15111,28 +15116,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5233112405309087440, guid: c61951da319b00843aefbeb112fbd4bf, type: 3}
   m_PrefabInstance: {fileID: 913056681}
   m_PrefabAsset: {fileID: 0}
---- !u!64 &913056742
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 913056737}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -1550514412580984892, guid: c61951da319b00843aefbeb112fbd4bf, type: 3}
 --- !u!64 &913056743
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -15221,6 +15204,27 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -2124705421725058983, guid: c61951da319b00843aefbeb112fbd4bf, type: 3}
+--- !u!65 &913056750
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 913056737}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.07476507, y: 0.16383994, z: 1.9611199}
+  m_Center: {x: 0.38265574, y: -4.0804324, z: 0.6642819}
 --- !u!64 &915728838
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -21156,6 +21160,14 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: -6722085885383957590, guid: a420cb3b4f84fa54d90c995c48b0625f, type: 3}
+      propertyPath: m_Range
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: -6722085885383957590, guid: a420cb3b4f84fa54d90c995c48b0625f, type: 3}
+      propertyPath: m_Intensity
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -6026004772984408981, guid: a420cb3b4f84fa54d90c995c48b0625f, type: 3}
       propertyPath: m_Layer
       value: 6
@@ -21399,6 +21411,8 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 65702495048144492, guid: a420cb3b4f84fa54d90c995c48b0625f, type: 3}
+    - {fileID: -8700617353114198275, guid: a420cb3b4f84fa54d90c995c48b0625f, type: 3}
+    - {fileID: 2654713335656134247, guid: a420cb3b4f84fa54d90c995c48b0625f, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: -8391222552659086748, guid: a420cb3b4f84fa54d90c995c48b0625f, type: 3}
