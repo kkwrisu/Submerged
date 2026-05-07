@@ -566,6 +566,21 @@ MonoBehaviour:
   ledgeBlockAfterReleaseTime: 0.25
   crouchHeight: 1
   crouchTransitionSpeed: 12
+  slideInitialSpeed: 10
+  slideDeceleration: 8
+  slideMinSpeed: 1.5
+  slideCooldown: 1
+  slideJumpMomentumRetain: 0.8
+  wallJumpUpForce: 5
+  wallJumpAwayForce: 5
+  wallCheckDistance: 0.6
+  wallJumpCooldown: 0.2
+  wallMask:
+    serializedVersion: 2
+    m_Bits: 64
+  wallSlideSpeed: 1.8
+  wallSlideGravityDamp: 12
+  wallNormalDifferenceThreshold: 0.3
   ladderTag: Ladder
   ladderEnterSpeedThreshold: 0.1
   ladderDetachJumpForce: 5
