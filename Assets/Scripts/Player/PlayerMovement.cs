@@ -168,8 +168,8 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Velocidade de encaixe ao subir por cima da escada.")]
     public float ladderTopExitMoveSpeed = 6f;
 
-    [Tooltip("Bloqueio de reentrada após sair pelo topo.")]
-    public float ladderTopExitReenterBlockTime = 0.35f;
+    [Tooltip("Bloqueio de reentrada após sair pelo topo. Mantenha >= 0.5 para evitar bugs.")]
+    public float ladderTopExitReenterBlockTime = 0.5f;
 
     private float ladderReenterTimer;
 
@@ -259,9 +259,10 @@ public class PlayerMovement : MonoBehaviour
     bool CanCheckLedge()
     {
         if (isGrounded) return false;
+        // FIX #3: isExitingLadderTop verificado antes de qualquer coisa de escada
+        if (isExitingLadderTop) return false;
         if (isClimbing || isHanging || isDroppingToHang || isPullingUp) return false;
         if (isOnLadder) return false;
-        if (isExitingLadderTop) return false;
         if (isInsideLadder) return false;
         if (currentLadder != null) return false;
         if (ledgeBlockTimer > 0f) return false;
@@ -795,19 +796,15 @@ public class PlayerMovement : MonoBehaviour
 
     void StartLadderTopExit(Ladder ladder)
     {
-        Vector3 up = ladder.GetUpDirection();
-        Vector3 forward = ladder.GetForwardDirection();
+        // Reutiliza o sistema de hang/climb/pullup existente para sair pelo topo.
+        // Em vez de mover o player manualmente (que trava na geometria da borda),
+        // simplesmente iniciamos um hang no ponto do topo da escada — o fluxo
+        // normal isDroppingToHang → isHanging → isClimbing → isPullingUp
+        // resolve a saída de forma robusta para qualquer geometria.
         Vector3 topWorld = ladder.GetTopWorldPoint();
 
-        Vector3 target = topWorld
-                       + forward * ladderTopExitForwardOffset
-                       + up * ladderTopExitUpOffset;
-
         isOnLadder = false;
-        isExitingLadderTop = true;
-
-        ladderTopExitTarget = target;
-
+        isExitingLadderTop = false;
         isInsideLadder = false;
         currentLadder = null;
 
@@ -815,32 +812,20 @@ public class PlayerMovement : MonoBehaviour
         yVelocity = 0f;
         isSprinting = false;
 
-        ledgeBlockTimer = ledgeBlockAfterLadderTime;
         ladderReenterTimer = ladderTopExitReenterBlockTime;
+
+        // Zera o ledgeBlockTimer para que StartHang possa executar imediatamente.
+        ledgeBlockTimer = 0f;
+        StartHang(topWorld);
     }
 
+    // Mantido apenas para não quebrar a chamada no Update —
+    // isExitingLadderTop não é mais ativado por StartLadderTopExit.
     void HandleLadderTopExit()
     {
-        Vector3 toTarget = ladderTopExitTarget - transform.position;
-        float distance = toTarget.magnitude;
-
-        if (distance <= 0.03f)
-        {
-            controller.enabled = false;
-            transform.position = ladderTopExitTarget;
-            controller.enabled = true;
-
-            isExitingLadderTop = false;
-            yVelocity = -2f;
-            return;
-        }
-
-        Vector3 move = toTarget.normalized * ladderTopExitMoveSpeed * Time.deltaTime;
-        if (move.magnitude > distance)
-            move = toTarget;
-
-        controller.Move(move);
+        isExitingLadderTop = false;
     }
+
 
     void HandleLadderMovement()
     {

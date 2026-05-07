@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Coloque este componente no objeto de gerador da cena.
+/// Coloque este componente no objeto de computador/gerador da cena.
 /// Herda de Interactable — o raycast do PlayerInteract já detecta automaticamente.
-/// Não precisa mais de TriggerZone nem PlayerAdapter.
+/// Ao completar o puzzle, eleva o nível do cartão de acesso do jogador em +1.
 /// </summary>
 public class GeneratorPuzzleInteractable : Interactable, ISaveable
 {
@@ -30,10 +30,6 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
         Debug.Log($"[GenPuzzle] {saveID} | completed={completed}");
     }
 
-    /// <summary>
-    /// Chamado automaticamente pelo PlayerInteract ao pressionar a tecla de interagir.
-    /// Inicia o puzzle — o hold/release é escutado no Update abaixo.
-    /// </summary>
     public override void Interact()
     {
         if (blockIfCompleted && completed)
@@ -58,7 +54,6 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
     {
         if (_runtime == null || completed) return;
 
-        // Só processa hold/release se este gerador é o ativo no runtime
         if (!_runtime.IsCurrentInteractable(this)) return;
 
         bool held = Keyboard.current != null && Keyboard.current.eKey.isPressed;
@@ -74,9 +69,11 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
     public void OnPuzzleCompleted()
     {
         completed = true;
-        Debug.Log($"[GenPuzzle] {saveID} concluído. Salvando...");
+        Debug.Log($"[GenPuzzle] {saveID} concluído.");
 
-        if (SaveManager.Instance != null)
+        if (AccessCardManager.Instance != null)
+            AccessCardManager.Instance.UpgradeCard(); // já chama SaveGame() internamente
+        else if (SaveManager.Instance != null)
             SaveManager.Instance.SaveGame();
     }
 
@@ -87,7 +84,6 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
         if (failAudio != null)
             failAudio.Play();
 
-        // Alerta inimigos próximos — mesmo sistema do RepairPuzzle
         Collider[] hits = Physics.OverlapSphere(transform.position, failAlertRadius, enemyLayer, QueryTriggerInteraction.Ignore);
 
         for (int i = 0; i < hits.Length; i++)

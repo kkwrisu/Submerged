@@ -9,7 +9,10 @@ public class Ladder : MonoBehaviour
     public float snapSpeed = 10f;
 
     [Header("Exit Settings")]
-    public float topExitOffset = 0.35f;
+    // FIX #1: topExitOffset menor evita que IsAboveTop dispare antes do player
+    // chegar fisicamente ao topo, prevenindo StartLadderTopExit prematuro.
+    // Valor recomendado: 0.05 ~ 0.1. Evite valores maiores que 0.15.
+    public float topExitOffset = 0.08f;
     public float bottomExitOffset = 0.1f;
     public float topExitForwardOffset = 0.45f;
     public float topExitUpOffset = 0.1f;
@@ -25,7 +28,6 @@ public class Ladder : MonoBehaviour
     {
         Collider col = GetComponent<Collider>();
         col.isTrigger = true;
-
         if (!CompareTag("Ladder"))
             gameObject.tag = "Ladder";
     }
@@ -50,7 +52,6 @@ public class Ladder : MonoBehaviour
         Vector3 up = GetUpDirection();
         Vector3 closest = GetClosestPoint(playerPosition);
         Vector3 delta = closest - playerPosition;
-
         return Vector3.ProjectOnPlane(delta, up);
     }
 
@@ -58,13 +59,11 @@ public class Ladder : MonoBehaviour
     {
         Bounds bounds = ladderCollider.bounds;
         Vector3 extents = bounds.extents;
-
         Vector3 dir = new Vector3(
             Mathf.Abs(direction.x),
             Mathf.Abs(direction.y),
             Mathf.Abs(direction.z)
         );
-
         return extents.x * dir.x + extents.y * dir.y + extents.z * dir.z;
     }
 
@@ -72,7 +71,6 @@ public class Ladder : MonoBehaviour
     {
         Vector3 up = GetUpDirection();
         Bounds bounds = ladderCollider.bounds;
-
         float extentAlongUp = GetExtentAlongDirection(up);
         return bounds.center + up * extentAlongUp;
     }
@@ -81,7 +79,6 @@ public class Ladder : MonoBehaviour
     {
         Vector3 up = GetUpDirection();
         Bounds bounds = ladderCollider.bounds;
-
         float extentAlongUp = GetExtentAlongDirection(up);
         return bounds.center - up * extentAlongUp;
     }
@@ -113,7 +110,6 @@ public class Ladder : MonoBehaviour
         Vector3 up = GetUpDirection();
         Vector3 forward = GetForwardDirection();
         Vector3 topWorld = GetTopWorldPoint();
-
         return topWorld
              + forward * topExitForwardOffset
              + up * topExitUpOffset;
