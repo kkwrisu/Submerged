@@ -12,6 +12,7 @@ public class SaveData
     public List<LeverSaveRecord> levers = new List<LeverSaveRecord>();
     public List<DoorSaveRecord> doors = new List<DoorSaveRecord>();
     public List<PuzzleSaveRecord> puzzles = new List<PuzzleSaveRecord>();
+    public List<TutorialSeenRecord> seenTutorials = new List<TutorialSeenRecord>();
 }
 
 [Serializable]

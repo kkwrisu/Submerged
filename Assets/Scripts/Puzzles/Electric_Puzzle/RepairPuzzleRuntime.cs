@@ -34,6 +34,16 @@ public class RepairPuzzleRuntime : MonoBehaviour
     private bool wireBComplete;
     private int activeWire = 1;
 
+    // ── Tutorial ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Enquanto true, o Runtime ignora todos os inputs do jogador.
+    /// Definido pelo RepairPuzzleTutorialTracker.
+    /// </summary>
+    private bool lockedByTutorial;
+
+    // ── Input ─────────────────────────────────────────────────────────────────
+
     private InputAction click;
     private InputAction reset;
 
@@ -95,11 +105,38 @@ public class RepairPuzzleRuntime : MonoBehaviour
         BuildMap();
         FindSpecialNodes();
         ResetPuzzle();
+
+        // ── Verifica tutorial APÓS setup da cena ─────────────────────────────
+        RepairPuzzleTutorialTracker tracker = GetComponent<RepairPuzzleTutorialTracker>();
+
+        if (tracker != null)
+        {
+            bool tutorialOpened = tracker.TryShowTutorial();
+
+            if (tutorialOpened)
+            {
+                lockedByTutorial = true;
+                Debug.Log("[Runtime] Bloqueado pelo tutorial.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Chamado pelo RepairPuzzleTutorialTracker quando o jogador termina o tutorial.
+    /// </summary>
+    public void UnlockAfterTutorial()
+    {
+        lockedByTutorial = false;
+        Debug.Log("[Runtime] Desbloqueado pelo tutorial — jogo começa agora.");
     }
 
     private void Update()
     {
         if (RepairPuzzleManager.Instance == null || !RepairPuzzleManager.Instance.IsPuzzleOpen())
+            return;
+
+        // Bloqueia input enquanto tutorial está ativo
+        if (lockedByTutorial)
             return;
 
         bool resetPressed =
@@ -337,10 +374,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (!AreOrthogonallyAdjacent(currentEnd, targetNode))
             return;
 
-        // Hazard agora bloqueia igual wall
         if (!targetNode.IsWalkable())
         {
-            // Se tentou entrar exatamente no hazard, falha
             if (targetNode.nodeType == RepairPuzzleNodeType.RedHazard)
             {
                 Debug.Log("Tentou passar por cima do RedHazard.");
@@ -372,7 +407,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (difficulty == RepairPuzzleDifficulty.Difficulty4 && activeWire == 2 && pathA.Contains(targetNode))
             return;
 
-        // Falha se entrar em casa adjacente ortogonal a hazard
         if (IsDangerForStep(targetNode))
         {
             Debug.Log("Passou em casa adjacente a RedHazard.");
@@ -392,7 +426,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
                 return;
             }
 
-            // também verifica perigo ao sair do portal
             if (!exitPortal.IsWalkable())
             {
                 if (exitPortal.nodeType == RepairPuzzleNodeType.RedHazard)
@@ -458,7 +491,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (node == null)
             return false;
 
-        // entrar no próprio hazard também falha
         if (node.nodeType == RepairPuzzleNodeType.RedHazard)
             return true;
 

@@ -115,6 +115,9 @@ public class Doors : MonoBehaviour, ISaveable
 
     public bool AllLocksReleased()
     {
+        if (unlockedLocks == null || unlockedLocks.Length != totalLocks)
+            return false;
+
         for (int i = 0; i < totalLocks; i++)
         {
             if (!unlockedLocks[i])

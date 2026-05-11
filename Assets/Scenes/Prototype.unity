@@ -17382,10 +17382,9 @@ GameObject:
   - component: {fileID: 1298543285}
   - component: {fileID: 1298543284}
   - component: {fileID: 1298543283}
-  - component: {fileID: 1298543282}
   - component: {fileID: 1298543281}
   m_Layer: 6
-  m_Name: Lever (Left) (2)
+  m_Name: "Leitor de Cart\xE3o"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17424,9 +17423,9 @@ MonoBehaviour:
   onInteract:
     m_PersistentCalls:
       m_Calls: []
-  saveID: 
+  saveID: card_reader_01
   requiredCardLevel: 2
-  targetDoor: {fileID: 0}
+  targetDoor: {fileID: 1449874446}
   lockIndex: 0
   unlocked: 0
   blockIfUnlocked: 1
@@ -17440,68 +17439,6 @@ MonoBehaviour:
   onAccessDenied:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &1298543282
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1298543279}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bc88e98598e100f4594256635b4aff5f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Interactable
-  dialogueNodes:
-  - text: Ir para qual andar?
-    nextNodeIndex: 0
-    endDialogueHere: 0
-    choices:
-    - choiceText: Segundo Andar
-      nextNodeIndex: -1
-      closeDialogue: 1
-      triggerAction: 0
-      actionDebugMessage: 
-      onChoiceSelected:
-        m_PersistentCalls:
-          m_Calls:
-          - m_Target: {fileID: 0}
-            m_TargetAssemblyTypeName: Elevator, Assembly-CSharp
-            m_MethodName: GoToFloor
-            m_Mode: 3
-            m_Arguments:
-              m_ObjectArgument: {fileID: 0}
-              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-              m_IntArgument: 0
-              m_FloatArgument: 0
-              m_StringArgument: 
-              m_BoolArgument: 0
-            m_CallState: 2
-    - choiceText: Cancelar
-      nextNodeIndex: -1
-      closeDialogue: 1
-      triggerAction: 0
-      actionDebugMessage: 
-      onChoiceSelected:
-        m_PersistentCalls:
-          m_Calls: []
-  triggerActionOnInteract: 0
-  interactActionDebugMessage: 
-  onInteract:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: Levers, Assembly-CSharp
-        m_MethodName: ActivateLever
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!114 &1298543283
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18398,7 +18335,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Doors
   saveID: Prototype_Door_2
-  totalLocks: 0
+  totalLocks: 1
   unlockedLocks: 
   doorVisual: {fileID: 2483106}
   closedPosition: {x: 0, y: 0, z: 0}

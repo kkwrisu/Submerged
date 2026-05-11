@@ -10,6 +10,7 @@ public class SaveManager : MonoBehaviour
     public Transform player;
 
     private SaveData currentSave;
+    public SaveData CurrentSave => currentSave;
 
     private string pendingSpawnId;
     private string pendingSceneName;
