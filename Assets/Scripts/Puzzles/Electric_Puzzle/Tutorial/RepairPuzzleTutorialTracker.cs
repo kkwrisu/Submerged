@@ -1,26 +1,13 @@
 using UnityEngine;
 
-/// <summary>
-/// Coloque este componente no mesmo GameObject (ou filho) do RepairPuzzleRuntime na cena do puzzle.
-///
-/// Ele:
-///   1. Verifica no SaveData se o jogador já viu o tutorial deste tipo de puzzle.
-///   2. Se for a primeira vez, bloqueia o Runtime e abre o overlay de tutorial.
-///   3. Ao terminar (ou pular), desbloqueia o Runtime e salva que o tutorial foi visto.
-///
-/// DEPENDÊNCIAS ESPERADAS NO MESMO GAMEOBJECT:
-///   - RepairPuzzleRuntime
-///   - RepairPuzzleTutorialUI (pode estar em filho ou referenciado)
-/// </summary>
 [RequireComponent(typeof(RepairPuzzleRuntime))]
 public class RepairPuzzleTutorialTracker : MonoBehaviour
 {
     [Header("Tutorial")]
-    [Tooltip("Dados dos slides do tutorial. Crie via Create > RepairPuzzle > TutorialData.")]
     public RepairPuzzleTutorialData tutorialData;
 
-    [Tooltip("Referência ao componente de UI do tutorial na cena.")]
-    public RepairPuzzleTutorialUI tutorialUI;
+    [Tooltip("Referência ao componente de diálogo do tutorial na cena.")]
+    public RepairPuzzleTutorialDialogue tutorialDialogue;
 
     [Tooltip("Se true, o tutorial sempre abre (útil para testar sem precisar limpar o save).")]
     public bool forceShowForDebug = false;
@@ -37,10 +24,6 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
         runtime = GetComponent<RepairPuzzleRuntime>();
     }
 
-    /// <summary>
-    /// Chamado pelo RepairPuzzleRuntime no Start(), após BuildMap e FindSpecialNodes.
-    /// Retorna true se o tutorial foi aberto (Runtime deve ficar bloqueado até OnTutorialFinished).
-    /// </summary>
     public bool TryShowTutorial()
     {
         if (tutorialData == null)
@@ -49,9 +32,9 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
             return false;
         }
 
-        if (tutorialUI == null)
+        if (tutorialDialogue == null)
         {
-            Debug.LogWarning("[Tutorial] TutorialUI não referenciada. Pulando tutorial.");
+            Debug.LogWarning("[Tutorial] TutorialDialogue não referenciado. Pulando tutorial.");
             return false;
         }
 
@@ -65,7 +48,7 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
 
         Debug.Log("[Tutorial] Primeira vez — abrindo tutorial '" + tutorialData.tutorialID + "'.");
         IsTutorialActive = true;
-        tutorialUI.Show(tutorialData, OnTutorialFinished);
+        tutorialDialogue.Show(tutorialData, OnTutorialFinished);
         return true;
     }
 
@@ -74,16 +57,12 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
     private void OnTutorialFinished()
     {
         IsTutorialActive = false;
-
         Debug.Log("[Tutorial] Tutorial concluído. Desbloqueando puzzle.");
-
         MarkTutorialSeen(tutorialData.tutorialID);
-
-        // Desbloqueia o runtime para o jogador começar a jogar
         runtime.UnlockAfterTutorial();
     }
 
-    // ── Save Integration ─────────────────────────────────────────────────────
+    // ── Save ─────────────────────────────────────────────────────────────────
 
     private bool HasSeenTutorial(string id)
     {

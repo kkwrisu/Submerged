@@ -300,4 +300,9 @@ public class DialogueManager : MonoBehaviour
 
         Next();
     }
+
+    public void ForceEndDialogue()
+    {
+        EndDialogue();
+    }
 }
