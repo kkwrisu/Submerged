@@ -19,18 +19,30 @@ MonoBehaviour:
       pain\xE9is de eletricidade precisando de conserto. Pressione o clique esquerdo
       do mouse em um fio (amarelo) e segure para arrast\xE1-lo. Conecte o fio \xE0
       outra ponta para completar o minigame."
-    highlightColor: {r: 0, g: 0, b: 0, a: 0}
-  - title: Hazards Vermelhos
+    hasHighlight: 1
+    highlightEntries:
+    - nodeType: 3
+      highlightColor: {r: 1, g: 1, b: 1, a: 0}
+    - nodeType: 4
+      highlightColor: {r: 1, g: 1, b: 1, a: 0}
+  - title: Tutorial
     description: Hazards Vermelhos destroem fios que passarem por casas adjacentes
       ortogonais ao mesmo.
-    highlightColor: {r: 1, g: 0.023529412, b: 0.023529412, a: 0}
-  - title: "Zona de Conex\xE3o"
+    hasHighlight: 1
+    highlightEntries:
+    - nodeType: 2
+      highlightColor: {r: 1, g: 0, b: 0, a: 0}
+  - title: Tutorial
     description: "Nem sempre ser\xE1 poss\xEDvel conectar um fio at\xE9 a sua liga\xE7\xE3o
       normalmente. Para isso, voc\xEA pode ligar o fio inicial em uma das Zonas de
       Conex\xF5es roxas e energizar um outro fio presente na fia\xE7\xE3o, continuando
       o caminho atrav\xE9s dele. "
-    highlightColor: {r: 0.6509804, g: 0, b: 1, a: 0}
-  - title: Perigo!
+    hasHighlight: 1
+    highlightEntries:
+    - nodeType: 7
+      highlightColor: {r: 1, g: 1, b: 1, a: 0}
+  - title: Tutorial
     description: "Cuidado com inimigos por perto! Em caso de falha no conserto, voc\xEA
       poder\xE1 causar um curto-circuito que acionar\xE1 inimigos nas proximidades. "
-    highlightColor: {r: 0, g: 0, b: 0, a: 0}
+    hasHighlight: 0
+    highlightEntries: []

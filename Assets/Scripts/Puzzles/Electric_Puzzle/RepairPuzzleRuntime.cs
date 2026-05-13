@@ -19,6 +19,20 @@ public class RepairPuzzleRuntime : MonoBehaviour
     [Header("Visual")]
     public float wireZOffset = -0.1f;
 
+    [Header("Portal Wire Visual")]
+    [Tooltip("Largura do fio gerado após portal.")]
+    public float portalWireWidth = 0.1f;
+    [Tooltip("Gradiente de cor dos fios pós-portal. Cada par de portal usa uma cor da lista.")]
+    public Color[] portalWireColors = new Color[]
+    {
+        new Color(0.2f, 0.8f, 1f),
+        new Color(1f, 0.5f, 0f),
+        new Color(0.8f, 0.2f, 1f),
+        new Color(0.2f, 1f, 0.5f),
+    };
+
+    // ── Nodes ─────────────────────────────────────────────────────────────────
+
     private readonly Dictionary<Vector2Int, RepairPuzzleNode> nodes = new Dictionary<Vector2Int, RepairPuzzleNode>();
 
     private RepairPuzzleNode startA;
@@ -26,26 +40,49 @@ public class RepairPuzzleRuntime : MonoBehaviour
     private RepairPuzzleNode startB;
     private RepairPuzzleNode endB;
 
-    private readonly List<RepairPuzzleNode> pathA = new List<RepairPuzzleNode>();
-    private readonly List<RepairPuzzleNode> pathB = new List<RepairPuzzleNode>();
-
-    private bool isDragging;
-    private bool wireAComplete;
-    private bool wireBComplete;
-    private int activeWire = 1;
-
-    // ── Tutorial ─────────────────────────────────────────────────────────────
+    // ── Segmentos de fio ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// Enquanto true, o Runtime ignora todos os inputs do jogador.
-    /// Definido pelo RepairPuzzleTutorialTracker.
+    /// Representa um segmento de fio independente.
+    /// O fio principal (A ou B) é o segmento 0 ou 1.
+    /// Fios pós-portal são segmentos extras criados dinamicamente.
     /// </summary>
+    private class WireSegment
+    {
+        public List<RepairPuzzleNode> path = new List<RepairPuzzleNode>();
+        public RepairPuzzleNode expectedEnd;
+        public LineRenderer lineRenderer;
+        public bool complete;
+    }
+
+    private readonly List<WireSegment> segments = new List<WireSegment>();
+    private int activeSegmentIndex = 0;
+
+    private bool isDragging;
+
+    // ── Ghost lines (tracejado portal) ────────────────────────────────────────
+
+    // Mapeia entrada do portal → ghost instanciado
+    private readonly Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost> portalGhosts
+        = new Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost>();
+
+    // Índice de cor por entrada de portal
+    private readonly Dictionary<RepairPuzzleNode, int> portalColorIndex
+        = new Dictionary<RepairPuzzleNode, int>();
+
+    // AABB do grid em world space (calculado uma vez no BuildMap)
+    private Bounds gridBounds;
+
+    // ── Tutorial ──────────────────────────────────────────────────────────────
+
     private bool lockedByTutorial;
 
     // ── Input ─────────────────────────────────────────────────────────────────
 
     private InputAction click;
     private InputAction reset;
+
+    // ── Unity ─────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -54,39 +91,17 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     private void OnEnable()
     {
-        Debug.Log("RepairPuzzleRuntime OnEnable");
-
         click = clickAction != null ? clickAction.action : null;
         reset = resetAction != null ? resetAction.action : null;
 
-        if (click != null)
-        {
-            click.Enable();
-            Debug.Log("Click action enabled: " + click.name + " | map: " + click.actionMap.name);
-        }
-        else
-        {
-            Debug.LogWarning("ClickAction não atribuída. Usando fallback direto do mouse.");
-        }
-
-        if (reset != null)
-        {
-            reset.Enable();
-            Debug.Log("Reset action enabled: " + reset.name + " | map: " + reset.actionMap.name);
-        }
-        else
-        {
-            Debug.LogWarning("ResetAction não atribuída. Usando fallback do teclado.");
-        }
+        if (click != null) click.Enable();
+        if (reset != null) reset.Enable();
     }
 
     private void OnDisable()
     {
-        if (click != null)
-            click.Disable();
-
-        if (reset != null)
-            reset.Disable();
+        if (click != null) click.Disable();
+        if (reset != null) reset.Disable();
     }
 
     private void Start()
@@ -106,7 +121,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         FindSpecialNodes();
         ResetPuzzle();
 
-        // ── Verifica tutorial APÓS setup da cena ─────────────────────────────
         RepairPuzzleTutorialTracker tracker = GetComponent<RepairPuzzleTutorialTracker>();
 
         if (tracker != null)
@@ -121,21 +135,19 @@ public class RepairPuzzleRuntime : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Chamado pelo RepairPuzzleTutorialTracker quando o jogador termina o tutorial.
-    /// </summary>
     public void UnlockAfterTutorial()
     {
         lockedByTutorial = false;
         Debug.Log("[Runtime] Desbloqueado pelo tutorial — jogo começa agora.");
     }
 
+    // ── Update ────────────────────────────────────────────────────────────────
+
     private void Update()
     {
         if (RepairPuzzleManager.Instance == null || !RepairPuzzleManager.Instance.IsPuzzleOpen())
             return;
 
-        // Bloqueia input enquanto tutorial está ativo
         if (lockedByTutorial)
             return;
 
@@ -145,7 +157,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         if (resetPressed)
         {
-            Debug.Log("RESET PRESSIONADO");
             ResetPuzzle();
             return;
         }
@@ -164,15 +175,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         if (clickPressed)
         {
-            Debug.Log("CLICK PRESSIONADO");
-
             RepairPuzzleNode node = GetNodeUnderPointer();
-
-            if (node == null)
-                Debug.Log("Nenhum node detectado no clique.");
-            else
-                Debug.Log("Node clicado: " + node.name + " | X=" + node.x + " Y=" + node.y + " | Tipo=" + node.nodeType);
-
             TryStartDrag(node);
         }
 
@@ -187,11 +190,12 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         if (clickReleased)
         {
-            Debug.Log("CLICK SOLTO");
             isDragging = false;
             RefreshVisuals();
         }
     }
+
+    // ── Setup ─────────────────────────────────────────────────────────────────
 
     private Camera FindPuzzleCameraInMyScene()
     {
@@ -224,290 +228,506 @@ public class RepairPuzzleRuntime : MonoBehaviour
             if (!nodes.ContainsKey(pos))
                 nodes.Add(pos, allNodes[i]);
             else
-                Debug.LogWarning("Node duplicado em: " + pos + " | " + allNodes[i].name);
+                Debug.LogWarning("Node duplicado em: " + pos);
         }
 
         Debug.Log("Nodes carregados: " + nodes.Count);
+
+        // Calcula AABB do grid para posicionar os ghosts fora da borda
+        if (nodes.Count > 0)
+        {
+            bool first = true;
+            foreach (var pair in nodes)
+            {
+                Vector3 wp = pair.Value.transform.position;
+                if (first) { gridBounds = new Bounds(wp, Vector3.zero); first = false; }
+                else gridBounds.Encapsulate(wp);
+            }
+            gridBounds.Expand(GetNodeSpacing());
+        }
+    }
+
+    /// <summary>Retorna a distância aproximada entre nodes adjacentes no mundo.</summary>
+    private float GetNodeSpacing()
+    {
+        foreach (var pair in nodes)
+        {
+            Vector2Int pos = new Vector2Int(pair.Value.x, pair.Value.y);
+            Vector2Int[] offsets = { Vector2Int.right, Vector2Int.up };
+            foreach (var off in offsets)
+            {
+                if (nodes.TryGetValue(pos + off, out RepairPuzzleNode neighbor))
+                    return Vector3.Distance(pair.Value.transform.position,
+                                           neighbor.transform.position);
+            }
+        }
+        return 1f;
     }
 
     private void FindSpecialNodes()
     {
-        startA = null;
-        endA = null;
-        startB = null;
-        endB = null;
+        startA = null; endA = null;
+        startB = null; endB = null;
 
         foreach (var pair in nodes)
         {
-            RepairPuzzleNode node = pair.Value;
-
-            switch (node.nodeType)
+            switch (pair.Value.nodeType)
             {
-                case RepairPuzzleNodeType.StartA: startA = node; break;
-                case RepairPuzzleNodeType.EndA: endA = node; break;
-                case RepairPuzzleNodeType.StartB: startB = node; break;
-                case RepairPuzzleNodeType.EndB: endB = node; break;
+                case RepairPuzzleNodeType.StartA: startA = pair.Value; break;
+                case RepairPuzzleNodeType.EndA: endA = pair.Value; break;
+                case RepairPuzzleNodeType.StartB: startB = pair.Value; break;
+                case RepairPuzzleNodeType.EndB: endB = pair.Value; break;
             }
         }
-
-        Debug.Log("StartA: " + (startA != null ? startA.name : "NULL"));
-        Debug.Log("EndA: " + (endA != null ? endA.name : "NULL"));
-        Debug.Log("StartB: " + (startB != null ? startB.name : "NULL"));
-        Debug.Log("EndB: " + (endB != null ? endB.name : "NULL"));
     }
+
+    // ── Reset ─────────────────────────────────────────────────────────────────
 
     public void ResetPuzzle()
     {
-        pathA.Clear();
-        pathB.Clear();
+        // Destroi LineRenderers extras criados para portais
+        for (int i = 0; i < segments.Count; i++)
+        {
+            if (segments[i].lineRenderer != null &&
+                segments[i].lineRenderer != wireRendererA &&
+                segments[i].lineRenderer != wireRendererB)
+            {
+                Destroy(segments[i].lineRenderer.gameObject);
+            }
+        }
 
-        wireAComplete = false;
-        wireBComplete = false;
-        activeWire = 1;
+        // Destroi ghosts de portal
+        foreach (var kv in portalGhosts)
+            if (kv.Value != null) Destroy(kv.Value.gameObject);
+
+        portalGhosts.Clear();
+        portalColorIndex.Clear();
+
+        segments.Clear();
+        activeSegmentIndex = 0;
         isDragging = false;
+
+        // Cria ghost para cada par de portal na cena
+        SpawnPortalGhosts();
+
+        // Segmento 0 — fio A
+        WireSegment segA = new WireSegment();
+        segA.expectedEnd = endA;
+        segA.lineRenderer = wireRendererA;
+        segments.Add(segA);
+
+        // Segmento 1 — fio B (só na dificuldade 4)
+        if (difficulty == RepairPuzzleDifficulty.Difficulty4)
+        {
+            WireSegment segB = new WireSegment();
+            segB.expectedEnd = endB;
+            segB.lineRenderer = wireRendererB;
+            segments.Add(segB);
+        }
 
         RefreshVisuals();
     }
 
-    private Vector3 GetPointerWorldPosition()
-    {
-        if (puzzleCamera == null || Mouse.current == null)
-            return Vector3.zero;
-
-        Vector2 screenPos = Mouse.current.position.ReadValue();
-        Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(
-            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z))
-        );
-
-        worldPos.z = wireZOffset;
-        return worldPos;
-    }
-
-    private RepairPuzzleNode GetNodeUnderPointer()
-    {
-        if (puzzleCamera == null || Mouse.current == null)
-            return null;
-
-        Vector2 screenPos = Mouse.current.position.ReadValue();
-
-        Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(
-            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z))
-        );
-
-        Collider2D[] hits = Physics2D.OverlapPointAll(new Vector2(worldPos.x, worldPos.y));
-
-        if (hits == null || hits.Length == 0)
-            return null;
-
-        for (int i = 0; i < hits.Length; i++)
-        {
-            RepairPuzzleNode node = hits[i].GetComponent<RepairPuzzleNode>();
-            if (node != null && node.gameObject.scene == gameObject.scene)
-                return node;
-        }
-
-        return null;
-    }
+    // ── Drag ──────────────────────────────────────────────────────────────────
 
     private void TryStartDrag(RepairPuzzleNode node)
     {
-        if (node == null)
-            return;
+        if (node == null) return;
 
-        if (activeWire == 1)
+        WireSegment active = segments[activeSegmentIndex];
+
+        if (active.complete) return;
+
+        // Início do segmento
+        if (active.path.Count == 0)
         {
-            if (wireAComplete)
+            RepairPuzzleNode expectedStart = GetExpectedStart(activeSegmentIndex);
+
+            if (node != expectedStart)
                 return;
 
-            if (pathA.Count == 0)
-            {
-                if (node != startA)
-                {
-                    Debug.Log("Clique não foi no StartA.");
-                    return;
-                }
-
-                pathA.Add(node);
-                isDragging = true;
-                RefreshVisuals();
-                return;
-            }
-
-            if (node == pathA[pathA.Count - 1])
-                isDragging = true;
-        }
-        else
-        {
-            if (wireBComplete)
-                return;
-
-            if (pathB.Count == 0)
-            {
-                if (node != startB)
-                {
-                    Debug.Log("Clique não foi no StartB.");
-                    return;
-                }
-
-                pathB.Add(node);
-                isDragging = true;
-                RefreshVisuals();
-                return;
-            }
-
-            if (node == pathB[pathB.Count - 1])
-                isDragging = true;
-        }
-    }
-
-    private void TryExtendPath(RepairPuzzleNode targetNode)
-    {
-        List<RepairPuzzleNode> currentPath = activeWire == 1 ? pathA : pathB;
-        RepairPuzzleNode currentEnd = currentPath.Count > 0 ? currentPath[currentPath.Count - 1] : null;
-
-        if (currentEnd == null || targetNode == null)
-            return;
-
-        if (targetNode == currentEnd)
-            return;
-
-        if (!AreOrthogonallyAdjacent(currentEnd, targetNode))
-            return;
-
-        if (!targetNode.IsWalkable())
-        {
-            if (targetNode.nodeType == RepairPuzzleNodeType.RedHazard)
-            {
-                Debug.Log("Tentou passar por cima do RedHazard.");
-                FailPuzzle();
-            }
-
-            return;
-        }
-
-        if (currentPath.Count >= 2 && targetNode == currentPath[currentPath.Count - 2])
-        {
-            currentPath.RemoveAt(currentPath.Count - 1);
+            active.path.Add(node);
+            isDragging = true;
             RefreshVisuals();
             return;
         }
 
-        if (currentPath.Contains(targetNode))
-            return;
+        // Retomar do último nó
+        if (node == active.path[active.path.Count - 1])
+            isDragging = true;
+    }
 
-        if (targetNode.nodeType == RepairPuzzleNodeType.StartA || targetNode.nodeType == RepairPuzzleNodeType.StartB)
-            return;
+    private RepairPuzzleNode GetExpectedStart(int segmentIndex)
+    {
+        // Segmento 0 → StartA
+        if (segmentIndex == 0) return startA;
 
-        if (activeWire == 1 && targetNode.nodeType == RepairPuzzleNodeType.EndB)
-            return;
+        // Segmento 1 na dificuldade 4 → StartB
+        if (difficulty == RepairPuzzleDifficulty.Difficulty4 && segmentIndex == 1)
+            return startB;
 
-        if (activeWire == 2 && targetNode.nodeType == RepairPuzzleNodeType.EndA)
-            return;
+        // Segmentos de portal → a saída do portal que ativou este segmento
+        // Guardado em expectedStart do próprio segmento
+        return segments[segmentIndex].path.Count > 0 ? segments[segmentIndex].path[0] : null;
+    }
 
-        if (difficulty == RepairPuzzleDifficulty.Difficulty4 && activeWire == 2 && pathA.Contains(targetNode))
-            return;
+    private void TryExtendPath(RepairPuzzleNode targetNode)
+    {
+        WireSegment active = segments[activeSegmentIndex];
 
-        if (IsDangerForStep(targetNode))
+        if (active.complete) return;
+
+        RepairPuzzleNode currentEnd = active.path.Count > 0
+            ? active.path[active.path.Count - 1]
+            : null;
+
+        if (currentEnd == null || targetNode == null) return;
+        if (targetNode == currentEnd) return;
+        if (!AreOrthogonallyAdjacent(currentEnd, targetNode)) return;
+
+        // Backtrack
+        if (active.path.Count >= 2 && targetNode == active.path[active.path.Count - 2])
         {
-            Debug.Log("Passou em casa adjacente a RedHazard.");
-            FailPuzzle();
+            active.path.RemoveAt(active.path.Count - 1);
+            RefreshVisuals();
             return;
         }
 
-        currentPath.Add(targetNode);
+        // Já está no caminho
+        if (IsNodeInAnyPath(targetNode)) return;
 
+        // Não pode entrar em starts
+        if (targetNode.nodeType == RepairPuzzleNodeType.StartA ||
+            targetNode.nodeType == RepairPuzzleNodeType.StartB)
+            return;
+
+        // ── FIX: verifica se é o End esperado ANTES de checar IsWalkable ──────
+        bool isExpectedEnd = (targetNode == active.expectedEnd);
+
+        if (isExpectedEnd)
+        {
+            // É o End correto deste segmento — apenas checa perigo e entra
+            if (IsDangerForStep(targetNode))
+            {
+                FailPuzzle();
+                return;
+            }
+        }
+        else
+        {
+            // Não é o End esperado — bloqueia tentativas de entrar no End errado
+            if (targetNode.nodeType == RepairPuzzleNodeType.EndA && active.expectedEnd != endA) return;
+            if (targetNode.nodeType == RepairPuzzleNodeType.EndB && active.expectedEnd != endB) return;
+
+            // Checa walkable normalmente para nós que não são o End deste segmento
+            if (!targetNode.IsWalkable())
+            {
+                if (targetNode.nodeType == RepairPuzzleNodeType.RedHazard)
+                    FailPuzzle();
+                return;
+            }
+
+            if (IsDangerForStep(targetNode))
+            {
+                FailPuzzle();
+                return;
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
+        active.path.Add(targetNode);
+
+        // Chegou em um portal
         if (targetNode.nodeType == RepairPuzzleNodeType.Portal && targetNode.portalTarget != null)
         {
-            RepairPuzzleNode exitPortal = targetNode.portalTarget;
-
-            if (difficulty == RepairPuzzleDifficulty.Difficulty4 && activeWire == 2 && pathA.Contains(exitPortal))
-            {
-                FailPuzzle();
-                return;
-            }
-
-            if (!exitPortal.IsWalkable())
-            {
-                if (exitPortal.nodeType == RepairPuzzleNodeType.RedHazard)
-                {
-                    Debug.Log("Portal saiu em cima de RedHazard.");
-                    FailPuzzle();
-                }
-
-                return;
-            }
-
-            if (IsDangerForStep(exitPortal))
-            {
-                Debug.Log("Portal saiu adjacente a RedHazard.");
-                FailPuzzle();
-                return;
-            }
-
-            if (!currentPath.Contains(exitPortal))
-                currentPath.Add(exitPortal);
+            HandlePortalEntry(targetNode);
+            return;
         }
 
         RefreshVisuals();
         CheckCompletion();
     }
 
+    // ── Portal Ghost ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Percorre todos os nodes do tipo Portal e cria um ghost tracejado
+    /// de entrada → saída para cada par único.
+    /// </summary>
+    private void SpawnPortalGhosts()
+    {
+        int pairIndex = 0;
+
+        foreach (var pair in nodes)
+        {
+            RepairPuzzleNode entry = pair.Value;
+
+            if (entry.nodeType != RepairPuzzleNodeType.Portal) continue;
+            if (entry.portalTarget == null) continue;
+            // Evita criar dois ghosts para o mesmo par (A→B e B→A)
+            if (portalGhosts.ContainsKey(entry)) continue;
+
+            RepairPuzzleNode exit = entry.portalTarget;
+
+            // Cor que este par vai usar ao ativar
+            int colorIdx = pairIndex % portalWireColors.Length;
+            portalColorIndex[entry] = colorIdx;
+            pairIndex++;
+
+            // Calcula os pontos do L
+            Vector3[] pts = BuildGhostLPath(entry.transform.position, exit.transform.position);
+
+            // Instancia o ghost
+            GameObject ghostObj = new GameObject("PortalGhost_" + entry.name);
+            ghostObj.transform.SetParent(transform);
+
+            RepairPuzzlePortalGhost ghost = ghostObj.AddComponent<RepairPuzzlePortalGhost>();
+
+            int layerID = wireRendererA != null ? wireRendererA.sortingLayerID : 0;
+            int order = wireRendererA != null ? wireRendererA.sortingOrder - 1 : 0;
+
+            ghost.Setup(pts, layerID, order);
+            portalGhosts[entry] = ghost;
+        }
+    }
+
+    /// <summary>
+    /// Constrói os pontos de um caminho em L que sai da borda do grid.
+    /// O cotovelo é posicionado fora do AABB do grid, pelo lado mais próximo da borda.
+    /// Retorna 3 pontos: entrada → cotovelo externo → saída.
+    /// </summary>
+    private Vector3[] BuildGhostLPath(Vector3 entryWorld, Vector3 exitWorld)
+    {
+        float z = wireZOffset - 0.05f; // atrás dos fios normais
+
+        Vector3 entry = new Vector3(entryWorld.x, entryWorld.y, z);
+        Vector3 exit = new Vector3(exitWorld.x, exitWorld.y, z);
+
+        // Margens da borda do grid
+        float left = gridBounds.min.x;
+        float right = gridBounds.max.x;
+        float bottom = gridBounds.min.y;
+        float top = gridBounds.max.y;
+
+        // Ponto médio horizontal e vertical entre entrada e saída
+        float midX = (entry.x + exit.x) * 0.5f;
+        float midY = (entry.y + exit.y) * 0.5f;
+
+        // Distância de cada ponto até cada borda
+        float dLeft = Mathf.Min(entry.x, exit.x) - left;
+        float dRight = right - Mathf.Max(entry.x, exit.x);
+        float dBottom = Mathf.Min(entry.y, exit.y) - bottom;
+        float dTop = top - Mathf.Max(entry.y, exit.y);
+
+        float minDist = Mathf.Min(dLeft, dRight, dBottom, dTop);
+
+        Vector3 elbow;
+
+        if (minDist == dLeft)
+            // Sai pela esquerda: cotovelo alinhado em X com a borda esquerda, Y no meio
+            elbow = new Vector3(left, midY, z);
+        else if (minDist == dRight)
+            // Sai pela direita
+            elbow = new Vector3(right, midY, z);
+        else if (minDist == dBottom)
+            // Sai por baixo: cotovelo em X no meio, Y na borda inferior
+            elbow = new Vector3(midX, bottom, z);
+        else
+            // Sai por cima
+            elbow = new Vector3(midX, top, z);
+
+        return new Vector3[] { entry, elbow, exit };
+    }
+
+    // ── Portal ────────────────────────────────────────────────────────────────
+
+    private void HandlePortalEntry(RepairPuzzleNode portalEntry)
+    {
+        RepairPuzzleNode portalExit = portalEntry.portalTarget;
+
+        if (portalExit == null)
+        {
+            RefreshVisuals();
+            return;
+        }
+
+        if (IsDangerForStep(portalExit))
+        {
+            FailPuzzle();
+            return;
+        }
+
+        // Ativa o ghost tracejado deste portal (animação entrada → saída)
+        if (portalGhosts.TryGetValue(portalEntry, out RepairPuzzlePortalGhost ghost) && ghost != null)
+        {
+            int colorIdx = portalColorIndex.ContainsKey(portalEntry)
+                ? portalColorIndex[portalEntry]
+                : 0;
+            ghost.Activate(portalWireColors[colorIdx % portalWireColors.Length]);
+        }
+
+        // Conclui o segmento atual na entrada do portal
+        segments[activeSegmentIndex].complete = true;
+        isDragging = false;
+
+        // Cria novo segmento começando pela saída do portal
+        // Herda o expectedEnd do segmento que entrou no portal
+        RepairPuzzleNode inheritedEnd = segments[activeSegmentIndex].expectedEnd;
+
+        WireSegment newSegment = new WireSegment();
+        newSegment.path.Add(portalExit);
+        newSegment.expectedEnd = inheritedEnd;
+        newSegment.lineRenderer = CreatePortalLineRenderer();
+        segments.Add(newSegment);
+
+        // Ativa o novo segmento
+        activeSegmentIndex = segments.Count - 1;
+
+        Debug.Log("[Portal] Entrada conectada. Novo segmento ativado na saída: " + portalExit.name);
+
+        RefreshVisuals();
+        CheckCompletion();
+    }
+
+    private RepairPuzzleNode FindEndForSegment()
+    {
+        // Retorna o primeiro End que ainda não tem segmento apontando para ele
+        List<RepairPuzzleNode> allEnds = new List<RepairPuzzleNode>();
+
+        if (endA != null) allEnds.Add(endA);
+        if (endB != null) allEnds.Add(endB);
+
+        for (int i = 0; i < allEnds.Count; i++)
+        {
+            bool alreadyClaimed = false;
+
+            for (int j = 0; j < segments.Count; j++)
+            {
+                if (segments[j].expectedEnd == allEnds[i])
+                {
+                    alreadyClaimed = true;
+                    break;
+                }
+            }
+
+            if (!alreadyClaimed)
+                return allEnds[i];
+        }
+
+        return null;
+    }
+
+    private LineRenderer CreatePortalLineRenderer()
+    {
+        int portalWireIndex = 0;
+        int count = 0;
+
+        for (int i = 0; i < segments.Count; i++)
+        {
+            if (segments[i].lineRenderer != wireRendererA &&
+                segments[i].lineRenderer != wireRendererB)
+                count++;
+        }
+
+        portalWireIndex = count % portalWireColors.Length;
+
+        GameObject obj = new GameObject("PortalWire_" + count);
+        obj.transform.SetParent(transform);
+
+        LineRenderer lr = obj.AddComponent<LineRenderer>();
+
+        if (wireRendererA != null)
+        {
+            lr.material = wireRendererA.material;
+            lr.widthMultiplier = wireRendererA.widthMultiplier;
+            lr.startWidth = wireRendererA.startWidth;
+            lr.endWidth = wireRendererA.endWidth;
+            lr.sortingLayerID = wireRendererA.sortingLayerID;
+            lr.sortingOrder = wireRendererA.sortingOrder;
+        }
+
+        Color wireColor = portalWireColors[portalWireIndex];
+        lr.startColor = wireColor;
+        lr.endColor = wireColor;
+        lr.positionCount = 0;
+
+        return lr;
+    }
+
+    // ── Completion ────────────────────────────────────────────────────────────
+
     private void CheckCompletion()
     {
-        if (activeWire == 1)
-        {
-            if (pathA.Count > 0 && pathA[pathA.Count - 1] == endA)
-            {
-                wireAComplete = true;
-                isDragging = false;
+        WireSegment active = segments[activeSegmentIndex];
 
-                if (difficulty == RepairPuzzleDifficulty.Difficulty4)
-                {
-                    activeWire = 2;
-                    RefreshVisuals();
-                }
-                else
-                {
-                    SuccessPuzzle();
-                }
-            }
-        }
-        else
+        if (active.path.Count == 0) return;
+
+        RepairPuzzleNode last = active.path[active.path.Count - 1];
+
+        if (active.expectedEnd != null && last == active.expectedEnd)
         {
-            if (pathB.Count > 0 && pathB[pathB.Count - 1] == endB)
+            active.complete = true;
+            isDragging = false;
+
+            Debug.Log("[Runtime] Segmento " + activeSegmentIndex + " completo.");
+
+            // Verifica se todos os segmentos estão completos
+            if (AllSegmentsComplete())
             {
-                wireBComplete = true;
-                isDragging = false;
                 SuccessPuzzle();
+                return;
             }
+
+            // Avança para o próximo segmento incompleto
+            for (int i = 0; i < segments.Count; i++)
+            {
+                if (!segments[i].complete)
+                {
+                    activeSegmentIndex = i;
+                    break;
+                }
+            }
+
+            RefreshVisuals();
         }
+    }
+
+    private bool AllSegmentsComplete()
+    {
+        for (int i = 0; i < segments.Count; i++)
+        {
+            if (!segments[i].complete)
+                return false;
+        }
+
+        return true;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private bool IsNodeInAnyPath(RepairPuzzleNode node)
+    {
+        for (int i = 0; i < segments.Count; i++)
+        {
+            if (segments[i].path.Contains(node))
+                return true;
+        }
+
+        return false;
     }
 
     private bool IsDangerForStep(RepairPuzzleNode node)
     {
-        if (difficulty == RepairPuzzleDifficulty.Difficulty1)
-            return false;
-
-        if (node == null)
-            return false;
-
-        if (node.nodeType == RepairPuzzleNodeType.RedHazard)
-            return true;
+        if (difficulty == RepairPuzzleDifficulty.Difficulty1) return false;
+        if (node == null) return false;
+        if (node.nodeType == RepairPuzzleNodeType.RedHazard) return true;
 
         Vector2Int pos = new Vector2Int(node.x, node.y);
-        Vector2Int[] offsets =
-        {
-            Vector2Int.up,
-            Vector2Int.down,
-            Vector2Int.left,
-            Vector2Int.right
-        };
+        Vector2Int[] offsets = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
         for (int i = 0; i < offsets.Length; i++)
         {
-            Vector2Int check = pos + offsets[i];
-
-            if (nodes.TryGetValue(check, out RepairPuzzleNode neighbor))
+            if (nodes.TryGetValue(pos + offsets[i], out RepairPuzzleNode neighbor))
             {
                 if (neighbor != null && neighbor.nodeType == RepairPuzzleNodeType.RedHazard)
                     return true;
@@ -524,23 +744,27 @@ public class RepairPuzzleRuntime : MonoBehaviour
         return dx + dy == 1;
     }
 
+    // ── Visuals ───────────────────────────────────────────────────────────────
+
     private void RefreshVisuals()
     {
         foreach (var pair in nodes)
             pair.Value.SetNormal();
 
-        for (int i = 0; i < pathA.Count; i++)
-            pathA[i].SetPath();
-
-        for (int i = 0; i < pathB.Count; i++)
-            pathB[i].SetPath();
+        for (int i = 0; i < segments.Count; i++)
+        {
+            for (int j = 0; j < segments[i].path.Count; j++)
+                segments[i].path[j].SetPath();
+        }
 
         if (startA != null) startA.SetPath();
         if (endA != null) endA.SetPath();
 
         if (difficulty == RepairPuzzleDifficulty.Difficulty4)
         {
-            if (wireAComplete)
+            bool segAComplete = segments.Count > 0 && segments[0].complete;
+
+            if (segAComplete)
             {
                 if (startB != null) startB.SetPath();
                 if (endB != null) endB.SetPath();
@@ -552,14 +776,16 @@ public class RepairPuzzleRuntime : MonoBehaviour
             }
         }
 
-        UpdateLineRenderer(wireRendererA, pathA, activeWire == 1 && isDragging && !wireAComplete);
-        UpdateLineRenderer(wireRendererB, pathB, activeWire == 2 && isDragging && !wireBComplete);
+        for (int i = 0; i < segments.Count; i++)
+        {
+            bool isActive = i == activeSegmentIndex && isDragging && !segments[i].complete;
+            UpdateLineRenderer(segments[i].lineRenderer, segments[i].path, isActive);
+        }
     }
 
     private void UpdateLineRenderer(LineRenderer lr, List<RepairPuzzleNode> path, bool drawPreviewToMouse)
     {
-        if (lr == null)
-            return;
+        if (lr == null) return;
 
         if (path.Count == 0)
         {
@@ -578,11 +804,62 @@ public class RepairPuzzleRuntime : MonoBehaviour
         }
 
         if (drawPreviewToMouse)
-        {
-            Vector3 pointerPos = GetPointerWorldPosition();
-            lr.SetPosition(path.Count, pointerPos);
-        }
+            lr.SetPosition(path.Count, GetPointerWorldPosition());
     }
+
+    private Vector3 GetPointerWorldPosition()
+    {
+        if (puzzleCamera == null || Mouse.current == null)
+            return Vector3.zero;
+
+        Vector2 screenPos = Mouse.current.position.ReadValue();
+        Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(
+            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z))
+        );
+
+        worldPos.z = wireZOffset;
+        return worldPos;
+    }
+
+    private RepairPuzzleNode GetNodeUnderPointer()
+    {
+        if (puzzleCamera == null || Mouse.current == null) return null;
+
+        Vector2 screenPos = Mouse.current.position.ReadValue();
+        Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(
+            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z))
+        );
+
+        Collider2D[] hits = Physics2D.OverlapPointAll(new Vector2(worldPos.x, worldPos.y));
+
+        if (hits == null || hits.Length == 0) return null;
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RepairPuzzleNode node = hits[i].GetComponent<RepairPuzzleNode>();
+            if (node != null && node.gameObject.scene == gameObject.scene)
+                return node;
+        }
+
+        return null;
+    }
+
+    // ── Tutorial Helper ───────────────────────────────────────────────────────
+
+    public List<RepairPuzzleNode> GetNodesByType(RepairPuzzleNodeType type)
+    {
+        List<RepairPuzzleNode> result = new List<RepairPuzzleNode>();
+
+        foreach (var pair in nodes)
+        {
+            if (pair.Value != null && pair.Value.nodeType == type)
+                result.Add(pair.Value);
+        }
+
+        return result;
+    }
+
+    // ── Puzzle Result ─────────────────────────────────────────────────────────
 
     public void FailPuzzle()
     {
@@ -598,6 +875,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
     public void SuccessPuzzle()
     {
         Debug.Log("PUZZLE SUCCESS");
+
         if (RepairPuzzleManager.Instance != null)
             RepairPuzzleManager.Instance.FinishPuzzle(RepairPuzzleResult.Success);
     }

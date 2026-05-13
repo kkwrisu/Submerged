@@ -6,18 +6,14 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
     [Header("Tutorial")]
     public RepairPuzzleTutorialData tutorialData;
 
-    [Tooltip("Referência ao componente de diálogo do tutorial na cena.")]
-    public RepairPuzzleTutorialDialogue tutorialDialogue;
+    [Tooltip("Referência ao componente de UI do tutorial na cena.")]
+    public RepairPuzzleTutorialUI tutorialUI;
 
     [Tooltip("Se true, o tutorial sempre abre (útil para testar sem precisar limpar o save).")]
     public bool forceShowForDebug = false;
 
-    // ── Estado interno ───────────────────────────────────────────────────────
-
     private RepairPuzzleRuntime runtime;
     public bool IsTutorialActive { get; private set; }
-
-    // ── Unity ────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -32,9 +28,9 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
             return false;
         }
 
-        if (tutorialDialogue == null)
+        if (tutorialUI == null)
         {
-            Debug.LogWarning("[Tutorial] TutorialDialogue não referenciado. Pulando tutorial.");
+            Debug.LogWarning("[Tutorial] TutorialUI não referenciada. Pulando tutorial.");
             return false;
         }
 
@@ -48,11 +44,13 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
 
         Debug.Log("[Tutorial] Primeira vez — abrindo tutorial '" + tutorialData.tutorialID + "'.");
         IsTutorialActive = true;
-        tutorialDialogue.Show(tutorialData, OnTutorialFinished);
+
+        // Marca como visto imediatamente ao abrir
+        MarkTutorialSeen(tutorialData.tutorialID);
+
+        tutorialUI.Show(tutorialData, runtime, OnTutorialFinished);
         return true;
     }
-
-    // ── Callbacks ────────────────────────────────────────────────────────────
 
     private void OnTutorialFinished()
     {
@@ -61,8 +59,6 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
         MarkTutorialSeen(tutorialData.tutorialID);
         runtime.UnlockAfterTutorial();
     }
-
-    // ── Save ─────────────────────────────────────────────────────────────────
 
     private bool HasSeenTutorial(string id)
     {

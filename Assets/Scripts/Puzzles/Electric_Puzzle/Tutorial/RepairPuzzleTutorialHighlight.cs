@@ -1,38 +1,19 @@
 using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// Coloque este componente nos nós da cena que devem ser destacados durante o tutorial.
-/// Cria automaticamente um SpriteRenderer filho que simula um glow/outline.
-/// </summary>
 [RequireComponent(typeof(SpriteRenderer))]
 public class RepairPuzzleTutorialHighlight : MonoBehaviour
 {
     [Header("Glow Config")]
-    [Tooltip("Cor do glow ao redor do objeto.")]
     public Color glowColor = new Color(1f, 1f, 0f, 1f);
+    public float pulseSpeed = 0.6f;
 
-    [Tooltip("Escala extra do glow em relação ao sprite original.")]
-    public float glowScale = 1.25f;
-
-    [Tooltip("Velocidade do pulse de alpha do glow.")]
-    public float pulseSpeed = 2f;
-
-    [Tooltip("Alpha mínimo do glow durante o pulse.")]
-    [Range(0f, 1f)]
-    public float pulseAlphaMin = 0.2f;
-
-    [Tooltip("Alpha máximo do glow durante o pulse.")]
-    [Range(0f, 1f)]
-    public float pulseAlphaMax = 0.8f;
-
-    // ── Internos ─────────────────────────────────────────────────────────────
+    [Range(0f, 1f)] public float pulseAlphaMin = 0.35f;
+    [Range(0f, 1f)] public float pulseAlphaMax = 0.65f;
 
     private SpriteRenderer mainRenderer;
     private SpriteRenderer glowRenderer;
     private Coroutine pulseCoroutine;
-
-    // ── Unity ────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -41,10 +22,10 @@ public class RepairPuzzleTutorialHighlight : MonoBehaviour
         DisableGlow();
     }
 
-    // ── API Pública ──────────────────────────────────────────────────────────
-
-    public void EnableGlow()
+    public void EnableGlow(Color color)
     {
+        glowColor = color;
+
         if (glowRenderer == null)
             CreateGlowRenderer();
 
@@ -68,15 +49,13 @@ public class RepairPuzzleTutorialHighlight : MonoBehaviour
         }
     }
 
-    // ── Internos ─────────────────────────────────────────────────────────────
-
     private void CreateGlowRenderer()
     {
-        Transform existingGlow = transform.Find("__GlowLayer__");
+        Transform existing = transform.Find("__GlowLayer__");
 
-        if (existingGlow != null)
+        if (existing != null)
         {
-            glowRenderer = existingGlow.GetComponent<SpriteRenderer>();
+            glowRenderer = existing.GetComponent<SpriteRenderer>();
             return;
         }
 
@@ -84,12 +63,12 @@ public class RepairPuzzleTutorialHighlight : MonoBehaviour
         glowObj.transform.SetParent(transform);
         glowObj.transform.localPosition = Vector3.zero;
         glowObj.transform.localRotation = Quaternion.identity;
-        glowObj.transform.localScale = Vector3.one * glowScale;
+        glowObj.transform.localScale = Vector3.one;
 
         glowRenderer = glowObj.AddComponent<SpriteRenderer>();
         glowRenderer.sprite = mainRenderer.sprite;
         glowRenderer.sortingLayerID = mainRenderer.sortingLayerID;
-        glowRenderer.sortingOrder = mainRenderer.sortingOrder - 1;
+        glowRenderer.sortingOrder = mainRenderer.sortingOrder + 1;
 
         Color c = glowColor;
         c.a = 0f;
