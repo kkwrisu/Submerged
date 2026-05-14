@@ -97,6 +97,12 @@ public class RepairPuzzleManager : MonoBehaviour
         if (pauseGameWhilePuzzleIsOpen)
             Time.timeScale = 0f;
 
+        // Registra a cena de puzzle no SaveManager antes de carregá-la,
+        // para que qualquer SaveGame chamado enquanto o puzzle estiver aberto
+        // ignore os ISaveables dessa cena e use a cena principal como referência.
+        if (SaveManager.Instance != null)
+            SaveManager.Instance.RegisterPuzzleScene(sceneName);
+
         AsyncOperation op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
         while (!op.isDone)
             yield return null;
@@ -130,6 +136,11 @@ public class RepairPuzzleManager : MonoBehaviour
 
         loadedScene = null;
         isOpen = false;
+
+        // Desregistra a cena de puzzle — a partir daqui o SaveManager volta
+        // a enxergar todos os ISaveables normalmente.
+        if (SaveManager.Instance != null)
+            SaveManager.Instance.UnregisterPuzzleScene();
 
         if (GameUI.Instance != null)
             GameUI.Instance.RefreshForScene(previousScene.name);

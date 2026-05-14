@@ -5,10 +5,8 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
 {
     [Header("Tutorial")]
     public RepairPuzzleTutorialData tutorialData;
-
     [Tooltip("Referência ao componente de UI do tutorial na cena.")]
     public RepairPuzzleTutorialUI tutorialUI;
-
     [Tooltip("Se true, o tutorial sempre abre (útil para testar sem precisar limpar o save).")]
     public bool forceShowForDebug = false;
 
@@ -27,14 +25,29 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
             Debug.Log("[Tutorial] Nenhum TutorialData configurado. Pulando tutorial.");
             return false;
         }
-
         if (tutorialUI == null)
         {
             Debug.LogWarning("[Tutorial] TutorialUI não referenciada. Pulando tutorial.");
             return false;
         }
 
+        // DEBUG: compara o ID do ScriptableObject com o que está no save
+        Debug.Log($"[TutorialCheck] tutorialID no ScriptableObject: '{tutorialData.tutorialID}' | len={tutorialData.tutorialID?.Length}");
+        var list = SaveManager.Instance?.CurrentSave?.seenTutorials;
+        if (list != null)
+        {
+            Debug.Log($"[TutorialCheck] seenTutorials.Count={list.Count}");
+            for (int i = 0; i < list.Count; i++)
+                Debug.Log($"[TutorialCheck] save[{i}]: id='{list[i].tutorialID}' seen={list[i].seen} | len={list[i].tutorialID?.Length}");
+        }
+        else
+        {
+            Debug.LogWarning("[TutorialCheck] seenTutorials é null.");
+        }
+
         bool alreadySeen = !forceShowForDebug && HasSeenTutorial(tutorialData.tutorialID);
+
+        Debug.Log($"[TutorialCheck] alreadySeen={alreadySeen} | forceShowForDebug={forceShowForDebug}");
 
         if (alreadySeen)
         {
@@ -47,7 +60,6 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
 
         // Marca como visto imediatamente ao abrir
         MarkTutorialSeen(tutorialData.tutorialID);
-
         tutorialUI.Show(tutorialData, runtime, OnTutorialFinished);
         return true;
     }
@@ -81,7 +93,6 @@ public class RepairPuzzleTutorialTracker : MonoBehaviour
         SaveDataTutorialExtensions.MarkTutorialSeen(
             SaveManager.Instance.CurrentSave.seenTutorials, id
         );
-
         SaveManager.Instance.SaveGame();
         Debug.Log("[Tutorial] Tutorial '" + id + "' marcado como visto no save.");
     }

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -62,15 +63,12 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     // ── Ghost lines (tracejado portal) ────────────────────────────────────────
 
-    // Mapeia entrada do portal → ghost instanciado
     private readonly Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost> portalGhosts
         = new Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost>();
 
-    // Índice de cor por entrada de portal
     private readonly Dictionary<RepairPuzzleNode, int> portalColorIndex
         = new Dictionary<RepairPuzzleNode, int>();
 
-    // AABB do grid em world space (calculado uma vez no BuildMap)
     private Bounds gridBounds;
 
     // ── Tutorial ──────────────────────────────────────────────────────────────
@@ -122,16 +120,20 @@ public class RepairPuzzleRuntime : MonoBehaviour
         ResetPuzzle();
 
         RepairPuzzleTutorialTracker tracker = GetComponent<RepairPuzzleTutorialTracker>();
-
         if (tracker != null)
-        {
-            bool tutorialOpened = tracker.TryShowTutorial();
+            StartCoroutine(TryShowTutorialNextFrame(tracker));
+    }
 
-            if (tutorialOpened)
-            {
-                lockedByTutorial = true;
-                Debug.Log("[Runtime] Bloqueado pelo tutorial.");
-            }
+    private IEnumerator TryShowTutorialNextFrame(RepairPuzzleTutorialTracker tracker)
+    {
+        yield return null;
+
+        bool tutorialOpened = tracker.TryShowTutorial();
+
+        if (tutorialOpened)
+        {
+            lockedByTutorial = true;
+            Debug.Log("[Runtime] Bloqueado pelo tutorial.");
         }
     }
 
@@ -233,7 +235,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         Debug.Log("Nodes carregados: " + nodes.Count);
 
-        // Calcula AABB do grid para posicionar os ghosts fora da borda
         if (nodes.Count > 0)
         {
             bool first = true;
@@ -285,7 +286,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     public void ResetPuzzle()
     {
-        // Destroi LineRenderers extras criados para portais
         for (int i = 0; i < segments.Count; i++)
         {
             if (segments[i].lineRenderer != null &&
@@ -296,7 +296,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
             }
         }
 
-        // Destroi ghosts de portal
         foreach (var kv in portalGhosts)
             if (kv.Value != null) Destroy(kv.Value.gameObject);
 
@@ -307,16 +306,13 @@ public class RepairPuzzleRuntime : MonoBehaviour
         activeSegmentIndex = 0;
         isDragging = false;
 
-        // Cria ghost para cada par de portal na cena
         SpawnPortalGhosts();
 
-        // Segmento 0 — fio A
         WireSegment segA = new WireSegment();
         segA.expectedEnd = endA;
         segA.lineRenderer = wireRendererA;
         segments.Add(segA);
 
-        // Segmento 1 — fio B (só na dificuldade 4)
         if (difficulty == RepairPuzzleDifficulty.Difficulty4)
         {
             WireSegment segB = new WireSegment();
@@ -338,7 +334,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         if (active.complete) return;
 
-        // Início do segmento
         if (active.path.Count == 0)
         {
             RepairPuzzleNode expectedStart = GetExpectedStart(activeSegmentIndex);
@@ -352,22 +347,17 @@ public class RepairPuzzleRuntime : MonoBehaviour
             return;
         }
 
-        // Retomar do último nó
         if (node == active.path[active.path.Count - 1])
             isDragging = true;
     }
 
     private RepairPuzzleNode GetExpectedStart(int segmentIndex)
     {
-        // Segmento 0 → StartA
         if (segmentIndex == 0) return startA;
 
-        // Segmento 1 na dificuldade 4 → StartB
         if (difficulty == RepairPuzzleDifficulty.Difficulty4 && segmentIndex == 1)
             return startB;
 
-        // Segmentos de portal → a saída do portal que ativou este segmento
-        // Guardado em expectedStart do próprio segmento
         return segments[segmentIndex].path.Count > 0 ? segments[segmentIndex].path[0] : null;
     }
 
@@ -393,10 +383,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
             return;
         }
 
-        // Já está no caminho
         if (IsNodeInAnyPath(targetNode)) return;
 
-        // Não pode entrar em starts
         if (targetNode.nodeType == RepairPuzzleNodeType.StartA ||
             targetNode.nodeType == RepairPuzzleNodeType.StartB)
             return;
@@ -406,7 +394,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         if (isExpectedEnd)
         {
-            // É o End correto deste segmento — apenas checa perigo e entra
             if (IsDangerForStep(targetNode))
             {
                 FailPuzzle();
@@ -415,11 +402,9 @@ public class RepairPuzzleRuntime : MonoBehaviour
         }
         else
         {
-            // Não é o End esperado — bloqueia tentativas de entrar no End errado
             if (targetNode.nodeType == RepairPuzzleNodeType.EndA && active.expectedEnd != endA) return;
             if (targetNode.nodeType == RepairPuzzleNodeType.EndB && active.expectedEnd != endB) return;
 
-            // Checa walkable normalmente para nós que não são o End deste segmento
             if (!targetNode.IsWalkable())
             {
                 if (targetNode.nodeType == RepairPuzzleNodeType.RedHazard)
@@ -437,7 +422,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         active.path.Add(targetNode);
 
-        // Chegou em um portal
         if (targetNode.nodeType == RepairPuzzleNodeType.Portal && targetNode.portalTarget != null)
         {
             HandlePortalEntry(targetNode);
@@ -450,10 +434,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     // ── Portal Ghost ──────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Percorre todos os nodes do tipo Portal e cria um ghost tracejado
-    /// de entrada → saída para cada par único.
-    /// </summary>
     private void SpawnPortalGhosts()
     {
         int pairIndex = 0;
@@ -464,20 +444,16 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
             if (entry.nodeType != RepairPuzzleNodeType.Portal) continue;
             if (entry.portalTarget == null) continue;
-            // Evita criar dois ghosts para o mesmo par (A→B e B→A)
             if (portalGhosts.ContainsKey(entry)) continue;
 
             RepairPuzzleNode exit = entry.portalTarget;
 
-            // Cor que este par vai usar ao ativar
             int colorIdx = pairIndex % portalWireColors.Length;
             portalColorIndex[entry] = colorIdx;
             pairIndex++;
 
-            // Calcula os pontos do L
             Vector3[] pts = BuildGhostLPath(entry.transform.position, exit.transform.position);
 
-            // Instancia o ghost
             GameObject ghostObj = new GameObject("PortalGhost_" + entry.name);
             ghostObj.transform.SetParent(transform);
 
@@ -491,29 +467,21 @@ public class RepairPuzzleRuntime : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Constrói os pontos de um caminho em L que sai da borda do grid.
-    /// O cotovelo é posicionado fora do AABB do grid, pelo lado mais próximo da borda.
-    /// Retorna 3 pontos: entrada → cotovelo externo → saída.
-    /// </summary>
     private Vector3[] BuildGhostLPath(Vector3 entryWorld, Vector3 exitWorld)
     {
-        float z = wireZOffset - 0.05f; // atrás dos fios normais
+        float z = wireZOffset - 0.05f;
 
         Vector3 entry = new Vector3(entryWorld.x, entryWorld.y, z);
         Vector3 exit = new Vector3(exitWorld.x, exitWorld.y, z);
 
-        // Margens da borda do grid
         float left = gridBounds.min.x;
         float right = gridBounds.max.x;
         float bottom = gridBounds.min.y;
         float top = gridBounds.max.y;
 
-        // Ponto médio horizontal e vertical entre entrada e saída
         float midX = (entry.x + exit.x) * 0.5f;
         float midY = (entry.y + exit.y) * 0.5f;
 
-        // Distância de cada ponto até cada borda
         float dLeft = Mathf.Min(entry.x, exit.x) - left;
         float dRight = right - Mathf.Max(entry.x, exit.x);
         float dBottom = Mathf.Min(entry.y, exit.y) - bottom;
@@ -523,18 +491,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         Vector3 elbow;
 
-        if (minDist == dLeft)
-            // Sai pela esquerda: cotovelo alinhado em X com a borda esquerda, Y no meio
-            elbow = new Vector3(left, midY, z);
-        else if (minDist == dRight)
-            // Sai pela direita
-            elbow = new Vector3(right, midY, z);
-        else if (minDist == dBottom)
-            // Sai por baixo: cotovelo em X no meio, Y na borda inferior
-            elbow = new Vector3(midX, bottom, z);
-        else
-            // Sai por cima
-            elbow = new Vector3(midX, top, z);
+        if (minDist == dLeft) elbow = new Vector3(left, midY, z);
+        else if (minDist == dRight) elbow = new Vector3(right, midY, z);
+        else if (minDist == dBottom) elbow = new Vector3(midX, bottom, z);
+        else elbow = new Vector3(midX, top, z);
 
         return new Vector3[] { entry, elbow, exit };
     }
@@ -557,7 +517,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
             return;
         }
 
-        // Ativa o ghost tracejado deste portal (animação entrada → saída)
         if (portalGhosts.TryGetValue(portalEntry, out RepairPuzzlePortalGhost ghost) && ghost != null)
         {
             int colorIdx = portalColorIndex.ContainsKey(portalEntry)
@@ -566,12 +525,9 @@ public class RepairPuzzleRuntime : MonoBehaviour
             ghost.Activate(portalWireColors[colorIdx % portalWireColors.Length]);
         }
 
-        // Conclui o segmento atual na entrada do portal
         segments[activeSegmentIndex].complete = true;
         isDragging = false;
 
-        // Cria novo segmento começando pela saída do portal
-        // Herda o expectedEnd do segmento que entrou no portal
         RepairPuzzleNode inheritedEnd = segments[activeSegmentIndex].expectedEnd;
 
         WireSegment newSegment = new WireSegment();
@@ -580,7 +536,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         newSegment.lineRenderer = CreatePortalLineRenderer();
         segments.Add(newSegment);
 
-        // Ativa o novo segmento
         activeSegmentIndex = segments.Count - 1;
 
         Debug.Log("[Portal] Entrada conectada. Novo segmento ativado na saída: " + portalExit.name);
@@ -591,7 +546,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     private RepairPuzzleNode FindEndForSegment()
     {
-        // Retorna o primeiro End que ainda não tem segmento apontando para ele
         List<RepairPuzzleNode> allEnds = new List<RepairPuzzleNode>();
 
         if (endA != null) allEnds.Add(endA);
@@ -671,14 +625,12 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
             Debug.Log("[Runtime] Segmento " + activeSegmentIndex + " completo.");
 
-            // Verifica se todos os segmentos estão completos
             if (AllSegmentsComplete())
             {
                 SuccessPuzzle();
                 return;
             }
 
-            // Avança para o próximo segmento incompleto
             for (int i = 0; i < segments.Count; i++)
             {
                 if (!segments[i].complete)

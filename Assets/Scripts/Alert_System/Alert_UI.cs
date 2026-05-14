@@ -4,8 +4,12 @@ using UnityEngine.SceneManagement;
 
 public class Alert_UI : MonoBehaviour
 {
-    [Header("Slider de Alerta")]
-    public Slider alertSlider;
+    [Header("Barras de Alerta")]
+    [Tooltip("Sprite base com todas as barras apagadas — sempre visível.")]
+    public Image baseImage;
+
+    [Tooltip("8 Images, uma por barra, em ordem crescente de alerta. Arraste da menor para a maior.")]
+    public Image[] barImages = new Image[8];
 
     private void Awake()
     {
@@ -14,13 +18,6 @@ public class Alert_UI : MonoBehaviour
 
     private void Start()
     {
-        if (alertSlider != null)
-        {
-            alertSlider.minValue = 0f;
-            alertSlider.maxValue = 1f;
-            alertSlider.interactable = false;
-        }
-
         ResetValueIfNoSystem();
         ConnectAlertSystem();
     }
@@ -47,8 +44,7 @@ public class Alert_UI : MonoBehaviour
         }
         else
         {
-            if (alertSlider != null)
-                alertSlider.value = 0f;
+            SetActiveBars(0);
         }
     }
 
@@ -58,22 +54,31 @@ public class Alert_UI : MonoBehaviour
             DungeonAlertSystem.Instance.onAlertChanged.RemoveListener(UpdateFill);
     }
 
-    // GameUI é responsável pelo SetActive deste objeto.
-    // Este script só zera o valor quando não há sistema de alerta na cena.
     private void ResetValueIfNoSystem()
     {
-        if (alertSlider != null && DungeonAlertSystem.Instance == null)
-            alertSlider.value = 0f;
+        if (DungeonAlertSystem.Instance == null)
+            SetActiveBars(0);
     }
 
     private void UpdateFill(float value) => Refresh();
 
     private void Refresh()
     {
-        if (alertSlider == null) return;
-
-        alertSlider.value = DungeonAlertSystem.Instance != null
+        float normalized = DungeonAlertSystem.Instance != null
             ? DungeonAlertSystem.Instance.AlertNormalized
             : 0f;
+
+        // Cada barra representa 12.5% — quantas barras devem estar acesas
+        int activeBars = Mathf.RoundToInt(normalized * 8f);
+        SetActiveBars(activeBars);
+    }
+
+    private void SetActiveBars(int count)
+    {
+        for (int i = 0; i < barImages.Length; i++)
+        {
+            if (barImages[i] != null)
+                barImages[i].enabled = i < count;
+        }
     }
 }
