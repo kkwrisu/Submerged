@@ -5,6 +5,8 @@ public class DungeonAlertSystem : MonoBehaviour
 {
     public static DungeonAlertSystem Instance;
 
+    public const float AlertPerBar = 12.5f;
+
     [Header("Alert Level")]
     [Range(0f, 100f)] public float currentAlert = 0f;
     public float maxAlert = 100f;
@@ -36,13 +38,12 @@ public class DungeonAlertSystem : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject); // 🔥 IMPORTANTE
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Update()
     {
-        if (!alertDecaysOverTime)
-            return;
+        if (!alertDecaysOverTime) return;
 
         if (currentAlert > 0f)
         {
@@ -54,15 +55,13 @@ public class DungeonAlertSystem : MonoBehaviour
 
     public void AddAlert(float amount)
     {
-        if (amount <= 0f)
-            return;
+        if (amount <= 0f) return;
 
         currentAlert += amount;
         currentAlert = Mathf.Clamp(currentAlert, 0f, maxAlert);
-
         onAlertChanged?.Invoke(currentAlert);
 
-        Debug.Log($"[DungeonAlertSystem] Alerta aumentado. Valor atual: {currentAlert}%");
+        Debug.Log($"[DungeonAlertSystem] Alerta: {currentAlert}%");
     }
 
     public void SetAlert(float value)
@@ -77,13 +76,13 @@ public class DungeonAlertSystem : MonoBehaviour
         onAlertChanged?.Invoke(currentAlert);
     }
 
+    public void RegisterMinigameFailure()
+    {
+        AddAlert(AlertPerBar);
+    }
+
     public void RegisterMinigameFailure(float alertIncrease)
     {
         AddAlert(alertIncrease);
-    }
-
-    public void RegisterMinigameFailure()
-    {
-        AddAlert(20f);
     }
 }

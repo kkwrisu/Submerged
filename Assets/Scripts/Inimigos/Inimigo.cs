@@ -66,7 +66,7 @@ public class Inimigo : MonoBehaviour
 
     [Header("Dungeon Alert")]
     public bool useDungeonAlert = true;
-    [Range(0f, 100f)] public float alertIncreaseOnDetection = 15f;
+    [Range(0f, 100f)] public float alertIncreaseOnDetection = 12.5f;
 
     [Header("Audio")]
     public AudioSource detectAudio;
@@ -751,7 +751,7 @@ public class Inimigo : MonoBehaviour
         return center;
     }
 
-    public void ForceChaseFromExternalAlert()
+    public void ForceChaseFromExternalAlert(bool skipAlertIncrease = false)
     {
         if (player == null || agent == null)
             return;
@@ -764,7 +764,32 @@ public class Inimigo : MonoBehaviour
         hasHeardSomething = true;
         detectionMeter = detectionThreshold;
 
-        EnterChase();
+        // Evita dupla contagem quando chamado após falha de minigame
+        if (skipAlertIncrease)
+        {
+            bool wasAlreadyChasing = currentState == EnemyState.Chase;
+            ChangeState(EnemyState.Chase);
+
+            if (!wasAlreadyChasing)
+            {
+                if (detectAudio != null)
+                    detectAudio.Play();
+
+                isInDetectionPause = true;
+                detectionPauseTimer = detectionPauseDuration;
+                agent.isStopped = true;
+
+                StartChaseLoopWithDelay();
+            }
+            else
+            {
+                SetDestination(GetPlayerPosition());
+            }
+        }
+        else
+        {
+            EnterChase(); // caminho normal, inclui AddAlert
+        }
     }
 
     private void CatchPlayer()

@@ -79,7 +79,7 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
                 inimigo = hits[i].GetComponentInChildren<Inimigo>();
 
             if (inimigo != null)
-                inimigo.ForceChaseFromExternalAlert();
+                inimigo.ForceChaseFromExternalAlert(skipAlertIncrease: true); // <-- flag nova
         }
     }
 

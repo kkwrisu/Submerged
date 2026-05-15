@@ -145,7 +145,7 @@ MonoBehaviour:
   viewAngle: 90
   obstructionMask:
     serializedVersion: 2
-    m_Bits: 81
+    m_Bits: 65
   suspiciousViewMultiplier: 1.25
   crouchVisionMultiplier: 0.65
   sprintVisionMultiplier: 1.2
@@ -167,9 +167,9 @@ MonoBehaviour:
   catchRange: 1.6
   catchCooldown: 1.2
   respawnDelay: 0.15
-  postRespawnIgnoreDuration: 2
-  useDungeonAlert: 0
-  alertIncreaseOnDetection: 10
+  postRespawnIgnoreDuration: 3
+  useDungeonAlert: 1
+  alertIncreaseOnDetection: 12.5
   detectAudio: {fileID: 7359614123257941305}
   chaseLoopAudio: {fileID: 4722141363865815850}
   chaseLoopStartDelay: 0.8
