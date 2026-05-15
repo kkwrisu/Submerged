@@ -14084,11 +14084,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 914367325997548064, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -741
+      value: -735
       objectReference: {fileID: 0}
     - target: {fileID: 914367325997548064, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 305
+      value: 360
       objectReference: {fileID: 0}
     - target: {fileID: 1361366994001780204, guid: 5ac25af93785d9f4f93d0ba99faf1227, type: 3}
       propertyPath: m_Pivot.x
