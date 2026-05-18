@@ -1271,12 +1271,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b8a4bdce20df0445a6732da563559b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GeneratorPuzzleRuntime
-  fillSpeed: 0.06
+  fillSpeed: 0.03
   failRegressAmount: 0.15
   releaseRegressSpeed: 0.03
   qteMinInterval: 0.2
   qteMaxInterval: 0.4
-  qteWindowSeconds: 1.2
+  qteWindowSeconds: 0.6
   playerMovement: {fileID: 822734260}
   playerLook: {fileID: 822734259}
   playerInteract: {fileID: 822734258}
@@ -1759,6 +1759,7 @@ MonoBehaviour:
   maxSpeedMultiplier: 1.75
   minTimeMultiplier: 1
   maxTimeMultiplier: 2
+  saveID: dungeon_alert_system
   onAlertChanged:
     m_PersistentCalls:
       m_Calls: []

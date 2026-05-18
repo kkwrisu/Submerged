@@ -78,7 +78,9 @@ public class SaveManager : MonoBehaviour
 
         ApplyPendingSpawnIfNeeded(scene.name);
         ApplySceneState();
-        RestorePlayerAtCheckpointIfPossible();
+
+        if (mode == LoadSceneMode.Single)
+            RestorePlayerAtCheckpointIfPossible();
     }
 
     // ── Player ────────────────────────────────────────────────────────────────

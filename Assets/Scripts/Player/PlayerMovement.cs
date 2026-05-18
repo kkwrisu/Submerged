@@ -76,6 +76,14 @@ public class PlayerMovement : MonoBehaviour
     [Header("Ledge Release")]
     public float ledgeBlockAfterReleaseTime = 0.25f;
 
+    [Header("Climb Timeout")]
+    [Tooltip("Tempo máximo em cada fase do climb antes de cancelar automaticamente.")]
+    public float climbTimeout = 1.5f;
+
+    private float hangTimeout;
+    private float climbingTimeout;
+    private float pullUpTimeout;
+
     private float hangTimer;
     private bool isDroppingToHang;
     private float ledgeBlockTimer;
@@ -84,7 +92,6 @@ public class PlayerMovement : MonoBehaviour
     private bool isHanging;
     private bool isPullingUp;
 
-    // Flag para garantir que o climb tem prioridade sobre o wall slide no mesmo frame
     private bool ledgeGrabThisFrame;
 
     private Vector3 climbTarget;
@@ -108,6 +115,7 @@ public class PlayerMovement : MonoBehaviour
     public float slideDeceleration = 8f;
     public float slideMinSpeed = 1.5f;
     public float slideCooldown = 1f;
+    public float slideShiftGraceTime = 0.3f;
 
     [Tooltip("Impulso horizontal preservado ao pular durante o slide (0 = nenhum, 1 = total).")]
     [Range(0f, 1f)]
@@ -117,6 +125,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 slideDirection;
     private float slideSpeed;
     private float slideCooldownTimer;
+    private float shiftGraceTimer;
 
     [Header("Wall Jump")]
     public float wallJumpUpForce = 7f;
@@ -131,8 +140,7 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Quão rápido o player desacelera até o wallSlideSpeed ao encostar na parede.")]
     public float wallSlideGravityDamp = 12f;
 
-    [Tooltip("Dot product mínimo entre a normal atual e a última parede para considerar paredes DIFERENTES. " +
-             "0.3 = ~72° de diferença. Diminua para dutos mais estreitos.")]
+    [Tooltip("Dot product mínimo entre a normal atual e a última parede para considerar paredes DIFERENTES.")]
     public float wallNormalDifferenceThreshold = 0.3f;
 
     private float wallJumpCooldownTimer;
@@ -202,6 +210,7 @@ public class PlayerMovement : MonoBehaviour
         ladderReenterTimer -= Time.deltaTime;
         slideCooldownTimer -= Time.deltaTime;
         wallJumpCooldownTimer -= Time.deltaTime;
+        shiftGraceTimer -= Time.deltaTime;
 
         HandleGroundCheck();
         HandleCrouch();
@@ -223,7 +232,6 @@ public class PlayerMovement : MonoBehaviour
 
         TryEnterLadder();
 
-        // Reseta o flag a cada frame antes de CheckLedge
         ledgeGrabThisFrame = false;
 
         if (CanCheckLedge())
@@ -233,7 +241,7 @@ public class PlayerMovement : MonoBehaviour
         HandleClimb();
         HandlePullUp();
         HandleSlide();
-        HandleWallSlide(); // ledgeGrabThisFrame já estará correto aqui
+        HandleWallSlide();
         HandleMovement();
 
         UpdateStealthStatus();
@@ -259,7 +267,6 @@ public class PlayerMovement : MonoBehaviour
     bool CanCheckLedge()
     {
         if (isGrounded) return false;
-        // FIX #3: isExitingLadderTop verificado antes de qualquer coisa de escada
         if (isExitingLadderTop) return false;
         if (isClimbing || isHanging || isDroppingToHang || isPullingUp) return false;
         if (isOnLadder) return false;
@@ -344,9 +351,7 @@ public class PlayerMovement : MonoBehaviour
 
         float heightDeltaNormal = controller.height - oldH;
         if (Mathf.Abs(heightDeltaNormal) > 0.0001f)
-        {
             controller.Move(Vector3.up * (heightDeltaNormal * 0.5f));
-        }
 
         if (isCrouching)
             isSprinting = false;
@@ -465,8 +470,6 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleWallSlide()
     {
-        // ledgeGrabThisFrame garante que o climb sempre tem prioridade,
-        // mesmo que o raycast de parede e o de quina detectem no mesmo frame.
         if (isGrounded || isCrouching || isClimbing || isHanging || isDroppingToHang ||
             isPullingUp || isOnLadder || isExitingLadderTop || isSliding || ledgeGrabThisFrame)
         {
@@ -626,12 +629,11 @@ public class PlayerMovement : MonoBehaviour
         currentVelocity = Vector3.zero;
 
         hangTimer = hangInputDelay;
+        hangTimeout = climbTimeout;
         isDroppingToHang = true;
         isHanging = false;
         isSprinting = false;
 
-        // Sinaliza que uma quina foi detectada neste frame,
-        // bloqueando o wall slide antes que ele possa ativar.
         ledgeGrabThisFrame = true;
     }
 
@@ -659,6 +661,7 @@ public class PlayerMovement : MonoBehaviour
 
                 isDroppingToHang = false;
                 isHanging = true;
+                hangTimeout = climbTimeout;
             }
 
             return;
@@ -693,6 +696,7 @@ public class PlayerMovement : MonoBehaviour
         isClimbing = true;
         climbTarget = ledgePoint;
         climbStartY = transform.position.y;
+        climbingTimeout = climbTimeout;
         yVelocity = 0f;
         isSprinting = false;
     }
@@ -700,6 +704,15 @@ public class PlayerMovement : MonoBehaviour
     void HandleClimb()
     {
         if (!isClimbing) return;
+
+        climbingTimeout -= Time.deltaTime;
+
+        if (climbingTimeout <= 0f)
+        {
+            Debug.Log("[Climb] Timeout no isClimbing — cancelando.");
+            CancelClimb();
+            return;
+        }
 
         Vector3 direction = (climbTarget - transform.position).normalized;
 
@@ -722,6 +735,7 @@ public class PlayerMovement : MonoBehaviour
     void StartPullUp()
     {
         isPullingUp = true;
+        pullUpTimeout = climbTimeout;
         pullUpTarget = transform.position + transform.forward * pullUpForward + Vector3.up * pullUpUpward;
         isSprinting = false;
     }
@@ -729,6 +743,15 @@ public class PlayerMovement : MonoBehaviour
     void HandlePullUp()
     {
         if (!isPullingUp) return;
+
+        pullUpTimeout -= Time.deltaTime;
+
+        if (pullUpTimeout <= 0f)
+        {
+            Debug.Log("[Climb] Timeout no isPullingUp — cancelando.");
+            CancelClimb();
+            return;
+        }
 
         Vector3 toTarget = pullUpTarget - transform.position;
         controller.Move(toTarget.normalized * pullUpSpeed * Time.deltaTime);
@@ -738,6 +761,23 @@ public class PlayerMovement : MonoBehaviour
             isPullingUp = false;
             yVelocity = -2f;
         }
+    }
+
+    private void CancelClimb()
+    {
+        isDroppingToHang = false;
+        isHanging = false;
+        isClimbing = false;
+        isPullingUp = false;
+        ledgeGrabThisFrame = false;
+        ledgeBlockTimer = ledgeBlockAfterReleaseTime;
+
+        yVelocity = -3f;
+        currentVelocity = Vector3.zero;
+
+        controller.enabled = true;
+
+        Debug.Log("[Climb] Cancelado — controle devolvido ao player.");
     }
 
     void TryEnterLadder()
@@ -796,11 +836,6 @@ public class PlayerMovement : MonoBehaviour
 
     void StartLadderTopExit(Ladder ladder)
     {
-        // Reutiliza o sistema de hang/climb/pullup existente para sair pelo topo.
-        // Em vez de mover o player manualmente (que trava na geometria da borda),
-        // simplesmente iniciamos um hang no ponto do topo da escada — o fluxo
-        // normal isDroppingToHang → isHanging → isClimbing → isPullingUp
-        // resolve a saída de forma robusta para qualquer geometria.
         Vector3 topWorld = ladder.GetTopWorldPoint();
 
         isOnLadder = false;
@@ -814,18 +849,14 @@ public class PlayerMovement : MonoBehaviour
 
         ladderReenterTimer = ladderTopExitReenterBlockTime;
 
-        // Zera o ledgeBlockTimer para que StartHang possa executar imediatamente.
         ledgeBlockTimer = 0f;
         StartHang(topWorld);
     }
 
-    // Mantido apenas para não quebrar a chamada no Update —
-    // isExitingLadderTop não é mais ativado por StartLadderTopExit.
     void HandleLadderTopExit()
     {
         isExitingLadderTop = false;
     }
-
 
     void HandleLadderMovement()
     {
@@ -912,6 +943,9 @@ public class PlayerMovement : MonoBehaviour
     {
         sprintHeld = context.ReadValueAsButton();
 
+        if (!sprintHeld)
+            shiftGraceTimer = slideShiftGraceTime;
+
         if (isOnLadder || isExitingLadderTop || isClimbing || isHanging || isDroppingToHang || isPullingUp || isCrouching)
         {
             isSprinting = false;
@@ -967,14 +1001,12 @@ public class PlayerMovement : MonoBehaviour
 
         if (context.performed)
         {
-            if (isSprinting && isGrounded && !isSliding && slideCooldownTimer <= 0f)
-            {
+            bool canSlide = (isSprinting || shiftGraceTimer > 0f) && isGrounded && !isSliding && slideCooldownTimer <= 0f;
+
+            if (canSlide)
                 StartSlide();
-            }
             else
-            {
                 crouchHeld = true;
-            }
         }
         else if (context.canceled)
         {
@@ -1051,38 +1083,58 @@ public class PlayerMovement : MonoBehaviour
         isSprinting = false;
     }
 
+    public void ResetAllStates()
+    {
+        moveInput = Vector2.zero;
+        sprintHeld = false;
+        isSprinting = false;
+        crouchHeld = false;
+
+        currentVelocity = Vector3.zero;
+        yVelocity = -2f;
+
+        isClimbing = false;
+        isPullingUp = false;
+        ledgeGrabThisFrame = false;
+        ledgeBlockTimer = 0f;
+        hangTimer = 0f;
+        hangTimeout = 0f;
+        climbingTimeout = 0f;
+        pullUpTimeout = 0f;
+
+        isSliding = false;
+        slideSpeed = 0f;
+        slideCooldownTimer = 0f;
+        shiftGraceTimer = 0f;
+
+        isWallSliding = false;
+        lastWallNormal = Vector3.zero;
+        wallJumpCooldownTimer = 0f;
+
+        isOnLadder = false;
+        isInsideLadder = false;
+        isExitingLadderTop = false;
+        currentLadder = null;
+        ladderReenterTimer = 0f;
+
+        isCrouching = false;
+        controller.height = standingHeight;
+        controller.center = standingCenter;
+
+        stepTimer = 0f;
+
+        Debug.Log("[PlayerMovement] Estado resetado.");
+    }
+
     public bool IsClimbing()
     {
         return isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder || isExitingLadderTop;
     }
 
-    public bool IsSprinting()
-    {
-        return isSprinting;
-    }
-
-    public bool IsMoving()
-    {
-        return moveInput.magnitude > 0.1f;
-    }
-
-    public bool IsCrouching()
-    {
-        return isCrouching;
-    }
-
-    public bool IsOnLadder()
-    {
-        return isOnLadder;
-    }
-
-    public bool IsSliding()
-    {
-        return isSliding;
-    }
-
-    public bool IsWallSliding()
-    {
-        return isWallSliding;
-    }
+    public bool IsSprinting() => isSprinting;
+    public bool IsMoving() => moveInput.magnitude > 0.1f;
+    public bool IsCrouching() => isCrouching;
+    public bool IsOnLadder() => isOnLadder;
+    public bool IsSliding() => isSliding;
+    public bool IsWallSliding() => isWallSliding;
 }

@@ -14724,9 +14724,29 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2001152425}
     - target: {fileID: 7943268010047346591, guid: cca4918340958ba43a556c552b18e464, type: 3}
+      propertyPath: viewAngle
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 7943268010047346591, guid: cca4918340958ba43a556c552b18e464, type: 3}
+      propertyPath: viewDistance
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 7943268010047346591, guid: cca4918340958ba43a556c552b18e464, type: 3}
+      propertyPath: hearingRadius
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7943268010047346591, guid: cca4918340958ba43a556c552b18e464, type: 3}
       propertyPath: playerStealth
       value: 
       objectReference: {fileID: 2001152430}
+    - target: {fileID: 7943268010047346591, guid: cca4918340958ba43a556c552b18e464, type: 3}
+      propertyPath: suspiciousSpeed
+      value: 3.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7943268010047346591, guid: cca4918340958ba43a556c552b18e464, type: 3}
+      propertyPath: detectionBuildSpeed
+      value: 2.5
+      objectReference: {fileID: 0}
     - target: {fileID: 7943268010047346591, guid: cca4918340958ba43a556c552b18e464, type: 3}
       propertyPath: 'patrolPoints.Array.data[0]'
       value: 
