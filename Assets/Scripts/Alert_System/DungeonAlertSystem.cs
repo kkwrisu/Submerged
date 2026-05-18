@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
 
-public class DungeonAlertSystem : MonoBehaviour
+public class DungeonAlertSystem : MonoBehaviour, ISaveable
 {
     public static DungeonAlertSystem Instance;
 
@@ -18,9 +18,11 @@ public class DungeonAlertSystem : MonoBehaviour
     [Header("Gameplay Multipliers")]
     public float minSpeedMultiplier = 1f;
     public float maxSpeedMultiplier = 1.75f;
-
     public float minTimeMultiplier = 1f;
     public float maxTimeMultiplier = 2f;
+
+    [Header("Save")]
+    [SerializeField] private string saveID = "dungeon_alert_system";
 
     [Header("Events")]
     public UnityEvent<float> onAlertChanged;
@@ -28,6 +30,8 @@ public class DungeonAlertSystem : MonoBehaviour
     public float AlertNormalized => Mathf.Clamp01(currentAlert / maxAlert);
     public float SpeedMultiplier => Mathf.Lerp(minSpeedMultiplier, maxSpeedMultiplier, AlertNormalized);
     public float TimeMultiplier => Mathf.Lerp(minTimeMultiplier, maxTimeMultiplier, AlertNormalized);
+
+    // ── Unity ─────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -44,14 +48,14 @@ public class DungeonAlertSystem : MonoBehaviour
     private void Update()
     {
         if (!alertDecaysOverTime) return;
+        if (currentAlert <= 0f) return;
 
-        if (currentAlert > 0f)
-        {
-            currentAlert -= decayPerSecond * Time.deltaTime;
-            currentAlert = Mathf.Clamp(currentAlert, 0f, maxAlert);
-            onAlertChanged?.Invoke(currentAlert);
-        }
+        currentAlert -= decayPerSecond * Time.deltaTime;
+        currentAlert = Mathf.Clamp(currentAlert, 0f, maxAlert);
+        onAlertChanged?.Invoke(currentAlert);
     }
+
+    // ── Public API ────────────────────────────────────────────────────────────
 
     public void AddAlert(float amount)
     {
@@ -60,7 +64,6 @@ public class DungeonAlertSystem : MonoBehaviour
         currentAlert += amount;
         currentAlert = Mathf.Clamp(currentAlert, 0f, maxAlert);
         onAlertChanged?.Invoke(currentAlert);
-
         Debug.Log($"[DungeonAlertSystem] Alerta: {currentAlert}%");
     }
 
@@ -84,5 +87,30 @@ public class DungeonAlertSystem : MonoBehaviour
     public void RegisterMinigameFailure(float alertIncrease)
     {
         AddAlert(alertIncrease);
+    }
+
+    // ── ISaveable ─────────────────────────────────────────────────────────────
+
+    public string GetSaveID() => saveID;
+
+    public void SaveToData(SaveData data)
+    {
+        data.alertLevel = currentAlert;
+    }
+
+    /// <summary>
+    /// CORREÇÃO: DungeonAlertSystem é DontDestroyOnLoad, então LoadFromSave é
+    /// chamado em toda troca de cena via ApplySceneState. Para não resetar o
+    /// alerta acumulado durante a sessão, só restaura quando o valor salvo for
+    /// maior que o atual (ex: ao dar Continue após fechar o jogo).
+    /// </summary>
+    public void LoadFromSave(SaveData data)
+    {
+        Debug.Log($"[DungeonAlertSystem] LoadFromSave — data.alertLevel={data.alertLevel} | currentAlert={currentAlert}");
+        if (data.alertLevel > currentAlert)
+        {
+            currentAlert = data.alertLevel;
+            onAlertChanged?.Invoke(currentAlert);
+        }
     }
 }

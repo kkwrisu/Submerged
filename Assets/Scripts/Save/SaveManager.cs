@@ -1,7 +1,8 @@
-using System.IO;
+﻿using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+[DefaultExecutionOrder(10)]
 public class SaveManager : MonoBehaviour
 {
     public static SaveManager Instance;
@@ -16,32 +17,32 @@ public class SaveManager : MonoBehaviour
     private string pendingSceneName;
     private bool hasPendingSpawn;
 
-    // Cenas de puzzle carregadas de forma Additive que devem ser ignoradas pelo SaveGame
-    // O RepairPuzzleManager deve registrar/desregistrar via RegisterPuzzleScene / UnregisterPuzzleScene
+    // Cena de puzzle Additive ativa — ignorada pelo SaveGame.
+    // Registre/desregistre via RegisterPuzzleScene / UnregisterPuzzleScene.
     private string activePuzzleScene = null;
 
     private string SavePath => Path.Combine(Application.persistentDataPath, "save.json");
 
+    // ── Unity ─────────────────────────────────────────────────────────────────
+
     private void Awake()
     {
-        // DEBUG: detecta se uma segunda inst�ncia est� sendo criada
         if (Instance != null && Instance != this)
         {
-            Debug.LogWarning("[SaveManager] Segunda inst�ncia detectada e destru�da. Isso n�o deveria acontecer.");
+            Debug.LogWarning("[SaveManager] Segunda instância detectada e destruída.");
             Destroy(gameObject);
             return;
         }
 
-        Debug.Log("[SaveManager] Awake � inicializando inst�ncia principal.");
+        Debug.Log("[SaveManager] Awake — inicializando instância principal.");
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
         currentSave = LoadFileOrCreateNew();
 
-        // DEBUG: mostra o estado do seenTutorials logo ap�s carregar do disco
         if (currentSave != null)
         {
-            Debug.Log($"[SaveManager] Save carregado do disco. seenTutorials.Count={currentSave.seenTutorials.Count}");
+            Debug.Log($"[SaveManager] Save carregado. seenTutorials.Count={currentSave.seenTutorials.Count}");
             for (int i = 0; i < currentSave.seenTutorials.Count; i++)
                 Debug.Log($"[SaveManager]   seenTutorial[{i}] = {currentSave.seenTutorials[i].tutorialID}");
         }
@@ -55,19 +56,21 @@ public class SaveManager : MonoBehaviour
             SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    // Chamado pelo RepairPuzzleManager ao abrir um puzzle Additive
+    // ── Puzzle Scene Registration ─────────────────────────────────────────────
+
     public void RegisterPuzzleScene(string sceneName)
     {
         activePuzzleScene = sceneName;
-        Debug.Log($"[SaveManager] Cena de puzzle registrada (ser� ignorada no SaveGame): {sceneName}");
+        Debug.Log($"[SaveManager] Cena de puzzle registrada (ignorada no SaveGame): {sceneName}");
     }
 
-    // Chamado pelo RepairPuzzleManager ao fechar o puzzle
     public void UnregisterPuzzleScene()
     {
         Debug.Log($"[SaveManager] Cena de puzzle desregistrada: {activePuzzleScene}");
         activePuzzleScene = null;
     }
+
+    // ── Scene Events ──────────────────────────────────────────────────────────
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -78,10 +81,14 @@ public class SaveManager : MonoBehaviour
         RestorePlayerAtCheckpointIfPossible();
     }
 
+    // ── Player ────────────────────────────────────────────────────────────────
+
     public void RegisterPlayer(Transform playerTransform)
     {
         player = playerTransform;
     }
+
+    // ── Checkpoint ────────────────────────────────────────────────────────────
 
     public void SetCheckpoint(Vector3 position, float yRotation, string sceneName)
     {
@@ -95,6 +102,8 @@ public class SaveManager : MonoBehaviour
         SaveGame();
     }
 
+    // ── Pending Spawn ─────────────────────────────────────────────────────────
+
     public void SetPendingSpawn(string sceneName, string spawnId)
     {
         pendingSceneName = sceneName;
@@ -104,14 +113,10 @@ public class SaveManager : MonoBehaviour
 
     private void ApplyPendingSpawnIfNeeded(string loadedSceneName)
     {
-        if (!hasPendingSpawn)
-            return;
-
-        if (loadedSceneName != pendingSceneName)
-            return;
+        if (!hasPendingSpawn) return;
+        if (loadedSceneName != pendingSceneName) return;
 
         SceneSpawnPoint[] spawnPoints = FindObjectsByType<SceneSpawnPoint>(FindObjectsSortMode.None);
-
         SceneSpawnPoint selectedSpawn = null;
 
         for (int i = 0; i < spawnPoints.Length; i++)
@@ -125,7 +130,7 @@ public class SaveManager : MonoBehaviour
 
         if (selectedSpawn == null)
         {
-            Debug.LogWarning("Spawn point n�o encontrado: " + pendingSpawnId);
+            Debug.LogWarning("Spawn point não encontrado: " + pendingSpawnId);
             ClearPendingSpawn();
             return;
         }
@@ -148,16 +153,17 @@ public class SaveManager : MonoBehaviour
         pendingSpawnId = null;
     }
 
+    // ── Save / Load ───────────────────────────────────────────────────────────
+
     public void SaveGame()
     {
         if (currentSave == null)
             currentSave = new SaveData();
 
-        // Usa a cena principal (n�o a cena de puzzle Additive) como currentSceneName
         string sceneToRecord = GetMainSceneName();
         currentSave.currentSceneName = sceneToRecord;
 
-        Debug.Log($"[SaveManager] SaveGame � gravando cena '{sceneToRecord}' | seenTutorials.Count={currentSave.seenTutorials.Count} | activePuzzleScene='{activePuzzleScene}'");
+        Debug.Log($"[SaveManager] SaveGame — cena='{sceneToRecord}' | seenTutorials.Count={currentSave.seenTutorials.Count} | activePuzzleScene='{activePuzzleScene}'");
 
         MonoBehaviour[] allBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
 
@@ -165,12 +171,10 @@ public class SaveManager : MonoBehaviour
         {
             if (allBehaviours[i] is ISaveable saveable)
             {
-                // Ignora ISaveables que pertencem � cena de puzzle Additive
-                // (eles t�m estado tempor�rio e n�o devem ser persistidos)
+                // Ignora ISaveables da cena de puzzle Additive (estado temporário)
                 if (!string.IsNullOrEmpty(activePuzzleScene))
                 {
-                    Scene objScene = allBehaviours[i].gameObject.scene;
-                    if (objScene.name == activePuzzleScene)
+                    if (allBehaviours[i].gameObject.scene.name == activePuzzleScene)
                         continue;
                 }
 
@@ -181,14 +185,11 @@ public class SaveManager : MonoBehaviour
         WriteToDisk();
     }
 
-    // Retorna o nome da cena principal do jogo, ignorando a cena de puzzle Additive
     private string GetMainSceneName()
     {
-        // Se n�o h� puzzle aberto, usa a cena ativa normalmente
         if (string.IsNullOrEmpty(activePuzzleScene))
             return SceneManager.GetActiveScene().name;
 
-        // Procura uma cena carregada que n�o seja a cena de puzzle
         for (int i = 0; i < SceneManager.sceneCount; i++)
         {
             Scene s = SceneManager.GetSceneAt(i);
@@ -196,7 +197,6 @@ public class SaveManager : MonoBehaviour
                 return s.name;
         }
 
-        // Fallback
         return SceneManager.GetActiveScene().name;
     }
 
@@ -205,18 +205,9 @@ public class SaveManager : MonoBehaviour
         currentSave = LoadFileOrCreateNew();
     }
 
-    public bool HasSave()
-    {
-        return File.Exists(SavePath);
-    }
+    public bool HasSave() => File.Exists(SavePath);
 
-    public string GetSavedSceneName()
-    {
-        if (currentSave == null)
-            return null;
-
-        return currentSave.currentSceneName;
-    }
+    public string GetSavedSceneName() => currentSave?.currentSceneName;
 
     public void LoadSavedScene()
     {
@@ -229,46 +220,41 @@ public class SaveManager : MonoBehaviour
         SceneManager.LoadScene(currentSave.currentSceneName);
     }
 
+    // ── Respawn ───────────────────────────────────────────────────────────────
+
     public void RespawnPlayerAtCheckpoint()
     {
         if (currentSave == null || player == null)
         {
-            Debug.LogWarning("N�o foi poss�vel respawnar: save ou player ausente.");
+            Debug.LogWarning("Não foi possível respawnar: save ou player ausente.");
             return;
         }
 
         CharacterController cc = player.GetComponent<CharacterController>();
-
-        if (cc != null)
-            cc.enabled = false;
+        if (cc != null) cc.enabled = false;
 
         player.position = currentSave.checkpointPosition.ToVector3();
         player.rotation = Quaternion.Euler(0f, currentSave.checkpointYRotation, 0f);
 
-        if (cc != null)
-            cc.enabled = true;
+        if (cc != null) cc.enabled = true;
     }
 
     private void RestorePlayerAtCheckpointIfPossible()
     {
-        if (player == null || currentSave == null)
-            return;
-
-        if (string.IsNullOrWhiteSpace(currentSave.currentSceneName))
-            return;
-
-        if (SceneManager.GetActiveScene().name != currentSave.currentSceneName)
-            return;
+        if (player == null || currentSave == null) return;
+        if (string.IsNullOrWhiteSpace(currentSave.currentSceneName)) return;
+        if (SceneManager.GetActiveScene().name != currentSave.currentSceneName) return;
 
         RespawnPlayerAtCheckpoint();
     }
 
+    // ── Apply State ───────────────────────────────────────────────────────────
+
     private void ApplySceneState()
     {
-        if (currentSave == null)
-            return;
+        if (currentSave == null) return;
 
-        Debug.Log($"[SaveManager] ApplySceneState � seenTutorials.Count={currentSave.seenTutorials.Count}");
+        Debug.Log($"[SaveManager] ApplySceneState — seenTutorials.Count={currentSave.seenTutorials.Count}");
 
         MonoBehaviour[] allBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
 
@@ -279,6 +265,13 @@ public class SaveManager : MonoBehaviour
         }
     }
 
+    // ── Disk I/O ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Lê o arquivo de save do disco.
+    /// CORREÇÃO: JsonUtility.FromJson nunca retorna null, mas não inicializa
+    /// listas na build compilada — EnsureListsInitialized() corrige isso.
+    /// </summary>
     private SaveData LoadFileOrCreateNew()
     {
         if (!File.Exists(SavePath))
@@ -290,13 +283,19 @@ public class SaveManager : MonoBehaviour
             return new SaveData();
 
         SaveData loaded = JsonUtility.FromJson<SaveData>(json);
-        return loaded ?? new SaveData();
+
+        if (loaded == null)
+            return new SaveData();
+
+        // Garante que listas não fiquem null após desserialização na build
+        loaded.EnsureListsInitialized();
+
+        return loaded;
     }
 
     private void WriteToDisk()
     {
-        // DEBUG: mostra o estado do seenTutorials antes de gravar
-        Debug.Log($"[SaveManager] WriteToDisk � seenTutorials.Count={currentSave?.seenTutorials?.Count}");
+        Debug.Log($"[SaveManager] WriteToDisk — seenTutorials.Count={currentSave?.seenTutorials?.Count}");
         if (currentSave?.seenTutorials != null)
         {
             for (int i = 0; i < currentSave.seenTutorials.Count; i++)

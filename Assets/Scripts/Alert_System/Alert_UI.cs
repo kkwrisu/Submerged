@@ -1,8 +1,9 @@
+ï»¿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using System.Collections;
 
+[DefaultExecutionOrder(-10)]
 public class Alert_UI : MonoBehaviour
 {
     [Header("Barras de Alerta")]
@@ -28,11 +29,7 @@ public class Alert_UI : MonoBehaviour
     {
         flashCoroutines = new Coroutine[barImages.Length];
         SceneManager.sceneLoaded += OnSceneLoaded;
-    }
 
-    private void Start()
-    {
-        ResetValueIfNoSystem();
         ConnectAlertSystem();
     }
 
@@ -45,15 +42,27 @@ public class Alert_UI : MonoBehaviour
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         DisconnectAlertSystem();
-        ResetValueIfNoSystem();
         ConnectAlertSystem();
+
+        StartCoroutine(DelayedRefresh());
+    }
+
+    private IEnumerator DelayedRefresh()
+    {
+        yield return null;
+        yield return null;
+        yield return null;
+
+        Refresh();
     }
 
     private void ConnectAlertSystem()
     {
         if (DungeonAlertSystem.Instance != null)
         {
+            DungeonAlertSystem.Instance.onAlertChanged.RemoveListener(UpdateFill);
             DungeonAlertSystem.Instance.onAlertChanged.AddListener(UpdateFill);
+
             Refresh();
         }
         else
@@ -69,19 +78,7 @@ public class Alert_UI : MonoBehaviour
             DungeonAlertSystem.Instance.onAlertChanged.RemoveListener(UpdateFill);
     }
 
-    private void ResetValueIfNoSystem()
-    {
-        if (DungeonAlertSystem.Instance == null)
-        {
-            previousActiveBars = 0;
-            SetActiveBars(0);
-        }
-    }
-
-    private void UpdateFill(float value)
-    {
-        Refresh();
-    }
+    private void UpdateFill(float value) => Refresh();
 
     private void Refresh()
     {
@@ -89,15 +86,11 @@ public class Alert_UI : MonoBehaviour
             ? DungeonAlertSystem.Instance.currentAlert
             : 0f;
 
-        int activeBars = Mathf.FloorToInt(
-            alert / DungeonAlertSystem.AlertPerBar
-        );
-
+        int activeBars = Mathf.FloorToInt(alert / DungeonAlertSystem.AlertPerBar);
         activeBars = Mathf.Clamp(activeBars, 0, barImages.Length);
 
         bool nowFull = activeBars >= barImages.Length;
 
-        // DESLIGA apenas barras acima do nível atual
         for (int i = activeBars; i < barImages.Length; i++)
         {
             if (flashCoroutines[i] != null)
@@ -110,14 +103,12 @@ public class Alert_UI : MonoBehaviour
                 barImages[i].gameObject.SetActive(false);
         }
 
-        // GARANTE que barras anteriores permaneçam ligadas
         for (int i = 0; i < previousActiveBars && i < activeBars; i++)
         {
             if (barImages[i] != null)
                 barImages[i].gameObject.SetActive(true);
         }
 
-        // FLASH apenas das novas barras
         for (int i = previousActiveBars; i < activeBars; i++)
         {
             if (barImages[i] == null)
@@ -132,7 +123,6 @@ public class Alert_UI : MonoBehaviour
             flashCoroutines[i] = StartCoroutine(FlashBar(i));
         }
 
-        // ALERTA MÁXIMO
         if (nowFull && !isFull)
         {
             isFull = true;
@@ -143,7 +133,6 @@ public class Alert_UI : MonoBehaviour
             sirenCoroutine = StartCoroutine(SirenEffect());
         }
 
-        // SAIU DO ALERTA MÁXIMO
         if (!nowFull && isFull)
         {
             isFull = false;
@@ -166,7 +155,6 @@ public class Alert_UI : MonoBehaviour
 
         for (int i = 0; i < flashCount; i++)
         {
-            // antes de piscar, garante que as anteriores continuam ligadas
             for (int j = 0; j < index; j++)
             {
                 if (barImages[j] != null)
@@ -182,7 +170,6 @@ public class Alert_UI : MonoBehaviour
 
         bar.SetActive(true);
 
-        // GARANTE novamente que as anteriores continuem ligadas
         for (int j = 0; j < index; j++)
         {
             if (barImages[j] != null)
@@ -197,11 +184,7 @@ public class Alert_UI : MonoBehaviour
         while (true)
         {
             float t = Mathf.PingPong(Time.unscaledTime * sirenSpeed, 1f);
-
-            Color current = Color.Lerp(normalColor, fullAlertColor, t);
-
-            ApplyTint(current);
-
+            ApplyTint(Color.Lerp(normalColor, fullAlertColor, t));
             yield return null;
         }
     }
