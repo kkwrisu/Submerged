@@ -188,6 +188,38 @@ public class PlayerMovement : MonoBehaviour
     private bool isExitingLadderTop;
     private Vector3 ladderTopExitTarget;
 
+    // -------------------------------------------------------------------------
+    // Capture lock — bloqueia todo input de movimento durante a captura
+    // -------------------------------------------------------------------------
+    private bool _capturedLock = false;
+
+    /// <summary>
+    /// Chamado pelo Inimigo antes de disparar onPlayerCaught.
+    /// Trava completamente o movimento e o pulo do player.
+    /// </summary>
+    public void LockForCapture()
+    {
+        _capturedLock = true;
+
+        // Para o player no lugar imediatamente
+        moveInput = Vector2.zero;
+        currentVelocity = Vector3.zero;
+        yVelocity = -2f;
+        sprintHeld = false;
+        isSprinting = false;
+    }
+
+    /// <summary>
+    /// Chamado pelo Inimigo em ResetEnemyAfterRespawn.
+    /// Devolve o controle ao player após o respawn.
+    /// </summary>
+    public void UnlockFromCapture()
+    {
+        _capturedLock = false;
+    }
+
+    // -------------------------------------------------------------------------
+
     void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -204,6 +236,9 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        // Trava total durante a captura — nenhum input é processado
+        if (_capturedLock) return;
+
         stepTimer -= Time.deltaTime;
         hangTimer -= Time.deltaTime;
         ledgeBlockTimer -= Time.deltaTime;
@@ -936,11 +971,16 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnMove(InputAction.CallbackContext context)
     {
+        // Input bloqueado durante captura
+        if (_capturedLock) return;
         moveInput = context.ReadValue<Vector2>();
     }
 
     public void OnSprint(InputAction.CallbackContext context)
     {
+        // Input bloqueado durante captura
+        if (_capturedLock) return;
+
         sprintHeld = context.ReadValueAsButton();
 
         if (!sprintHeld)
@@ -957,6 +997,8 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnJump(InputAction.CallbackContext context)
     {
+        // Input bloqueado durante captura
+        if (_capturedLock) return;
         if (!context.performed) return;
 
         if (isOnLadder)
@@ -993,6 +1035,9 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnCrouch(InputAction.CallbackContext context)
     {
+        // Input bloqueado durante captura
+        if (_capturedLock) return;
+
         if (isOnLadder || isExitingLadderTop)
         {
             crouchHeld = false;

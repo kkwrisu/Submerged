@@ -46,6 +46,13 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
 
     public void OnPuzzleFinished(RepairPuzzleResult result)
     {
+        // ESC fecha sem consequência — nem salva nem alerta inimigos
+        if (result == RepairPuzzleResult.None)
+        {
+            Debug.Log($"[Puzzle] {saveID} fechado pelo jogador sem resultado.");
+            return;
+        }
+
         if (result == RepairPuzzleResult.Success)
         {
             completed = true;
@@ -79,7 +86,7 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
                 inimigo = hits[i].GetComponentInChildren<Inimigo>();
 
             if (inimigo != null)
-                inimigo.ForceChaseFromExternalAlert(skipAlertIncrease: true); // <-- flag nova
+                inimigo.ForceChaseFromExternalAlert(skipAlertIncrease: true);
         }
     }
 

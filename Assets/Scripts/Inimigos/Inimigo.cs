@@ -74,6 +74,10 @@ public class Inimigo : MonoBehaviour
     public float chaseLoopStartDelay = 0.4f;
     public float chaseLoopFadeOutDuration = 0.8f;
 
+    [Header("Chase Music Resume")]
+    [Tooltip("Janela de tempo (s) apos perder o player em que, se ele for visto de novo, a musica retoma de onde parou")]
+    public float chaseMusicResumeWindow = 8f;
+
     [Header("Detection Pause")]
     public float detectionPauseDuration = 0.35f;
 
@@ -86,6 +90,7 @@ public class Inimigo : MonoBehaviour
     public EnemyState currentState = EnemyState.Patrol;
     [Range(0f, 1f)] public float detectionMeter;
 
+    // --- Estado interno ---
     private int currentPatrolIndex;
     private float patrolWaitTimer;
     private float lostSightTimer;
@@ -104,16 +109,41 @@ public class Inimigo : MonoBehaviour
     private bool hadPlayerInSightLastFrame;
     private bool isHandlingCapture;
     private bool isInDetectionPause;
+    private bool isWaitingForUppercut;
+
     private Coroutine chaseLoopStartRoutine;
     private Coroutine chaseLoopFadeRoutine;
     private float chaseLoopOriginalVolume = 1f;
 
+    // Controle de retomada da musica de perseguicao
+    private float savedChaseMusicTime = 0f;
+    private float timeSinceChaseEnded = 0f;
+    private bool chaseJustEnded = false;
+
+    // --- Animator ---
+    private Animator animator;
+
+    private static readonly int HashSpeed = Animator.StringToHash("Speed");
+    private static readonly int HashChase = Animator.StringToHash("Chase");
+    private static readonly int HashCatch = Animator.StringToHash("Catch");
+    private static readonly int HashSuspicious = Animator.StringToHash("Suspicious");
+    private static readonly int HashTurningL = Animator.StringToHash("TurningLeft");
+    private static readonly int HashTurningR = Animator.StringToHash("TurningRight");
+    private static readonly int HashLookout = Animator.StringToHash("Lookout");
+    private static readonly int HashAnnoyed = Animator.StringToHash("Annoyed");
+
+    private float idleTimer = 0f;
+    private float idleGestureInterval = 8f;
+
+    // --- Cache do PlayerMovement para o lock de captura ---
+    private PlayerMovement playerMovement;
+
+    // --- Propriedades do DungeonAlertSystem ---
     private float CurrentSpeedMultiplier
     {
         get
         {
-            if (!useDungeonAlert || DungeonAlertSystem.Instance == null)
-                return 1f;
+            if (!useDungeonAlert || DungeonAlertSystem.Instance == null) return 1f;
             return DungeonAlertSystem.Instance.SpeedMultiplier;
         }
     }
@@ -122,8 +152,7 @@ public class Inimigo : MonoBehaviour
     {
         get
         {
-            if (!useDungeonAlert || DungeonAlertSystem.Instance == null)
-                return 1f;
+            if (!useDungeonAlert || DungeonAlertSystem.Instance == null) return 1f;
             return DungeonAlertSystem.Instance.TimeMultiplier;
         }
     }
@@ -134,6 +163,10 @@ public class Inimigo : MonoBehaviour
     private float EffectiveSearchDurationAfterChase => searchDurationAfterChase / CurrentTimeMultiplier;
     private float EffectiveSearchPointInterval => searchPointInterval / CurrentTimeMultiplier;
     private float EffectiveLostSightGraceTime => lostSightGraceTime / CurrentTimeMultiplier;
+
+    // -------------------------------------------------------------------------
+    // Unity callbacks
+    // -------------------------------------------------------------------------
 
     private void Reset()
     {
@@ -147,6 +180,8 @@ public class Inimigo : MonoBehaviour
 
         if (eyePoint == null)
             eyePoint = transform;
+
+        animator = GetComponentInChildren<Animator>();
     }
 
     private void Start()
@@ -160,6 +195,9 @@ public class Inimigo : MonoBehaviour
 
         if (playerStealth == null && player != null)
             playerStealth = player.GetComponent<Player_Status>();
+
+        if (player != null)
+            playerMovement = player.GetComponent<PlayerMovement>();
 
         if (detectAudio != null)
             detectAudio.playOnAwake = false;
@@ -178,17 +216,25 @@ public class Inimigo : MonoBehaviour
 
     private void Update()
     {
-        if (player == null || agent == null)
-            return;
-
-        if (!agent.enabled || !agent.isOnNavMesh)
-            return;
+        if (player == null || agent == null) return;
+        if (!agent.enabled || !agent.isOnNavMesh) return;
 
         if (postRespawnIgnoreTimer > 0f)
             postRespawnIgnoreTimer -= Time.deltaTime;
 
-        if (isHandlingCapture)
-            return;
+        if (isHandlingCapture) return;
+
+        // Contador da janela de retomada da musica
+        if (chaseJustEnded)
+        {
+            timeSinceChaseEnded += Time.deltaTime;
+            if (timeSinceChaseEnded >= chaseMusicResumeWindow)
+            {
+                chaseJustEnded = false;
+                timeSinceChaseEnded = 0f;
+                savedChaseMusicTime = 0f;
+            }
+        }
 
         if (isInDetectionPause)
         {
@@ -202,13 +248,12 @@ public class Inimigo : MonoBehaviour
 
                 if (currentState == EnemyState.Chase)
                 {
-                    if (CanSeePlayer())
-                        SetDestination(GetPlayerPosition());
-                    else
-                        SetDestination(lastKnownPlayerPosition);
+                    if (CanSeePlayer()) SetDestination(GetPlayerPosition());
+                    else SetDestination(lastKnownPlayerPosition);
                 }
             }
 
+            UpdateAnimator();
             return;
         }
 
@@ -223,54 +268,90 @@ public class Inimigo : MonoBehaviour
 
         switch (currentState)
         {
-            case EnemyState.Patrol:
-                UpdatePatrol(canSeePlayer, canHearPlayer);
-                break;
-            case EnemyState.Suspicious:
-                UpdateSuspicious(canSeePlayer, canHearPlayer);
-                break;
-            case EnemyState.Investigate:
-                UpdateInvestigate(canSeePlayer);
-                break;
-            case EnemyState.Chase:
-                UpdateChase(canSeePlayer, canHearPlayer);
-                break;
-            case EnemyState.Catch:
-                UpdateCatch(canSeePlayer);
-                break;
-            case EnemyState.Search:
-                UpdateSearch(canSeePlayer, canHearPlayer);
-                break;
-            case EnemyState.ReturnToPatrol:
-                UpdateReturnToPatrol(canSeePlayer, canHearPlayer);
-                break;
+            case EnemyState.Patrol: UpdatePatrol(canSeePlayer, canHearPlayer); break;
+            case EnemyState.Suspicious: UpdateSuspicious(canSeePlayer, canHearPlayer); break;
+            case EnemyState.Investigate: UpdateInvestigate(canSeePlayer); break;
+            case EnemyState.Chase: UpdateChase(canSeePlayer, canHearPlayer); break;
+            case EnemyState.Catch: UpdateCatch(canSeePlayer); break;
+            case EnemyState.Search: UpdateSearch(canSeePlayer, canHearPlayer); break;
+            case EnemyState.ReturnToPatrol: UpdateReturnToPatrol(canSeePlayer, canHearPlayer); break;
         }
 
         hadPlayerInSightLastFrame = canSeePlayer;
+        UpdateAnimator();
     }
+
+    // -------------------------------------------------------------------------
+    // Animator
+    // -------------------------------------------------------------------------
+
+    private void UpdateAnimator()
+    {
+        if (animator == null) return;
+
+        float speed = agent.velocity.magnitude / chaseSpeed;
+        animator.SetFloat(HashSpeed, speed, 0.1f, Time.deltaTime);
+
+        if (speed > 0.1f)
+        {
+            float cross = Vector3.Cross(transform.forward, agent.velocity.normalized).y;
+            float dot = Vector3.Dot(transform.forward, agent.velocity.normalized);
+            animator.SetBool(HashTurningL, cross < -0.5f && dot < 0.5f);
+            animator.SetBool(HashTurningR, cross > 0.5f && dot < 0.5f);
+        }
+        else
+        {
+            animator.SetBool(HashTurningL, false);
+            animator.SetBool(HashTurningR, false);
+        }
+
+        bool isSearching = currentState == EnemyState.Search
+                        || currentState == EnemyState.Investigate
+                        || currentState == EnemyState.Suspicious;
+
+        if (isSearching && speed < 0.05f)
+        {
+            idleTimer += Time.deltaTime;
+            if (idleTimer >= idleGestureInterval)
+            {
+                idleTimer = 0f;
+                idleGestureInterval = Random.Range(3f, 7f);
+                animator.SetTrigger(HashLookout);
+            }
+        }
+        else if (currentState == EnemyState.Patrol && speed < 0.05f)
+        {
+            idleTimer += Time.deltaTime;
+            if (idleTimer >= idleGestureInterval)
+            {
+                idleTimer = 0f;
+                idleGestureInterval = Random.Range(8f, 16f);
+                animator.SetTrigger(HashAnnoyed);
+            }
+        }
+        else
+        {
+            idleTimer = 0f;
+            idleGestureInterval = Random.Range(8f, 16f);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Estados
+    // -------------------------------------------------------------------------
 
     private void UpdatePatrol(bool canSeePlayer, bool canHearPlayer)
     {
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
-        if (canSeePlayer && detectionMeter >= detectionThreshold)
-        {
-            EnterChase();
-            return;
-        }
-
-        if (canHearPlayer)
-        {
-            EnterSuspicious(heardPosition);
-            return;
-        }
+        if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
+        if (canHearPlayer) { EnterSuspicious(heardPosition); return; }
 
         if (patrolPoints == null || patrolPoints.Length == 0) return;
 
         if (!agent.pathPending && agent.remainingDistance <= patrolPointReachDistance)
         {
             patrolWaitTimer += Time.deltaTime;
-
             if (patrolWaitTimer >= EffectivePatrolWaitTime)
             {
                 patrolWaitTimer = 0f;
@@ -284,16 +365,10 @@ public class Inimigo : MonoBehaviour
     {
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
-        if (canSeePlayer && detectionMeter >= detectionThreshold)
-        {
-            EnterChase();
-            return;
-        }
+        if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
 
         suspiciousTimer += Time.deltaTime;
-
-        if (canHearPlayer)
-            suspiciousTimer = 0f;
+        if (canHearPlayer) suspiciousTimer = 0f;
 
         if (!agent.pathPending && agent.remainingDistance <= 1f)
         {
@@ -309,11 +384,7 @@ public class Inimigo : MonoBehaviour
     {
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
-        if (canSeePlayer && detectionMeter >= detectionThreshold)
-        {
-            EnterChase();
-            return;
-        }
+        if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
 
         searchTimer += Time.deltaTime;
         searchPointTimer += Time.deltaTime;
@@ -366,14 +437,17 @@ public class Inimigo : MonoBehaviour
 
         agent.isStopped = true;
 
-        Vector3 lookTarget = GetPlayerPosition();
-        lookTarget.y = transform.position.y;
-        Vector3 dir = (lookTarget - transform.position).normalized;
-
-        if (dir != Vector3.zero)
+        if (!isWaitingForUppercut)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(dir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10f * Time.deltaTime);
+            Vector3 lookTarget = GetPlayerPosition();
+            lookTarget.y = transform.position.y;
+            Vector3 dir = (lookTarget - transform.position).normalized;
+
+            if (dir != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(dir);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10f * Time.deltaTime);
+            }
         }
 
         float distanceToPlayer = Vector3.Distance(transform.position, GetPlayerPosition());
@@ -385,11 +459,8 @@ public class Inimigo : MonoBehaviour
             return;
         }
 
-        if (catchTimer <= 0f)
-        {
-            CatchPlayer();
-            catchTimer = catchCooldown;
-        }
+        if (catchTimer <= 0f && !isWaitingForUppercut)
+            StartCoroutine(WaitForUppercutAndCatch());
 
         if (!canSeePlayer && distanceToPlayer > catchRange)
         {
@@ -402,17 +473,8 @@ public class Inimigo : MonoBehaviour
     {
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
-        if (canSeePlayer && detectionMeter >= detectionThreshold)
-        {
-            EnterChase();
-            return;
-        }
-
-        if (canHearPlayer)
-        {
-            EnterSuspicious(heardPosition);
-            return;
-        }
+        if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
+        if (canHearPlayer) { EnterSuspicious(heardPosition); return; }
 
         searchTimer += Time.deltaTime;
         searchPointTimer += Time.deltaTime;
@@ -431,17 +493,8 @@ public class Inimigo : MonoBehaviour
     {
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
-        if (canSeePlayer && detectionMeter >= detectionThreshold)
-        {
-            EnterChase();
-            return;
-        }
-
-        if (canHearPlayer)
-        {
-            EnterSuspicious(heardPosition);
-            return;
-        }
+        if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
+        if (canHearPlayer) { EnterSuspicious(heardPosition); return; }
 
         if (patrolPoints == null || patrolPoints.Length == 0) return;
 
@@ -452,88 +505,9 @@ public class Inimigo : MonoBehaviour
         }
     }
 
-    private void UpdateDetectionMeter(bool canSeePlayer)
-    {
-        if (canSeePlayer)
-        {
-            float multiplier = 1f;
-
-            if (playerStealth != null)
-            {
-                if (playerStealth.isCrouching) multiplier *= 0.7f;
-                if (playerStealth.isSprinting) multiplier *= 1.35f;
-            }
-
-            detectionMeter += detectionBuildSpeed * multiplier * Time.deltaTime;
-        }
-        else
-        {
-            detectionMeter -= detectionFallSpeed * Time.deltaTime;
-        }
-
-        detectionMeter = Mathf.Clamp01(detectionMeter);
-    }
-
-    private bool CanSeePlayer()
-    {
-        if (player == null) return false;
-
-        Vector3 origin = eyePoint != null ? eyePoint.position : transform.position + Vector3.up * 1.6f;
-        Vector3 target = player.position + Vector3.up * 1.0f;
-        Vector3 toPlayer = target - origin;
-
-        float distance = toPlayer.magnitude;
-        float adjustedViewDistance = viewDistance;
-
-        if (currentState == EnemyState.Suspicious || currentState == EnemyState.Investigate)
-            adjustedViewDistance *= suspiciousViewMultiplier;
-
-        if (playerStealth != null)
-        {
-            if (playerStealth.isCrouching) adjustedViewDistance *= crouchVisionMultiplier;
-            if (playerStealth.isSprinting) adjustedViewDistance *= sprintVisionMultiplier;
-        }
-
-        if (distance > adjustedViewDistance) return false;
-
-        float angle = Vector3.Angle(transform.forward, toPlayer.normalized);
-        if (angle > viewAngle * 0.5f) return false;
-
-        if (Physics.Raycast(origin, toPlayer.normalized, out RaycastHit hit, distance, obstructionMask, QueryTriggerInteraction.Ignore))
-        {
-            if (hit.transform == player || hit.transform.IsChildOf(player))
-            {
-                lastKnownPlayerPosition = player.position;
-
-                if (!hadPlayerInSightLastFrame)
-                    onPlayerDetected?.Invoke();
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private bool CanHearPlayer()
-    {
-        if (player == null || playerStealth == null) return false;
-
-        float noise = playerStealth.CurrentNoise;
-        if (noise < hearingThreshold) return false;
-
-        float distance = Vector3.Distance(transform.position, player.position);
-        float effectiveRadius = hearingRadius * Mathf.Lerp(0.5f, 1.5f, noise);
-
-        if (distance <= effectiveRadius)
-        {
-            heardPosition = player.position;
-            hasHeardSomething = true;
-            return true;
-        }
-
-        return false;
-    }
+    // -------------------------------------------------------------------------
+    // Entradas de estado
+    // -------------------------------------------------------------------------
 
     private void EnterSuspicious(Vector3 targetPosition)
     {
@@ -542,6 +516,7 @@ public class Inimigo : MonoBehaviour
         suspiciousTimer = 0f;
         ChangeState(EnemyState.Suspicious);
         SetDestination(targetPosition);
+        animator?.SetTrigger(HashSuspicious);
     }
 
     private void EnterInvestigate(Vector3 targetPosition)
@@ -568,7 +543,7 @@ public class Inimigo : MonoBehaviour
             if (useDungeonAlert && DungeonAlertSystem.Instance != null)
                 DungeonAlertSystem.Instance.AddAlert(alertIncreaseOnDetection);
             else
-                Debug.LogWarning("DungeonAlertSystem não encontrado ou desativado!");
+                Debug.LogWarning("DungeonAlertSystem nao encontrado ou desativado!");
 
             if (detectAudio != null)
                 detectAudio.Play();
@@ -577,14 +552,13 @@ public class Inimigo : MonoBehaviour
             detectionPauseTimer = detectionPauseDuration;
             agent.isStopped = true;
 
+            animator?.SetTrigger(HashChase);
             StartChaseLoopWithDelay();
         }
         else
         {
-            if (CanSeePlayer())
-                SetDestination(GetPlayerPosition());
-            else
-                SetDestination(lastKnownPlayerPosition);
+            if (CanSeePlayer()) SetDestination(GetPlayerPosition());
+            else SetDestination(lastKnownPlayerPosition);
         }
     }
 
@@ -598,6 +572,14 @@ public class Inimigo : MonoBehaviour
     private void EnterSearch(Vector3 targetPosition)
     {
         isInDetectionPause = false;
+
+        if (chaseLoopAudio != null && chaseLoopAudio.isPlaying)
+        {
+            savedChaseMusicTime = chaseLoopAudio.time;
+            chaseJustEnded = true;
+            timeSinceChaseEnded = 0f;
+        }
+
         FadeOutChaseAudio();
         onPlayerLost?.Invoke();
 
@@ -619,6 +601,130 @@ public class Inimigo : MonoBehaviour
         if (patrolPoints != null && patrolPoints.Length > 0)
             SetDestination(patrolPoints[currentPatrolIndex].position);
     }
+
+    // -------------------------------------------------------------------------
+    // Captura
+    // -------------------------------------------------------------------------
+
+    private IEnumerator WaitForUppercutAndCatch()
+    {
+        isWaitingForUppercut = true;
+
+        agent.isStopped = true;
+
+        Vector3 lookTarget = GetPlayerPosition();
+        lookTarget.y = transform.position.y;
+        Vector3 lookDir = (lookTarget - transform.position).normalized;
+        if (lookDir != Vector3.zero)
+            transform.rotation = Quaternion.LookRotation(lookDir);
+
+        animator?.SetTrigger(HashCatch);
+
+        yield return null;
+        yield return null;
+
+        float clipLength = animator != null
+            ? animator.GetCurrentAnimatorStateInfo(0).length
+            : 1f;
+
+        yield return new WaitForSeconds(clipLength * 0.70f);
+
+        if (playerMovement == null && player != null)
+            playerMovement = player.GetComponent<PlayerMovement>();
+
+        playerMovement?.LockForCapture();
+        onPlayerCaught?.Invoke();
+
+        PlayerLook playerLook = player?.GetComponentInChildren<PlayerLook>();
+        float fallDuration = playerLook != null ? playerLook.knockbackDuration : 1.4f;
+
+        yield return new WaitForSeconds(fallDuration);
+
+        CatchPlayer();
+        isWaitingForUppercut = false;
+    }
+
+    private void CatchPlayer()
+    {
+        if (isHandlingCapture) return;
+
+        FadeOutChaseAudio();
+        Debug.Log("Inimigo: Player capturado.");
+
+        isHandlingCapture = true;
+        agent.isStopped = true;
+
+        if (CaptureHandler.Instance != null)
+            CaptureHandler.Instance.HandleCapture();
+        else
+            DoRespawn();
+
+        StartCoroutine(ResetAfterDelay());
+    }
+
+    private IEnumerator ResetAfterDelay()
+    {
+        yield return new WaitForSeconds(respawnDelay);
+        isHandlingCapture = false;
+        ResetEnemyAfterRespawn();
+    }
+
+    private void DoRespawn()
+    {
+        if (SaveManager.Instance != null)
+            SaveManager.Instance.RespawnPlayerAtCheckpoint();
+        else
+            Debug.LogWarning("SaveManager nao encontrado. Respawn nao executado.");
+
+        ResetEnemyAfterRespawn();
+    }
+
+    private void ResetEnemyAfterRespawn()
+    {
+        detectionMeter = 0f;
+        lostSightTimer = 0f;
+        catchTimer = 0f;
+        searchTimer = 0f;
+        searchPointTimer = 0f;
+        suspiciousTimer = 0f;
+        patrolWaitTimer = 0f;
+        detectionPauseTimer = 0f;
+        currentSearchDuration = 0f;
+        postRespawnIgnoreTimer = postRespawnIgnoreDuration;
+        idleTimer = 0f;
+        idleGestureInterval = Random.Range(8f, 16f);
+        isWaitingForUppercut = false;
+
+        hasHeardSomething = false;
+        hadPlayerInSightLastFrame = false;
+        isInDetectionPause = false;
+
+        savedChaseMusicTime = 0f;
+        chaseJustEnded = false;
+        timeSinceChaseEnded = 0f;
+
+        StopAllChaseAudioCoroutinesAndSilence();
+
+        playerMovement?.UnlockFromCapture();
+
+        if (agent.enabled && agent.isOnNavMesh)
+            agent.ResetPath();
+
+        ChangeState(EnemyState.ReturnToPatrol);
+
+        if (patrolPoints != null && patrolPoints.Length > 0)
+            SetDestination(patrolPoints[currentPatrolIndex].position);
+        else
+        {
+            if (agent.enabled && agent.isOnNavMesh)
+                agent.ResetPath();
+            ChangeState(EnemyState.Patrol);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers de estado/movimento
+    // -------------------------------------------------------------------------
 
     private void ChangeState(EnemyState newState)
     {
@@ -664,6 +770,9 @@ public class Inimigo : MonoBehaviour
         if (!agent.enabled || !agent.isOnNavMesh) return;
         if (isInDetectionPause) return;
 
+        if (NavMesh.SamplePosition(position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            position = hit.position;
+
         agent.isStopped = false;
         agent.SetDestination(position);
     }
@@ -677,7 +786,8 @@ public class Inimigo : MonoBehaviour
     {
         for (int i = 0; i < 10; i++)
         {
-            Vector3 random = center + new Vector3(Random.Range(-radius, radius), 0f, Random.Range(-radius, radius));
+            Vector3 random = center + new Vector3(
+                Random.Range(-radius, radius), 0f, Random.Range(-radius, radius));
 
             if (NavMesh.SamplePosition(random, out NavMeshHit hit, 2f, NavMesh.AllAreas))
                 return hit.position;
@@ -685,6 +795,121 @@ public class Inimigo : MonoBehaviour
 
         return center;
     }
+
+    // -------------------------------------------------------------------------
+    // Deteccao
+    // -------------------------------------------------------------------------
+
+    private void UpdateDetectionMeter(bool canSeePlayer)
+    {
+        if (canSeePlayer)
+        {
+            float multiplier = 1f;
+
+            if (playerStealth != null)
+            {
+                if (playerStealth.isCrouching) multiplier *= 0.7f;
+                if (playerStealth.isSprinting) multiplier *= 1.35f;
+            }
+
+            detectionMeter += detectionBuildSpeed * multiplier * Time.deltaTime;
+        }
+        else
+        {
+            detectionMeter -= detectionFallSpeed * Time.deltaTime;
+        }
+
+        detectionMeter = Mathf.Clamp01(detectionMeter);
+    }
+
+    private bool CanSeePlayer()
+    {
+        if (player == null) return false;
+
+        Vector3 origin = eyePoint != null ? eyePoint.position : transform.position + Vector3.up * 1.6f;
+        Vector3 target = player.position + Vector3.up * 1.0f;
+        Vector3 toPlayer = target - origin;
+
+        float distance = toPlayer.magnitude;
+        float adjustedViewDistance = viewDistance;
+
+        if (currentState == EnemyState.Suspicious || currentState == EnemyState.Investigate)
+            adjustedViewDistance *= suspiciousViewMultiplier;
+
+        if (playerStealth != null)
+        {
+            if (playerStealth.isCrouching) adjustedViewDistance *= crouchVisionMultiplier;
+            if (playerStealth.isSprinting) adjustedViewDistance *= sprintVisionMultiplier;
+        }
+
+        if (distance > adjustedViewDistance) return false;
+
+        // Forward efetivo: blend entre transform.forward e direcao do agente
+        // para evitar que curvas no NavMesh causem perda momentanea de visao
+        Vector3 effectiveForward;
+        if (agent != null && agent.velocity.sqrMagnitude > 0.1f)
+        {
+            Vector3 agentDir = agent.velocity.normalized;
+            agentDir.y = 0f;
+            effectiveForward = Vector3.Slerp(transform.forward, agentDir, 0.6f).normalized;
+        }
+        else
+        {
+            effectiveForward = transform.forward;
+        }
+
+        // Bonus de angulo lateral em estados alertados:
+        // quanto mais perto o player, mais o cone abre (cobre diagonais e proximidade)
+        float alertedAngleBonus = 0f;
+        if (currentState == EnemyState.Suspicious
+         || currentState == EnemyState.Investigate
+         || currentState == EnemyState.Search)
+        {
+            alertedAngleBonus = Mathf.Lerp(40f, 10f, Mathf.Clamp01(distance / viewDistance));
+        }
+
+        float angle = Vector3.Angle(effectiveForward, toPlayer.normalized);
+        if (angle > (viewAngle * 0.5f) + alertedAngleBonus) return false;
+
+        if (Physics.Raycast(origin, toPlayer.normalized, out RaycastHit hit, distance, obstructionMask, QueryTriggerInteraction.Ignore))
+        {
+            if (hit.transform == player || hit.transform.IsChildOf(player))
+            {
+                lastKnownPlayerPosition = player.position;
+
+                if (!hadPlayerInSightLastFrame)
+                    onPlayerDetected?.Invoke();
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CanHearPlayer()
+    {
+        if (player == null || playerStealth == null) return false;
+
+        float noise = playerStealth.CurrentNoise;
+        if (noise < hearingThreshold) return false;
+
+        float distance = Vector3.Distance(transform.position, player.position);
+        float effectiveRadius = hearingRadius * Mathf.Lerp(0.5f, 1.5f, noise);
+
+        if (distance <= effectiveRadius)
+        {
+            heardPosition = player.position;
+            hasHeardSomething = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    // -------------------------------------------------------------------------
+    // API publica
+    // -------------------------------------------------------------------------
 
     public void ForceChaseFromExternalAlert(bool skipAlertIncrease = false)
     {
@@ -710,6 +935,7 @@ public class Inimigo : MonoBehaviour
                 detectionPauseTimer = detectionPauseDuration;
                 agent.isStopped = true;
 
+                animator?.SetTrigger(HashChase);
                 StartChaseLoopWithDelay();
             }
             else
@@ -723,79 +949,9 @@ public class Inimigo : MonoBehaviour
         }
     }
 
-    private void CatchPlayer()
-    {
-        if (isHandlingCapture) return;
-
-        FadeOutChaseAudio();
-        onPlayerCaught?.Invoke();
-
-        Debug.Log("Inimigo: Player capturado.");
-
-        isHandlingCapture = true;
-        agent.isStopped = true;
-
-        if (CaptureHandler.Instance != null)
-            CaptureHandler.Instance.HandleCapture();
-        else
-            DoRespawn();
-
-        StartCoroutine(ResetAfterDelay());
-    }
-
-    private IEnumerator ResetAfterDelay()
-    {
-        yield return new WaitForSeconds(respawnDelay);
-        isHandlingCapture = false;
-        ResetEnemyAfterRespawn();
-    }
-
-    private void DoRespawn()
-    {
-        if (SaveManager.Instance != null)
-            SaveManager.Instance.RespawnPlayerAtCheckpoint();
-        else
-            Debug.LogWarning("SaveManager não encontrado. Respawn não executado.");
-
-        ResetEnemyAfterRespawn();
-    }
-
-    private void ResetEnemyAfterRespawn()
-    {
-        detectionMeter = 0f;
-        lostSightTimer = 0f;
-        catchTimer = 0f;
-        searchTimer = 0f;
-        searchPointTimer = 0f;
-        suspiciousTimer = 0f;
-        patrolWaitTimer = 0f;
-        detectionPauseTimer = 0f;
-        currentSearchDuration = 0f;
-        postRespawnIgnoreTimer = postRespawnIgnoreDuration;
-
-        hasHeardSomething = false;
-        hadPlayerInSightLastFrame = false;
-        isInDetectionPause = false;
-
-        StopAllChaseAudioCoroutinesAndSilence();
-
-        if (agent.enabled && agent.isOnNavMesh)
-            agent.ResetPath();
-
-        ChangeState(EnemyState.ReturnToPatrol);
-
-        if (patrolPoints != null && patrolPoints.Length > 0)
-        {
-            SetDestination(patrolPoints[currentPatrolIndex].position);
-        }
-        else
-        {
-            if (agent.enabled && agent.isOnNavMesh)
-                agent.ResetPath();
-
-            ChangeState(EnemyState.Patrol);
-        }
-    }
+    // -------------------------------------------------------------------------
+    // Audio de chase
+    // -------------------------------------------------------------------------
 
     private void StartChaseLoopWithDelay()
     {
@@ -818,7 +974,17 @@ public class Inimigo : MonoBehaviour
             chaseLoopAudio.volume = chaseLoopOriginalVolume;
 
             if (!chaseLoopAudio.isPlaying)
+            {
+                if (chaseJustEnded && timeSinceChaseEnded < chaseMusicResumeWindow && savedChaseMusicTime > 0f)
+                    chaseLoopAudio.time = savedChaseMusicTime;
+                else
+                    chaseLoopAudio.time = 0f;
+
                 chaseLoopAudio.Play();
+
+                chaseJustEnded = false;
+                timeSinceChaseEnded = 0f;
+            }
         }
 
         chaseLoopStartRoutine = null;
@@ -848,8 +1014,7 @@ public class Inimigo : MonoBehaviour
         while (timer < chaseLoopFadeOutDuration)
         {
             timer += Time.deltaTime;
-            float t = timer / chaseLoopFadeOutDuration;
-            chaseLoopAudio.volume = Mathf.Lerp(startVolume, 0f, t);
+            chaseLoopAudio.volume = Mathf.Lerp(startVolume, 0f, timer / chaseLoopFadeOutDuration);
             yield return null;
         }
 
@@ -890,6 +1055,10 @@ public class Inimigo : MonoBehaviour
             chaseLoopAudio.volume = chaseLoopOriginalVolume;
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Gizmos
+    // -------------------------------------------------------------------------
 
     private void OnDrawGizmosSelected()
     {

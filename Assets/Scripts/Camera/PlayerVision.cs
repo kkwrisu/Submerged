@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerLook : MonoBehaviour
 {
-    [Header("Referências")]
+    [Header("Referencias")]
     public Transform playerBody;
     public Camera cam;
 
@@ -39,6 +39,25 @@ public class PlayerLook : MonoBehaviour
     public float crouchYOffset = -0.5f;
     public float crouchSmooth = 10f;
 
+    [Header("Catch Knockback — Queda Pra Tras")]
+    [Tooltip("Duracao total do efeito em segundos. Lido pelo Inimigo para sincronizar o respawn.")]
+    public float knockbackDuration = 1.4f;
+
+    [Tooltip("Graus para tras no pico do voo — fase 1 (impulso). Valor negativo = olha pro ceu.")]
+    public float knockbackBackTilt = -55f;
+
+    [Tooltip("Angulo final no chao — fase 2/3 (impacto). ~90 = camera olhando pro chao.")]
+    public float knockbackGroundAngle = 92f;
+
+    [Tooltip("Intensidade do tremor no impacto (fase 3).")]
+    public float knockbackImpactShake = 0.12f;
+
+    [Tooltip("Velocidade do tremor.")]
+    public float knockbackShakeSpeed = 18f;
+
+    [Tooltip("Quanto a camera desce verticalmente ao bater no chao.")]
+    public float knockbackYDrop = -0.7f;
+
     private Vector3 climbOffset;
     private Vector3 crouchOffset;
     private float currentTilt;
@@ -49,10 +68,20 @@ public class PlayerLook : MonoBehaviour
     private bool wasClimbing;
     private bool wasPullingUp;
 
+    private float knockbackTimer = 0f;
+
     private PlayerMovement playerMovement;
 
     private float xRotation = 0f;
     private Vector2 lookInput;
+
+    // Congela o Update() inteiro — usado pelo CaptureHandler durante o fade
+    // para garantir que nenhum frame com estado sujo vaze para a tela.
+    private bool _frozen = false;
+
+    // -------------------------------------------------------------------------
+    // Unity callbacks
+    // -------------------------------------------------------------------------
 
     private void OnEnable()
     {
@@ -78,11 +107,23 @@ public class PlayerLook : MonoBehaviour
 
     void Update()
     {
+        // Congelado pelo CaptureHandler enquanto a tela esta preta/resetando.
+        // Nenhum sistema de camera roda — a rotacao permanece exatamente
+        // como foi definida por ResetAfterCapture(), sem ser sobrescrita.
+        if (_frozen) return;
+
         if (PauseMenu.Instance != null && PauseMenu.Instance.IsPaused())
             return;
 
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsActive())
             return;
+
+        // O knockback tem prioridade sobre tudo — roda primeiro e sozinho
+        if (knockbackTimer > 0f)
+        {
+            HandleKnockback();
+            return;
+        }
 
         Look();
         HandleCrouchCamera();
@@ -91,6 +132,10 @@ public class PlayerLook : MonoBehaviour
         HandleClimbCamera();
         HandleImpactFX();
     }
+
+    // -------------------------------------------------------------------------
+    // Camera / look
+    // -------------------------------------------------------------------------
 
     void Look()
     {
@@ -209,8 +254,134 @@ public class PlayerLook : MonoBehaviour
         cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFOV, Time.deltaTime * fovSpeed);
     }
 
+    // -------------------------------------------------------------------------
+    // Knockback — queda pra tras com cabeçada no chao
+    //
+    // Fase 1 (0–30%): impulso pra tras  — camera vai olhar pro ceu
+    // Fase 2 (30–55%): rotacao no ar    — cabeça cai em direcao ao chao
+    // Fase 3 (55–100%): impacto + tremor — camera trava no chao e vibra
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Chame pelo UnityEvent onPlayerCaught do Inimigo.
+    /// Inicia a animacao de queda pra tras com cabeçada no chao.
+    /// </summary>
+    public void TriggerKnockback()
+    {
+        knockbackTimer = knockbackDuration;
+        xRotation = 0f;
+    }
+
+    private void HandleKnockback()
+    {
+        knockbackTimer -= Time.deltaTime;
+        knockbackTimer = Mathf.Max(knockbackTimer, 0f);
+
+        float t = 1f - (knockbackTimer / knockbackDuration);
+
+        float tiltAngle;
+        float yDrop = 0f;
+        float shakeX = 0f;
+        float shakeY = 0f;
+
+        if (t < 0.30f)
+        {
+            float p = t / 0.30f;
+            float eased = p * p;
+
+            tiltAngle = Mathf.Lerp(0f, knockbackBackTilt, eased);
+            yDrop = Mathf.Lerp(0f, 0.12f, eased);
+        }
+        else if (t < 0.55f)
+        {
+            float p = (t - 0.30f) / 0.25f;
+            float eased = p * p * p;
+
+            tiltAngle = Mathf.Lerp(knockbackBackTilt, knockbackGroundAngle, eased);
+            yDrop = Mathf.Lerp(0.12f, knockbackYDrop * 0.55f, eased);
+        }
+        else
+        {
+            float p = (t - 0.55f) / 0.45f;
+            float decay = 1f - p;
+
+            tiltAngle = knockbackGroundAngle + Mathf.Sin(p * Mathf.PI * 5f) * 3.5f * decay;
+            yDrop = Mathf.Lerp(knockbackYDrop * 0.55f, knockbackYDrop, Mathf.SmoothStep(0f, 1f, p * 0.6f));
+
+            float impactShake = knockbackImpactShake * decay;
+            shakeX = Mathf.Sin(Time.time * knockbackShakeSpeed * 1.3f) * impactShake;
+            shakeY = Mathf.Sin(Time.time * knockbackShakeSpeed) * impactShake * 0.5f;
+        }
+
+        transform.localRotation = Quaternion.Euler(
+            tiltAngle + shakeY * 10f,
+            shakeX * 6f,
+            shakeX * 3f
+        );
+
+        transform.localPosition = defaultPos + crouchOffset + new Vector3(
+            shakeX * 0.03f,
+            yDrop + shakeY * 0.015f,
+            0f
+        );
+
+        if (knockbackTimer <= 0f)
+        {
+            transform.localPosition = defaultPos + crouchOffset;
+            transform.localRotation = Quaternion.Euler(xRotation + currentTilt, 0f, 0f);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Reset pos-captura — chamado pelo CaptureHandler com a tela preta
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Congela o Update() e limpa todo o estado da camera.
+    /// Chame isso logo apos o FadeOut completar (tela 100% preta).
+    /// Chame Unfreeze() quando quiser devolver o controle (ex: apos FadeIn).
+    /// </summary>
+    public void FreezeAndReset()
+    {
+        _frozen = true;
+
+        knockbackTimer = 0f;
+        xRotation = 0f;
+        currentTilt = 0f;
+        climbOffset = Vector3.zero;
+        crouchOffset = Vector3.zero;
+        bobTimer = 0f;
+        joltTimer = 0f;
+        shakeTimer = 0f;
+        lookInput = Vector2.zero;
+        wasClimbing = false;
+        wasPullingUp = false;
+
+        // Aplica a rotacao neutra diretamente — sem Lerp, sem frame de delay
+        transform.localPosition = defaultPos;
+        transform.localRotation = Quaternion.identity;
+
+        if (cam != null)
+            cam.fieldOfView = normalFOV;
+    }
+
+    /// <summary>
+    /// Devolve o controle da camera ao player.
+    /// Chame apos o FadeIn completar.
+    /// </summary>
+    public void Unfreeze()
+    {
+        _frozen = false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Input
+    // -------------------------------------------------------------------------
+
     public void OnLook(InputAction.CallbackContext context)
     {
+        if (_frozen) return;
+        if (knockbackTimer > 0f) return;
         lookInput = context.ReadValue<Vector2>();
     }
 }
