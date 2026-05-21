@@ -75,8 +75,6 @@ public class PlayerLook : MonoBehaviour
     private float xRotation = 0f;
     private Vector2 lookInput;
 
-    // Congela o Update() inteiro — usado pelo CaptureHandler durante o fade
-    // para garantir que nenhum frame com estado sujo vaze para a tela.
     private bool _frozen = false;
 
     // -------------------------------------------------------------------------
@@ -107,10 +105,11 @@ public class PlayerLook : MonoBehaviour
 
     void Update()
     {
-        // Congelado pelo CaptureHandler enquanto a tela esta preta/resetando.
-        // Nenhum sistema de camera roda — a rotacao permanece exatamente
-        // como foi definida por ResetAfterCapture(), sem ser sobrescrita.
         if (_frozen) return;
+
+        // Puzzle aberto: câmera não processa nada
+        if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen())
+            return;
 
         if (PauseMenu.Instance != null && PauseMenu.Instance.IsPaused())
             return;
@@ -118,7 +117,6 @@ public class PlayerLook : MonoBehaviour
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsActive())
             return;
 
-        // O knockback tem prioridade sobre tudo — roda primeiro e sozinho
         if (knockbackTimer > 0f)
         {
             HandleKnockback();
@@ -255,17 +253,9 @@ public class PlayerLook : MonoBehaviour
     }
 
     // -------------------------------------------------------------------------
-    // Knockback — queda pra tras com cabeçada no chao
-    //
-    // Fase 1 (0–30%): impulso pra tras  — camera vai olhar pro ceu
-    // Fase 2 (30–55%): rotacao no ar    — cabeça cai em direcao ao chao
-    // Fase 3 (55–100%): impacto + tremor — camera trava no chao e vibra
+    // Knockback
     // -------------------------------------------------------------------------
 
-    /// <summary>
-    /// Chame pelo UnityEvent onPlayerCaught do Inimigo.
-    /// Inicia a animacao de queda pra tras com cabeçada no chao.
-    /// </summary>
     public void TriggerKnockback()
     {
         knockbackTimer = knockbackDuration;
@@ -333,14 +323,9 @@ public class PlayerLook : MonoBehaviour
     }
 
     // -------------------------------------------------------------------------
-    // Reset pos-captura — chamado pelo CaptureHandler com a tela preta
+    // Reset pos-captura
     // -------------------------------------------------------------------------
 
-    /// <summary>
-    /// Congela o Update() e limpa todo o estado da camera.
-    /// Chame isso logo apos o FadeOut completar (tela 100% preta).
-    /// Chame Unfreeze() quando quiser devolver o controle (ex: apos FadeIn).
-    /// </summary>
     public void FreezeAndReset()
     {
         _frozen = true;
@@ -357,7 +342,6 @@ public class PlayerLook : MonoBehaviour
         wasClimbing = false;
         wasPullingUp = false;
 
-        // Aplica a rotacao neutra diretamente — sem Lerp, sem frame de delay
         transform.localPosition = defaultPos;
         transform.localRotation = Quaternion.identity;
 
@@ -365,10 +349,6 @@ public class PlayerLook : MonoBehaviour
             cam.fieldOfView = normalFOV;
     }
 
-    /// <summary>
-    /// Devolve o controle da camera ao player.
-    /// Chame apos o FadeIn completar.
-    /// </summary>
     public void Unfreeze()
     {
         _frozen = false;

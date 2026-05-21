@@ -40,7 +40,9 @@ public class RepairPuzzleManager : MonoBehaviour
     private string loadedScene;
     private Scene previousScene;
     private RepairPuzzleInteractable currentInteractable;
+
     private bool isOpen;
+    private bool isClosing;
 
     private void Awake()
     {
@@ -55,8 +57,7 @@ public class RepairPuzzleManager : MonoBehaviour
 
     public void OpenPuzzle(RepairPuzzleDifficulty difficulty, RepairPuzzleInteractable interactable)
     {
-        if (isOpen)
-            return;
+        if (isOpen) return;
 
         string scene = GetRandomScene(difficulty);
 
@@ -72,8 +73,7 @@ public class RepairPuzzleManager : MonoBehaviour
 
     public void OpenSpecificPuzzle(string sceneName, RepairPuzzleInteractable interactable)
     {
-        if (isOpen)
-            return;
+        if (isOpen) return;
 
         if (string.IsNullOrWhiteSpace(sceneName))
         {
@@ -88,6 +88,7 @@ public class RepairPuzzleManager : MonoBehaviour
     private IEnumerator OpenRoutine(string sceneName)
     {
         isOpen = true;
+        isClosing = false;
         loadedScene = sceneName;
 
         previousScene = SceneManager.GetActiveScene();
@@ -97,13 +98,11 @@ public class RepairPuzzleManager : MonoBehaviour
         if (pauseGameWhilePuzzleIsOpen)
             Time.timeScale = 0f;
 
-        // Registra a cena de puzzle no SaveManager antes de carregá-la,
-        // para que qualquer SaveGame chamado enquanto o puzzle estiver aberto
-        // ignore os ISaveables dessa cena e use a cena principal como referência.
         if (SaveManager.Instance != null)
             SaveManager.Instance.RegisterPuzzleScene(sceneName);
 
         AsyncOperation op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        op.allowSceneActivation = true;
         while (!op.isDone)
             yield return null;
 
@@ -116,9 +115,9 @@ public class RepairPuzzleManager : MonoBehaviour
 
     public void FinishPuzzle(RepairPuzzleResult result)
     {
-        if (!isOpen)
-            return;
+        if (!isOpen || isClosing) return;
 
+        isClosing = true;
         StartCoroutine(CloseRoutine(result));
     }
 
@@ -135,10 +134,7 @@ public class RepairPuzzleManager : MonoBehaviour
         }
 
         loadedScene = null;
-        isOpen = false;
 
-        // Desregistra a cena de puzzle — a partir daqui o SaveManager volta
-        // a enxergar todos os ISaveables normalmente.
         if (SaveManager.Instance != null)
             SaveManager.Instance.UnregisterPuzzleScene();
 
@@ -148,7 +144,15 @@ public class RepairPuzzleManager : MonoBehaviour
         if (pauseGameWhilePuzzleIsOpen)
             Time.timeScale = 1f;
 
+        // Garante que o PauseMenu não fique em estado pausado após fechar o puzzle
+        if (PauseMenu.Instance != null && PauseMenu.Instance.IsPaused())
+            PauseMenu.Instance.ResumeGame();
+
         LockPlayer(false);
+
+        // Só agora marca como fechado
+        isOpen = false;
+        isClosing = false;
 
         if (currentInteractable != null)
         {
@@ -175,7 +179,7 @@ public class RepairPuzzleManager : MonoBehaviour
             playerAudioListener.enabled = !locked;
 
         Cursor.lockState = locked ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = locked;
+        Cursor.visible = locked ? true : false;
     }
 
     private string GetRandomScene(RepairPuzzleDifficulty difficulty)
@@ -190,31 +194,23 @@ public class RepairPuzzleManager : MonoBehaviour
             case RepairPuzzleDifficulty.Difficulty4: pool = difficulty4Scenes; break;
         }
 
-        if (pool == null || pool.Length == 0)
-            return null;
+        if (pool == null || pool.Length == 0) return null;
 
         int validCount = 0;
         for (int i = 0; i < pool.Length; i++)
-        {
-            if (!string.IsNullOrWhiteSpace(pool[i]))
-                validCount++;
-        }
+            if (!string.IsNullOrWhiteSpace(pool[i])) validCount++;
 
-        if (validCount == 0)
-            return null;
+        if (validCount == 0) return null;
 
         int randomIndex;
-        do
-        {
-            randomIndex = Random.Range(0, pool.Length);
-        }
+        do { randomIndex = Random.Range(0, pool.Length); }
         while (string.IsNullOrWhiteSpace(pool[randomIndex]));
 
         return pool[randomIndex];
     }
 
-    public bool IsPuzzleOpen()
-    {
-        return isOpen;
-    }
+    /// <summary>
+    /// Retorna true enquanto o puzzle estiver aberto OU fechando.
+    /// </summary>
+    public bool IsPuzzleOpen() => isOpen || isClosing;
 }

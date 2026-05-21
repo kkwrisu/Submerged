@@ -99,6 +99,9 @@ public class PlayerMovement : MonoBehaviour
     private float climbStartY;
     private Vector3 pullUpTarget;
 
+    // Quando true, ao terminar o pull-up o player agacha automaticamente
+    private bool pullUpForceCrouch;
+
     [Header("Crouch")]
     public float crouchHeight = 1f;
     public float crouchTransitionSpeed = 12f;
@@ -189,19 +192,13 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 ladderTopExitTarget;
 
     // -------------------------------------------------------------------------
-    // Capture lock — bloqueia todo input de movimento durante a captura
+    // Capture lock
     // -------------------------------------------------------------------------
     private bool _capturedLock = false;
 
-    /// <summary>
-    /// Chamado pelo Inimigo antes de disparar onPlayerCaught.
-    /// Trava completamente o movimento e o pulo do player.
-    /// </summary>
     public void LockForCapture()
     {
         _capturedLock = true;
-
-        // Para o player no lugar imediatamente
         moveInput = Vector2.zero;
         currentVelocity = Vector3.zero;
         yVelocity = -2f;
@@ -209,10 +206,6 @@ public class PlayerMovement : MonoBehaviour
         isSprinting = false;
     }
 
-    /// <summary>
-    /// Chamado pelo Inimigo em ResetEnemyAfterRespawn.
-    /// Devolve o controle ao player após o respawn.
-    /// </summary>
     public void UnlockFromCapture()
     {
         _capturedLock = false;
@@ -236,7 +229,6 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // Trava total durante a captura — nenhum input é processado
         if (_capturedLock) return;
 
         stepTimer -= Time.deltaTime;
@@ -773,6 +765,16 @@ public class PlayerMovement : MonoBehaviour
         pullUpTimeout = climbTimeout;
         pullUpTarget = transform.position + transform.forward * pullUpForward + Vector3.up * pullUpUpward;
         isSprinting = false;
+
+        // Verifica se não cabe em pé no destino — se sim, vai agachar ao terminar
+        float radius = controller.radius * 0.9f;
+        Vector3 standCenter = pullUpTarget + standingCenter;
+        float halfStand = Mathf.Max(standingHeight * 0.5f, radius);
+        Vector3 standP1 = standCenter + Vector3.up * (halfStand - radius);
+        Vector3 standP2 = standCenter - Vector3.up * (halfStand - radius);
+        bool canStand = !Physics.CheckCapsule(standP1, standP2, radius, groundMask, QueryTriggerInteraction.Ignore);
+
+        pullUpForceCrouch = !canStand;
     }
 
     void HandlePullUp()
@@ -795,6 +797,13 @@ public class PlayerMovement : MonoBehaviour
         {
             isPullingUp = false;
             yVelocity = -2f;
+
+            if (pullUpForceCrouch)
+            {
+                isCrouching = true;
+                crouchHeld = true;
+                pullUpForceCrouch = false;
+            }
         }
     }
 
@@ -804,6 +813,7 @@ public class PlayerMovement : MonoBehaviour
         isHanging = false;
         isClimbing = false;
         isPullingUp = false;
+        pullUpForceCrouch = false;
         ledgeGrabThisFrame = false;
         ledgeBlockTimer = ledgeBlockAfterReleaseTime;
 
@@ -971,14 +981,12 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnMove(InputAction.CallbackContext context)
     {
-        // Input bloqueado durante captura
         if (_capturedLock) return;
         moveInput = context.ReadValue<Vector2>();
     }
 
     public void OnSprint(InputAction.CallbackContext context)
     {
-        // Input bloqueado durante captura
         if (_capturedLock) return;
 
         sprintHeld = context.ReadValueAsButton();
@@ -997,7 +1005,6 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnJump(InputAction.CallbackContext context)
     {
-        // Input bloqueado durante captura
         if (_capturedLock) return;
         if (!context.performed) return;
 
@@ -1035,7 +1042,6 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnCrouch(InputAction.CallbackContext context)
     {
-        // Input bloqueado durante captura
         if (_capturedLock) return;
 
         if (isOnLadder || isExitingLadderTop)
@@ -1140,6 +1146,7 @@ public class PlayerMovement : MonoBehaviour
 
         isClimbing = false;
         isPullingUp = false;
+        pullUpForceCrouch = false;
         ledgeGrabThisFrame = false;
         ledgeBlockTimer = 0f;
         hangTimer = 0f;

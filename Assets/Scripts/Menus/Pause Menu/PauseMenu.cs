@@ -21,6 +21,7 @@ public class PauseMenu : MonoBehaviour
     public string mainMenuSceneName = "MainMenu";
 
     private bool isPaused = false;
+    private bool waitingForEscRelease = false;
 
     private void Awake()
     {
@@ -41,6 +42,15 @@ public class PauseMenu : MonoBehaviour
     private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void Update()
+    {
+        if (waitingForEscRelease)
+        {
+            if (Keyboard.current != null && !Keyboard.current.escapeKey.isPressed)
+                waitingForEscRelease = false;
+        }
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -131,7 +141,6 @@ public class PauseMenu : MonoBehaviour
         UnityEngine.UI.Button mainMenuButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
             .FirstOrDefault(b => b.name == "Main Menu");
 
-        // DEBUG — remove após confirmar que o botão é encontrado
         Debug.Log("[PauseMenu] Resume: " + (resumeButton != null ? "OK" : "NULL"));
         Debug.Log("[PauseMenu] SettingsButton: " + (settingsButton != null ? "OK" : "NULL"));
         Debug.Log("[PauseMenu] Back: " + (backButton != null ? "OK" : "NULL"));
@@ -163,7 +172,6 @@ public class PauseMenu : MonoBehaviour
         }
         else
         {
-            // Tenta variações do nome caso o objeto tenha nome diferente
             string[] possibleNames = { "Main Menu", "MainMenu", "main menu", "main_menu", "BtnMainMenu" };
             foreach (string name in possibleNames)
             {
@@ -179,7 +187,6 @@ public class PauseMenu : MonoBehaviour
                 }
             }
 
-            // Lista todos os botões encontrados para debug
             var allButtons = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true);
             Debug.Log($"[PauseMenu] Botões encontrados na UI ({allButtons.Length}):");
             foreach (var b in allButtons)
@@ -199,9 +206,24 @@ public class PauseMenu : MonoBehaviour
         isPaused = false;
     }
 
+    // Chamado pelo Unity Event (Player Input → Invoke Unity Events → Pause)
+    // O binding no Inspector deve apontar para este método.
     public void OnPause(InputAction.CallbackContext context)
     {
         if (!context.performed)
+            return;
+
+        TogglePause();
+    }
+
+    private void TogglePause()
+    {
+        // Proteção 1: puzzle aberto ou fechando
+        if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen())
+            return;
+
+        // Proteção 2: ESC ainda pressionado após fechar o puzzle
+        if (waitingForEscRelease)
             return;
 
         if (settingsPanel != null && settingsPanel.activeSelf)
@@ -222,8 +244,31 @@ public class PauseMenu : MonoBehaviour
         PauseGame();
     }
 
+    /// <summary>
+    /// Chamado pelo RepairPuzzleRuntime ao fechar o puzzle via ESC,
+    /// ANTES de qualquer outra coisa no mesmo frame.
+    /// Bloqueia o PauseMenu até que o ESC seja fisicamente solto.
+    /// </summary>
+    public void BlockPauseUntilEscReleased()
+    {
+        waitingForEscRelease = true;
+    }
+
+    // Mantido por compatibilidade com chamadas existentes no RepairPuzzleRuntime
+    public void BlockPauseForOneFrame()
+    {
+        waitingForEscRelease = true;
+    }
+
     public void PauseGame()
     {
+        // Proteção: nunca pausa durante o puzzle nem enquanto ESC não foi solto
+        if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen())
+            return;
+
+        if (waitingForEscRelease)
+            return;
+
         if (isPaused)
             return;
 
@@ -302,8 +347,5 @@ public class PauseMenu : MonoBehaviour
         SceneManager.LoadScene(mainMenuSceneName);
     }
 
-    public bool IsPaused()
-    {
-        return isPaused;
-    }
+    public bool IsPaused() => isPaused;
 }

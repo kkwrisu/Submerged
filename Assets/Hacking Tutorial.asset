@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8194dd9d09801594b8d72cce7555b7c6, type: 3}
+  m_Name: Hacking Tutorial
+  m_EditorClassIdentifier: Assembly-CSharp::GeneratorTutorialData
+  tutorialID: hacking_puzzle
+  approachSlides:
+  - title: Notebooks
+    description: "Dentro de \xE1reas protegidas \xE9 poss\xEDvel encontrar notebooks
+      para hackear e aumentar seu n\xEDvel de acesso do cart\xE3o."
+  - title: Notebooks
+    description: "Para hackear, segure E at\xE9 a barra de hackeamento encher por
+      completo."
+  qteSlides:
+  - title: Quick Time Event
+    description: "Durante o hacking, o firewall do sistema tentar\xE1 contra-atacar.
+      Pressione espa\xE7o rapidamente para driblar o sistema de defesa. "
+  - title: Quick Time Event
+    description: "Em caso de falha, o progresso de hackeamento ser\xE1 regredido
+      e inimigos pr\xF3ximos ser\xE3o acionados."

@@ -32,8 +32,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         new Color(0.2f, 1f, 0.5f),
     };
 
-    // ── Nodes ─────────────────────────────────────────────────────────────────
-
     private readonly Dictionary<Vector2Int, RepairPuzzleNode> nodes = new Dictionary<Vector2Int, RepairPuzzleNode>();
 
     private RepairPuzzleNode startA;
@@ -41,13 +39,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
     private RepairPuzzleNode startB;
     private RepairPuzzleNode endB;
 
-    // ── Segmentos de fio ──────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Representa um segmento de fio independente.
-    /// O fio principal (A ou B) é o segmento 0 ou 1.
-    /// Fios pós-portal são segmentos extras criados dinamicamente.
-    /// </summary>
     private class WireSegment
     {
         public List<RepairPuzzleNode> path = new List<RepairPuzzleNode>();
@@ -58,10 +49,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     private readonly List<WireSegment> segments = new List<WireSegment>();
     private int activeSegmentIndex = 0;
-
     private bool isDragging;
-
-    // ── Ghost lines (tracejado portal) ────────────────────────────────────────
 
     private readonly Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost> portalGhosts
         = new Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost>();
@@ -70,17 +58,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
         = new Dictionary<RepairPuzzleNode, int>();
 
     private Bounds gridBounds;
-
-    // ── Tutorial ──────────────────────────────────────────────────────────────
-
     private bool lockedByTutorial;
-
-    // ── Input ─────────────────────────────────────────────────────────────────
 
     private InputAction click;
     private InputAction reset;
-
-    // ── Unity ─────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -143,12 +124,18 @@ public class RepairPuzzleRuntime : MonoBehaviour
         Debug.Log("[Runtime] Desbloqueado pelo tutorial — jogo começa agora.");
     }
 
-    // ── Update ────────────────────────────────────────────────────────────────
-
     private void Update()
     {
         if (RepairPuzzleManager.Instance == null || !RepairPuzzleManager.Instance.IsPuzzleOpen())
             return;
+
+        // ESC: fecha o puzzle sem consequência e bloqueia o PauseMenu por um instante
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            PauseMenu.Instance?.BlockPauseForOneFrame();
+            RepairPuzzleManager.Instance.FinishPuzzle(RepairPuzzleResult.None);
+            return;
+        }
 
         if (lockedByTutorial)
             return;
@@ -196,8 +183,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
             RefreshVisuals();
         }
     }
-
-    // ── Setup ─────────────────────────────────────────────────────────────────
 
     private Camera FindPuzzleCameraInMyScene()
     {
@@ -248,7 +233,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         }
     }
 
-    /// <summary>Retorna a distância aproximada entre nodes adjacentes no mundo.</summary>
     private float GetNodeSpacing()
     {
         foreach (var pair in nodes)
@@ -258,8 +242,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
             foreach (var off in offsets)
             {
                 if (nodes.TryGetValue(pos + off, out RepairPuzzleNode neighbor))
-                    return Vector3.Distance(pair.Value.transform.position,
-                                           neighbor.transform.position);
+                    return Vector3.Distance(pair.Value.transform.position, neighbor.transform.position);
             }
         }
         return 1f;
@@ -281,8 +264,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
             }
         }
     }
-
-    // ── Reset ─────────────────────────────────────────────────────────────────
 
     public void ResetPuzzle()
     {
@@ -323,8 +304,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         RefreshVisuals();
     }
-
-    // ── Drag ──────────────────────────────────────────────────────────────────
 
     private void TryStartDrag(RepairPuzzleNode node)
     {
@@ -375,7 +354,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (targetNode == currentEnd) return;
         if (!AreOrthogonallyAdjacent(currentEnd, targetNode)) return;
 
-        // Backtrack
         if (active.path.Count >= 2 && targetNode == active.path[active.path.Count - 2])
         {
             active.path.RemoveAt(active.path.Count - 1);
@@ -389,7 +367,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
             targetNode.nodeType == RepairPuzzleNodeType.StartB)
             return;
 
-        // ── FIX: verifica se é o End esperado ANTES de checar IsWalkable ──────
         bool isExpectedEnd = (targetNode == active.expectedEnd);
 
         if (isExpectedEnd)
@@ -418,7 +395,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
                 return;
             }
         }
-        // ─────────────────────────────────────────────────────────────────────
 
         active.path.Add(targetNode);
 
@@ -432,8 +408,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         CheckCompletion();
     }
 
-    // ── Portal Ghost ──────────────────────────────────────────────────────────
-
     private void SpawnPortalGhosts()
     {
         int pairIndex = 0;
@@ -446,13 +420,11 @@ public class RepairPuzzleRuntime : MonoBehaviour
             if (entry.portalTarget == null) continue;
             if (portalGhosts.ContainsKey(entry)) continue;
 
-            RepairPuzzleNode exit = entry.portalTarget;
-
             int colorIdx = pairIndex % portalWireColors.Length;
             portalColorIndex[entry] = colorIdx;
             pairIndex++;
 
-            Vector3[] pts = BuildGhostLPath(entry.transform.position, exit.transform.position);
+            Vector3[] pts = BuildGhostLPath(entry.transform.position, entry.portalTarget.transform.position);
 
             GameObject ghostObj = new GameObject("PortalGhost_" + entry.name);
             ghostObj.transform.SetParent(transform);
@@ -499,8 +471,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         return new Vector3[] { entry, elbow, exit };
     }
 
-    // ── Portal ────────────────────────────────────────────────────────────────
-
     private void HandlePortalEntry(RepairPuzzleNode portalEntry)
     {
         RepairPuzzleNode portalExit = portalEntry.portalTarget;
@@ -519,9 +489,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         if (portalGhosts.TryGetValue(portalEntry, out RepairPuzzlePortalGhost ghost) && ghost != null)
         {
-            int colorIdx = portalColorIndex.ContainsKey(portalEntry)
-                ? portalColorIndex[portalEntry]
-                : 0;
+            int colorIdx = portalColorIndex.ContainsKey(portalEntry) ? portalColorIndex[portalEntry] : 0;
             ghost.Activate(portalWireColors[colorIdx % portalWireColors.Length]);
         }
 
@@ -573,7 +541,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     private LineRenderer CreatePortalLineRenderer()
     {
-        int portalWireIndex = 0;
         int count = 0;
 
         for (int i = 0; i < segments.Count; i++)
@@ -583,7 +550,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
                 count++;
         }
 
-        portalWireIndex = count % portalWireColors.Length;
+        int portalWireIndex = count % portalWireColors.Length;
 
         GameObject obj = new GameObject("PortalWire_" + count);
         obj.transform.SetParent(transform);
@@ -607,8 +574,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         return lr;
     }
-
-    // ── Completion ────────────────────────────────────────────────────────────
 
     private void CheckCompletion()
     {
@@ -655,8 +620,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         return true;
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
     private bool IsNodeInAnyPath(RepairPuzzleNode node)
     {
         for (int i = 0; i < segments.Count; i++)
@@ -695,8 +658,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         int dy = Mathf.Abs(a.y - b.y);
         return dx + dy == 1;
     }
-
-    // ── Visuals ───────────────────────────────────────────────────────────────
 
     private void RefreshVisuals()
     {
@@ -796,8 +757,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         return null;
     }
 
-    // ── Tutorial Helper ───────────────────────────────────────────────────────
-
     public List<RepairPuzzleNode> GetNodesByType(RepairPuzzleNodeType type)
     {
         List<RepairPuzzleNode> result = new List<RepairPuzzleNode>();
@@ -810,8 +769,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         return result;
     }
-
-    // ── Puzzle Result ─────────────────────────────────────────────────────────
 
     public void FailPuzzle()
     {

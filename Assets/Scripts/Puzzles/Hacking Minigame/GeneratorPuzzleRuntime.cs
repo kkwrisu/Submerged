@@ -29,14 +29,20 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
     public InputActionReference interactHoldAction;
     public InputActionReference qteInputAction;
 
-    private GeneratorPuzzleUI _ui;
+    [Header("Tutorial")]
+    [Tooltip("Referência ao GeneratorTutorialTracker do objeto do gerador na cena.")]
+    public GeneratorTutorialTracker tutorialTracker;
+    [Tooltip("RectTransform do QTEPanel na UI — será enaltecido durante o tutorial de QTE.")]
+    public RectTransform qteTutorialHighlightTarget;
 
+    private GeneratorPuzzleUI _ui;
     private GeneratorPuzzleInteractable _currentInteractable;
 
     private float _progress = 0f;
     private bool _isInteracting = false;
-    private bool _isOpen = false;        // true enquanto a UI está visível
+    private bool _isOpen = false;
     private bool _qteActive = false;
+    private bool _qteTutorialPending = false; // QTE aguardando tutorial terminar
     private float _qteTimer = 0f;
     private float _nextQteThreshold = 0f;
     private bool _playerLocked = false;
@@ -77,6 +83,11 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
             }
             return;
         }
+
+        // ── Tutorial de QTE pendente: jogo pausado, aguarda callback ─────────
+        // (Time.timeScale == 0 — o Update ainda roda mas não devemos processar input)
+        if (_qteTutorialPending)
+            return;
 
         // ── QTE ativo ─────────────────────────────────────────────────────────
         if (_qteActive)
@@ -147,8 +158,7 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         if (_currentInteractable != interactable) return;
         _isInteracting = true;
 
-        // Reabre a UI se o jogador voltou a segurar
-        if (!_isOpen && !_qteActive)
+        if (!_isOpen && !_qteActive && !_qteTutorialPending)
             OpenUI();
     }
 
@@ -156,7 +166,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
     {
         if (_currentInteractable != interactable) return;
         _isInteracting = false;
-        // A UI fecha no próximo Update (quando !_isInteracting e !_qteActive)
         Debug.Log("[GenPuzzle] Interação interrompida.");
     }
 
@@ -169,9 +178,42 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
 
     private void TriggerQTE()
     {
+        // Para o progresso imediatamente
+        _isInteracting = false;
+
+        // Tenta abrir o tutorial de QTE (só na primeira vez)
+        // O tracker pausa o jogo (timeScale = 0) e chama OnQteTutorialFinished ao fechar
+        if (tutorialTracker != null)
+        {
+            bool tutorialOpened = tutorialTracker.TryShowQteTutorial(
+                qteTutorialHighlightTarget,
+                onFinished: OnQteTutorialFinished
+            );
+
+            if (tutorialOpened)
+            {
+                _qteTutorialPending = true;
+                Debug.Log("[GenPuzzle] Tutorial de QTE aberto — QTE pausado até tutorial terminar.");
+                return;
+            }
+        }
+
+        // Tutorial já visto (ou não configurado): inicia QTE direto
+        StartQTE();
+    }
+
+    /// <summary>Chamado pelo GeneratorTutorialTracker quando o tutorial de QTE fecha.</summary>
+    private void OnQteTutorialFinished()
+    {
+        _qteTutorialPending = false;
+        Debug.Log("[GenPuzzle] Tutorial de QTE concluído — iniciando QTE.");
+        StartQTE();
+    }
+
+    private void StartQTE()
+    {
         _qteActive = true;
         _qteTimer = qteWindowSeconds;
-        _isInteracting = false;
 
         LockPlayer(true);
         _ui?.ShowQTE(qteWindowSeconds);
@@ -235,6 +277,7 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         _progress = 1f;
         _isInteracting = false;
         _qteActive = false;
+        _qteTutorialPending = false;
         _isOpen = false;
 
         _ui?.SetProgress(1f);
@@ -248,14 +291,11 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
 
         Debug.Log("[GenPuzzle] Puzzle completo!");
 
-        // Destravar no frame seguinte evita que o Space vaze para o pulo
         StartCoroutine(UnlockNextFrame());
     }
 
-    private System.Collections.IEnumerator UnlockNextFrame()
+    private IEnumerator UnlockNextFrame()
     {
-        // Espera o Space ser solto antes de destravar
-        // evita que o performed do QTE vaze para o OnJump
         float timeout = 1f;
         while (timeout > 0f)
         {
@@ -265,7 +305,7 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
             yield return null;
         }
 
-        yield return null; // 1 frame extra de segurança
+        yield return null;
         LockPlayer(false);
     }
 
@@ -305,7 +345,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
                 }
                 else
                 {
-                    // Zera movimento residual antes de reativar inputs
                     if (playerMovementFull != null)
                         playerMovementFull.ResetMovementState();
 
@@ -326,7 +365,7 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         if (!Application.isPlaying) return;
         GUI.Label(new Rect(10, 10, 300, 20), $"[GenPuzzle] Progress: {_progress:P0}");
         GUI.Label(new Rect(10, 30, 300, 20), $"[GenPuzzle] Interacting: {_isInteracting} | Open: {_isOpen} | QTE: {_qteActive}");
-        GUI.Label(new Rect(10, 50, 300, 20), $"[GenPuzzle] Next QTE at: {_nextQteThreshold:P0}");
+        GUI.Label(new Rect(10, 50, 300, 20), $"[GenPuzzle] Next QTE at: {_nextQteThreshold:P0} | TutorialPending: {_qteTutorialPending}");
     }
 #endif
 }
