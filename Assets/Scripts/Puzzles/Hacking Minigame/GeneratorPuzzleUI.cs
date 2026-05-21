@@ -156,7 +156,10 @@ public class GeneratorPuzzleUI : MonoBehaviour
 
         while (qtePanel != null && qtePanel.activeSelf)
         {
-            t += Time.deltaTime * flashSpeed;
+            // CORREÇÃO: unscaledDeltaTime garante que o flash continue animando
+            // mesmo quando o jogo está pausado (Time.timeScale = 0), por exemplo
+            // durante o tutorial de QTE que abre antes do minigame começar.
+            t += Time.unscaledDeltaTime * flashSpeed;
             float alpha = Mathf.Abs(Mathf.Sin(t));
             qteKeyText.color = new Color(1f, 1f, 1f, alpha);
             yield return null;

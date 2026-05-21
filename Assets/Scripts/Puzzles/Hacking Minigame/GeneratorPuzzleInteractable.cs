@@ -15,6 +15,10 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
     public bool completed = false;
     public bool blockIfCompleted = false;
 
+    [Header("Tutorial")]
+    [Tooltip("Referência ao tracker de tutorial do gerador. Se preenchido, exibe o tutorial na primeira interação.")]
+    public GeneratorTutorialTracker tutorialTracker;
+
     [Header("Fail Alert")]
     public float failAlertRadius = 12f;
     public LayerMask enemyLayer = ~0;
@@ -47,6 +51,16 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
             return;
         }
 
+        // Se tiver tutorial configurado, tenta exibir na primeira interação.
+        // O puzzle só abre no callback (quando o jogador fechar o tutorial).
+        if (tutorialTracker != null)
+        {
+            bool tutorialShown = tutorialTracker.TryShowApproachTutorial();
+
+            if (tutorialShown)
+                return;
+        }
+
         _runtime.BeginInteract(this);
     }
 
@@ -72,7 +86,7 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
         Debug.Log($"[GenPuzzle] {saveID} concluído.");
 
         if (AccessCardManager.Instance != null)
-            AccessCardManager.Instance.UpgradeCard(); // já chama SaveGame() internamente
+            AccessCardManager.Instance.UpgradeCard();
         else if (SaveManager.Instance != null)
             SaveManager.Instance.SaveGame();
     }

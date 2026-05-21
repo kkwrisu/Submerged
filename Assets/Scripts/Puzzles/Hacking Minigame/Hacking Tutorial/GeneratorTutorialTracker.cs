@@ -1,12 +1,5 @@
 ﻿using UnityEngine;
 
-/// <summary>
-/// Gerencia o estado dos dois tutoriais do Generator:
-///   1. Approach  — exibido na primeira vez que o jogador se aproxima do gerador.
-///   2. QTE       — exibido quando o primeiro QTE aparece no minigame.
-///
-/// Coloque este componente no mesmo GameObject do GeneratorInteractable (ou num pai).
-/// </summary>
 public class GeneratorTutorialTracker : MonoBehaviour
 {
     [Header("Dados")]
@@ -19,7 +12,6 @@ public class GeneratorTutorialTracker : MonoBehaviour
     [Tooltip("Se true, sempre exibe os tutoriais (ignora o save).")]
     public bool forceShowForDebug = false;
 
-    // IDs internos para cada subtutorial
     private const string SUFFIX_APPROACH = "_approach";
     private const string SUFFIX_QTE = "_qte";
 
@@ -28,10 +20,6 @@ public class GeneratorTutorialTracker : MonoBehaviour
 
     // ── Approach Tutorial ─────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Chame quando o jogador entrar no trigger de proximidade do gerador.
-    /// Retorna true se o tutorial foi aberto.
-    /// </summary>
     public bool TryShowApproachTutorial(System.Action onFinished = null)
     {
         if (!CanShow(SUFFIX_APPROACH)) return false;
@@ -39,9 +27,21 @@ public class GeneratorTutorialTracker : MonoBehaviour
         IsApproachTutorialActive = true;
         MarkSeen(SUFFIX_APPROACH);
 
+        // Tutorial abre na interação — o cursor já está travado e o jogo rodando.
+        // Libera o cursor para o jogador clicar no botão "Próximo/Entendido".
+        Time.timeScale = 0f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         tutorialUI.ShowApproach(tutorialData, () =>
         {
             IsApproachTutorialActive = false;
+            Time.timeScale = 1f;
+
+            // Retrava o cursor ao fechar o tutorial
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
             Debug.Log("[GenTutorial] Approach tutorial concluído.");
             onFinished?.Invoke();
         });
@@ -51,11 +51,6 @@ public class GeneratorTutorialTracker : MonoBehaviour
 
     // ── QTE Tutorial ──────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Chame quando o primeiro QTE surgir.
-    /// Passa o RectTransform do elemento de QTE a destacar.
-    /// Retorna true se o tutorial foi aberto.
-    /// </summary>
     public bool TryShowQteTutorial(RectTransform qteElement, System.Action onFinished = null)
     {
         if (!CanShow(SUFFIX_QTE)) return false;
@@ -63,7 +58,6 @@ public class GeneratorTutorialTracker : MonoBehaviour
         IsQteTutorialActive = true;
         MarkSeen(SUFFIX_QTE);
 
-        // Pausa o jogo em tempo não-escalado para o tutorial
         Time.timeScale = 0f;
 
         tutorialUI.ShowQTE(tutorialData, qteElement, () =>
@@ -86,6 +80,7 @@ public class GeneratorTutorialTracker : MonoBehaviour
             Debug.LogWarning("[GenTutorial] TutorialData não configurado.");
             return false;
         }
+
         if (tutorialUI == null)
         {
             Debug.LogWarning("[GenTutorial] TutorialUI não referenciada.");

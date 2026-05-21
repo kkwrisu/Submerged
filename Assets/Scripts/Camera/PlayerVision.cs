@@ -107,7 +107,6 @@ public class PlayerLook : MonoBehaviour
     {
         if (_frozen) return;
 
-        // Puzzle aberto: câmera não processa nada
         if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen())
             return;
 
@@ -115,6 +114,11 @@ public class PlayerLook : MonoBehaviour
             return;
 
         if (DialogueManager.Instance != null && DialogueManager.Instance.IsActive())
+            return;
+
+        // Durante tutorial de aproximação o cursor está livre para clicar no botão
+        // — a câmera não deve processar input de look
+        if (IsApproachTutorialActive())
             return;
 
         if (knockbackTimer > 0f)
@@ -129,6 +133,18 @@ public class PlayerLook : MonoBehaviour
         HandleFOV();
         HandleClimbCamera();
         HandleImpactFX();
+    }
+
+    // -------------------------------------------------------------------------
+    // Tutorial helper
+    // -------------------------------------------------------------------------
+
+    private bool IsApproachTutorialActive()
+    {
+        GeneratorTutorialTracker[] trackers = FindObjectsByType<GeneratorTutorialTracker>(FindObjectsSortMode.None);
+        foreach (var t in trackers)
+            if (t.IsApproachTutorialActive) return true;
+        return false;
     }
 
     // -------------------------------------------------------------------------

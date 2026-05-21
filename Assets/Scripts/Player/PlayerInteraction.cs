@@ -56,14 +56,12 @@ public class PlayerInteract : MonoBehaviour
         Ray ray = new Ray(cam.transform.position, cam.transform.forward);
         Debug.DrawRay(ray.origin, ray.direction * interactDistance, Color.red);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactMask))
+        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactMask,
+            QueryTriggerInteraction.Collide))
         {
             Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
-
             if (interactable != null)
-            {
                 currentTarget = interactable;
-            }
         }
 
         UpdateCrosshairColor(currentTarget != null);
@@ -81,19 +79,15 @@ public class PlayerInteract : MonoBehaviour
 
     void UpdateCrosshairColor(bool isInteractable)
     {
-        if (crosshairGraphic == null)
-            return;
-
+        if (crosshairGraphic == null) return;
         crosshairGraphic.color = isInteractable ? interactableCrosshairColor : normalCrosshairColor;
     }
 
     public void OnInteract(InputAction.CallbackContext context)
     {
-        if (!context.performed)
-            return;
+        if (!context.performed) return;
 
-        if (Time.time < nextInteractTime)
-            return;
+        if (Time.unscaledTime < nextInteractTime) return;
 
         Debug.Log("Tecla de interação pressionada.");
 
@@ -113,8 +107,7 @@ public class PlayerInteract : MonoBehaviour
         {
             Debug.Log("Chamando Interact() em: " + currentTarget.name);
             currentTarget.Interact();
-
-            nextInteractTime = Time.time + interactCooldown;
+            nextInteractTime = Time.unscaledTime + interactCooldown;
         }
         else
         {
@@ -122,8 +115,5 @@ public class PlayerInteract : MonoBehaviour
         }
     }
 
-    public Interactable GetCurrentTarget()
-    {
-        return currentTarget;
-    }
+    public Interactable GetCurrentTarget() => currentTarget;
 }

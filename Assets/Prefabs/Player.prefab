@@ -564,12 +564,14 @@ MonoBehaviour:
   hangHorizontalSnapSpeed: 14
   ledgeBlockAfterLadderTime: 0.25
   ledgeBlockAfterReleaseTime: 0.25
+  climbTimeout: 1.5
   crouchHeight: 1
   crouchTransitionSpeed: 12
   slideInitialSpeed: 10
   slideDeceleration: 8
   slideMinSpeed: 1.5
   slideCooldown: 1
+  slideShiftGraceTime: 0.3
   slideJumpMomentumRetain: 0.8
   wallJumpUpForce: 5
   wallJumpAwayForce: 5
@@ -610,7 +612,7 @@ MonoBehaviour:
   interactDistance: 3
   interactMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 503
   interactCooldown: 0.2
   cam: {fileID: 1281320848902720141}
   crosshairGraphic: {fileID: 0}
@@ -889,6 +891,12 @@ MonoBehaviour:
   pullUpShakeSpeed: 20
   crouchYOffset: -0.5
   crouchSmooth: 10
+  knockbackDuration: 1.4
+  knockbackBackTilt: -55
+  knockbackGroundAngle: 92
+  knockbackImpactShake: 0.12
+  knockbackShakeSpeed: 18
+  knockbackYDrop: -0.7
 --- !u!114 &2472571293811762677
 MonoBehaviour:
   m_ObjectHideFlags: 0

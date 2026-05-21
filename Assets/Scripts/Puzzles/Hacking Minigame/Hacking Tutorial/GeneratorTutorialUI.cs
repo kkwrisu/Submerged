@@ -4,10 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// UI genérica de tutorial do Generator.
-/// Suporta dois modos: Approach (simples, sem overlay) e QTE (com overlay escuro e destaque).
-/// </summary>
 public class GeneratorTutorialUI : MonoBehaviour
 {
     [Header("Painel principal")]
@@ -26,12 +22,12 @@ public class GeneratorTutorialUI : MonoBehaviour
     [Tooltip("RectTransform que será movido/escalado para enaltecer o elemento de UI do QTE.")]
     public RectTransform qteHighlightFrame;
 
-    // ── internos ──────────────────────────────────────────────────────────────
     private GeneratorTutorialData data;
     private GeneratorTutorialData.TutorialSlide[] currentSlides;
     private int currentIndex;
     private Action onFinished;
     private Coroutine overlayCoroutine;
+    private bool isApproachMode = false;
 
     private void Awake()
     {
@@ -45,15 +41,23 @@ public class GeneratorTutorialUI : MonoBehaviour
 
     // ── Abertura pública ──────────────────────────────────────────────────────
 
-    /// <summary>Tutorial simples de aproximação (sem overlay, sem pausa).</summary>
+    /// <summary>Tutorial simples de aproximação.</summary>
     public void ShowApproach(GeneratorTutorialData tutorialData, Action callback)
     {
+        isApproachMode = true;
+
+        // Libera o cursor para o jogador clicar no botão do tutorial
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         Open(tutorialData, tutorialData.approachSlides, callback);
     }
 
     /// <summary>Tutorial de QTE (com overlay escuro e highlight de UI).</summary>
     public void ShowQTE(GeneratorTutorialData tutorialData, RectTransform qteElementToHighlight, Action callback)
     {
+        isApproachMode = false;
+
         if (qteElementToHighlight != null && qteHighlightFrame != null)
         {
             qteHighlightFrame.position = qteElementToHighlight.position;
@@ -80,7 +84,9 @@ public class GeneratorTutorialUI : MonoBehaviour
         currentIndex = 0;
         onFinished = callback;
 
-        if (panelRoot != null) panelRoot.SetActive(true);
+        if (panelRoot != null)
+            panelRoot.SetActive(true);
+
         ShowSlide(currentIndex);
     }
 
@@ -112,14 +118,26 @@ public class GeneratorTutorialUI : MonoBehaviour
 
     private void Close()
     {
-        if (panelRoot != null) panelRoot.SetActive(false);
-        if (qteHighlightFrame != null) qteHighlightFrame.gameObject.SetActive(false);
+        if (panelRoot != null)
+            panelRoot.SetActive(false);
+
+        if (qteHighlightFrame != null)
+            qteHighlightFrame.gameObject.SetActive(false);
 
         if (darkOverlay != null)
         {
             if (overlayCoroutine != null) StopCoroutine(overlayCoroutine);
             overlayCoroutine = StartCoroutine(FadeOverlayAndDisable(0f));
         }
+
+        // No modo approach: volta a travar o cursor ao fechar
+        if (isApproachMode)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        isApproachMode = false;
 
         onFinished?.Invoke();
         onFinished = null;
@@ -131,7 +149,8 @@ public class GeneratorTutorialUI : MonoBehaviour
     {
         while (!Mathf.Approximately(darkOverlay.alpha, target))
         {
-            darkOverlay.alpha = Mathf.MoveTowards(darkOverlay.alpha, target, overlayFadeSpeed * Time.unscaledDeltaTime);
+            darkOverlay.alpha = Mathf.MoveTowards(
+                darkOverlay.alpha, target, overlayFadeSpeed * Time.unscaledDeltaTime);
             yield return null;
         }
         darkOverlay.alpha = target;
