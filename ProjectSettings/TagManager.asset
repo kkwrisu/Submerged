@@ -6,6 +6,11 @@ TagManager:
   tags:
   - Interactable
   - Ladder
+  - Stone
+  - Grass
+  - Gravel
+  - Water
+  - Sand
   layers:
   - Default
   - TransparentFX

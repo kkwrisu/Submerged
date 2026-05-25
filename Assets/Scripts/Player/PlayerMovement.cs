@@ -468,6 +468,12 @@ public class PlayerMovement : MonoBehaviour
 
         if (stealthStatus != null)
             stealthStatus.TriggerJumpNoise();
+
+        FootstepAudio footsteps =
+            GetComponent<FootstepAudio>();
+
+        if (footsteps != null)
+            footsteps.PlayJumpSound();
     }
 
     bool DetectWall(out Vector3 normal)
@@ -537,6 +543,12 @@ public class PlayerMovement : MonoBehaviour
 
         if (stealthStatus != null)
             stealthStatus.TriggerJumpNoise();
+
+        FootstepAudio footsteps =
+            GetComponent<FootstepAudio>();
+
+        if (footsteps != null)
+            footsteps.PlayJumpSound();
     }
 
     void HandleMovement()
@@ -1015,6 +1027,12 @@ public class PlayerMovement : MonoBehaviour
             if (stealthStatus != null)
                 stealthStatus.TriggerJumpNoise();
 
+            FootstepAudio footsteps =
+                GetComponent<FootstepAudio>();
+
+            if (footsteps != null)
+                footsteps.PlayJumpSound();
+
             return;
         }
 
@@ -1030,6 +1048,12 @@ public class PlayerMovement : MonoBehaviour
 
             if (stealthStatus != null)
                 stealthStatus.TriggerJumpNoise();
+
+            FootstepAudio footsteps =
+                GetComponent<FootstepAudio>();
+
+            if (footsteps != null)
+                footsteps.PlayJumpSound();
 
             return;
         }
