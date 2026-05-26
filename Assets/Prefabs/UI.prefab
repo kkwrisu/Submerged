@@ -3455,6 +3455,7 @@ GameObject:
   - component: {fileID: 1319094796387682528}
   - component: {fileID: 4456828717822744067}
   - component: {fileID: 7374284738210773700}
+  - component: {fileID: 7006630819820089487}
   m_Layer: 5
   m_Name: Nivel
   m_TagString: Untagged
@@ -3519,6 +3520,25 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7006630819820089487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8153467013007911059}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6207ffaa345d8354c887738a6deacaa0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AccessCardUI
+  cardSprites:
+  - {fileID: 21300000, guid: a72d2c2c82cd8ea45af774c8742c8467, type: 3}
+  - {fileID: 21300000, guid: 799bdbdf47ca8804dada4b9a66b58070, type: 3}
+  - {fileID: 21300000, guid: 23ca410caf1b07248bd593605d5e40ac, type: 3}
+  - {fileID: 21300000, guid: 402f5dcb3f675d64895e00cccfdc541e, type: 3}
+  - {fileID: 21300000, guid: d85d62cd830e9f6488f939d97e137c06, type: 3}
+  cardImage: {fileID: 7374284738210773700}
 --- !u!1 &8572014554580614991
 GameObject:
   m_ObjectHideFlags: 0
@@ -3787,7 +3807,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 50, y: 140}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2755186215970436436
 CanvasRenderer:
@@ -3817,7 +3837,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 12949c85a0b4016448bfcc141639b3ce, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 877089ee3fd13ab4d96659f990a5df79, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1

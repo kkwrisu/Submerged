@@ -1,20 +1,7 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 using UnityEngine.Events;
 
-/// <summary>
-/// Leitor de cartão de acesso. Coloque este componente no objeto físico do leitor.
-/// Herda de Interactable — o raycast do PlayerInteract detecta automaticamente.
-///
-/// Quando o jogador interage:
-///   - Se o nível do cartão for suficiente → abre a porta vinculada (ou dispara evento).
-///   - Se não for → feedback de acesso negado.
-///
-/// SETUP:
-///   1. Adicione este componente ao prefab/objeto do leitor de cartão.
-///   2. Preencha o saveID com um ID único (ex: "card_reader_lab_01").
-///   3. Configure requiredCardLevel com o nível mínimo necessário.
-///   4. Vincule targetDoor à porta que deve ser aberta, OU use o evento onAccessGranted.
-/// </summary>
 public class CardReaderInteractable : Interactable, ISaveable
 {
     [Header("Save")]
@@ -35,26 +22,28 @@ public class CardReaderInteractable : Interactable, ISaveable
     public bool blockIfUnlocked = true;
 
     [Header("Feedback Visual (opcional)")]
-    public GameObject lockedVisual;    // ex: luz vermelha
-    public GameObject unlockedVisual;  // ex: luz verde
+    public GameObject lockedVisual;
+    public GameObject unlockedVisual;
 
     [Header("Audio (opcional)")]
     public AudioSource grantedAudio;
     public AudioSource deniedAudio;
 
-    [Header("Eventos")]
-    public UnityEvent onAccessGranted;   // chamado quando acesso é liberado
-    public UnityEvent onAccessDenied;    // chamado quando acesso é negado
+    [Header("Player (para travar movimento)")]
+    public MonoBehaviour playerMovementScript;
+    public MonoBehaviour playerLookScript;
 
-    // ── Unity ──────────────────────────────────────────────────────────────────
+    [Header("Eventos")]
+    public UnityEvent onAccessGranted;
+    public UnityEvent onAccessDenied;
+
+    private bool _waitingForDeniedDialogue = false;
 
     private void Start()
     {
         RefreshVisuals();
         Debug.Log($"[CardReader] {saveID} | requiredLevel={requiredCardLevel} | unlocked={unlocked}");
     }
-
-    // ── Interactable ───────────────────────────────────────────────────────────
 
     public override void Interact()
     {
@@ -64,6 +53,8 @@ public class CardReaderInteractable : Interactable, ISaveable
             return;
         }
 
+        if (_waitingForDeniedDialogue) return;
+
         if (AccessCardManager.Instance == null)
         {
             Debug.LogError("[CardReader] AccessCardManager não encontrado na cena.");
@@ -71,16 +62,10 @@ public class CardReaderInteractable : Interactable, ISaveable
         }
 
         if (AccessCardManager.Instance.HasAccess(requiredCardLevel))
-        {
             GrantAccess();
-        }
         else
-        {
             DenyAccess();
-        }
     }
-
-    // ── Lógica interna ─────────────────────────────────────────────────────────
 
     private void GrantAccess()
     {
@@ -106,6 +91,39 @@ public class CardReaderInteractable : Interactable, ISaveable
         onAccessDenied?.Invoke();
 
         Debug.Log($"[CardReader] {saveID} — acesso NEGADO. Necessário nível {requiredCardLevel}, jogador tem {AccessCardManager.Instance.CardLevel}.");
+
+        StartCoroutine(ShowDeniedDialogue());
+    }
+
+    private IEnumerator ShowDeniedDialogue()
+    {
+        _waitingForDeniedDialogue = true;
+
+        if (playerMovementScript != null) playerMovementScript.enabled = false;
+        if (playerLookScript != null) playerLookScript.enabled = false;
+
+        yield return null;
+
+        _waitingForDeniedDialogue = false;
+
+        if (playerMovementScript != null) playerMovementScript.enabled = true;
+        if (playerLookScript != null) playerLookScript.enabled = true;
+
+        if (DialogueManager.Instance == null) yield break;
+
+        Interactable.DialogueNode[] nodes = new Interactable.DialogueNode[]
+        {
+            new Interactable.DialogueNode
+            {
+                text = $"Acesso negado. Nível de acesso {requiredCardLevel} necessário.",
+                endDialogueHere = true
+            }
+        };
+
+        Interactable temp = gameObject.AddComponent<Interactable>();
+        temp.dialogueNodes = nodes;
+        DialogueManager.Instance.StartDialogue(temp);
+        Destroy(temp, 0.1f);
     }
 
     private void RefreshVisuals()
@@ -114,13 +132,10 @@ public class CardReaderInteractable : Interactable, ISaveable
         if (unlockedVisual != null) unlockedVisual.SetActive(unlocked);
     }
 
-    // ── ISaveable ──────────────────────────────────────────────────────────────
-
     public string GetSaveID() => saveID;
 
     public void SaveToData(SaveData data)
     {
-        // Reutiliza a lista de puzzles para não precisar de nova lista no SaveData
         for (int i = 0; i < data.puzzles.Count; i++)
         {
             if (data.puzzles[i].id == saveID)

@@ -50,6 +50,9 @@ public class MainMenuController : MonoBehaviour
             Debug.LogWarning("SaveManager.Instance está null.");
         }
 
+        if (AccessCardManager.Instance != null)
+            AccessCardManager.Instance.SetLevel(1);
+
         if (DungeonAlertSystem.Instance != null)
             DungeonAlertSystem.Instance.ResetAlert();
 

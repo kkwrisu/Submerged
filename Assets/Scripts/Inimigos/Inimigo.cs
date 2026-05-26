@@ -71,11 +71,11 @@ public class Inimigo : MonoBehaviour
     [Header("Audio")]
     public AudioSource detectAudio;
     public AudioSource chaseLoopAudio;
+    public AudioSource uppercutAudio;
     public float chaseLoopStartDelay = 0.4f;
     public float chaseLoopFadeOutDuration = 0.8f;
 
     [Header("Chase Music Resume")]
-    [Tooltip("Janela de tempo (s) apos perder o player em que, se ele for visto de novo, a musica retoma de onde parou")]
     public float chaseMusicResumeWindow = 8f;
 
     [Header("Detection Pause")]
@@ -90,7 +90,6 @@ public class Inimigo : MonoBehaviour
     public EnemyState currentState = EnemyState.Patrol;
     [Range(0f, 1f)] public float detectionMeter;
 
-    // --- Estado interno ---
     private int currentPatrolIndex;
     private float patrolWaitTimer;
     private float lostSightTimer;
@@ -115,12 +114,10 @@ public class Inimigo : MonoBehaviour
     private Coroutine chaseLoopFadeRoutine;
     private float chaseLoopOriginalVolume = 1f;
 
-    // Controle de retomada da musica de perseguicao
     private float savedChaseMusicTime = 0f;
     private float timeSinceChaseEnded = 0f;
     private bool chaseJustEnded = false;
 
-    // --- Animator ---
     private Animator animator;
 
     private static readonly int HashSpeed = Animator.StringToHash("Speed");
@@ -135,10 +132,8 @@ public class Inimigo : MonoBehaviour
     private float idleTimer = 0f;
     private float idleGestureInterval = 8f;
 
-    // --- Cache do PlayerMovement para o lock de captura ---
     private PlayerMovement playerMovement;
 
-    // --- Propriedades do DungeonAlertSystem ---
     private float CurrentSpeedMultiplier
     {
         get
@@ -163,10 +158,6 @@ public class Inimigo : MonoBehaviour
     private float EffectiveSearchDurationAfterChase => searchDurationAfterChase / CurrentTimeMultiplier;
     private float EffectiveSearchPointInterval => searchPointInterval / CurrentTimeMultiplier;
     private float EffectiveLostSightGraceTime => lostSightGraceTime / CurrentTimeMultiplier;
-
-    // -------------------------------------------------------------------------
-    // Unity callbacks
-    // -------------------------------------------------------------------------
 
     private void Reset()
     {
@@ -224,7 +215,6 @@ public class Inimigo : MonoBehaviour
 
         if (isHandlingCapture) return;
 
-        // Contador da janela de retomada da musica
         if (chaseJustEnded)
         {
             timeSinceChaseEnded += Time.deltaTime;
@@ -281,10 +271,6 @@ public class Inimigo : MonoBehaviour
         UpdateAnimator();
     }
 
-    // -------------------------------------------------------------------------
-    // Animator
-    // -------------------------------------------------------------------------
-
     private void UpdateAnimator()
     {
         if (animator == null) return;
@@ -335,10 +321,6 @@ public class Inimigo : MonoBehaviour
             idleGestureInterval = Random.Range(8f, 16f);
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Estados
-    // -------------------------------------------------------------------------
 
     private void UpdatePatrol(bool canSeePlayer, bool canHearPlayer)
     {
@@ -505,10 +487,6 @@ public class Inimigo : MonoBehaviour
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Entradas de estado
-    // -------------------------------------------------------------------------
-
     private void EnterSuspicious(Vector3 targetPosition)
     {
         hasHeardSomething = true;
@@ -602,10 +580,6 @@ public class Inimigo : MonoBehaviour
             SetDestination(patrolPoints[currentPatrolIndex].position);
     }
 
-    // -------------------------------------------------------------------------
-    // Captura
-    // -------------------------------------------------------------------------
-
     private IEnumerator WaitForUppercutAndCatch()
     {
         isWaitingForUppercut = true;
@@ -628,6 +602,8 @@ public class Inimigo : MonoBehaviour
             : 1f;
 
         yield return new WaitForSeconds(clipLength * 0.70f);
+
+        if (uppercutAudio != null) uppercutAudio.Play();
 
         if (playerMovement == null && player != null)
             playerMovement = player.GetComponent<PlayerMovement>();
@@ -653,6 +629,7 @@ public class Inimigo : MonoBehaviour
 
         isHandlingCapture = true;
         agent.isStopped = true;
+        postRespawnIgnoreTimer = postRespawnIgnoreDuration;
 
         if (CaptureHandler.Instance != null)
             CaptureHandler.Instance.HandleCapture();
@@ -721,10 +698,6 @@ public class Inimigo : MonoBehaviour
             ChangeState(EnemyState.Patrol);
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers de estado/movimento
-    // -------------------------------------------------------------------------
 
     private void ChangeState(EnemyState newState)
     {
@@ -796,10 +769,6 @@ public class Inimigo : MonoBehaviour
         return center;
     }
 
-    // -------------------------------------------------------------------------
-    // Deteccao
-    // -------------------------------------------------------------------------
-
     private void UpdateDetectionMeter(bool canSeePlayer)
     {
         if (canSeePlayer)
@@ -844,8 +813,6 @@ public class Inimigo : MonoBehaviour
 
         if (distance > adjustedViewDistance) return false;
 
-        // Forward efetivo: blend entre transform.forward e direcao do agente
-        // para evitar que curvas no NavMesh causem perda momentanea de visao
         Vector3 effectiveForward;
         if (agent != null && agent.velocity.sqrMagnitude > 0.1f)
         {
@@ -858,8 +825,6 @@ public class Inimigo : MonoBehaviour
             effectiveForward = transform.forward;
         }
 
-        // Bonus de angulo lateral em estados alertados:
-        // quanto mais perto o player, mais o cone abre (cobre diagonais e proximidade)
         float alertedAngleBonus = 0f;
         if (currentState == EnemyState.Suspicious
          || currentState == EnemyState.Investigate
@@ -907,10 +872,6 @@ public class Inimigo : MonoBehaviour
         return false;
     }
 
-    // -------------------------------------------------------------------------
-    // API publica
-    // -------------------------------------------------------------------------
-
     public void ForceChaseFromExternalAlert(bool skipAlertIncrease = false)
     {
         if (player == null || agent == null) return;
@@ -948,10 +909,6 @@ public class Inimigo : MonoBehaviour
             EnterChase();
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Audio de chase
-    // -------------------------------------------------------------------------
 
     private void StartChaseLoopWithDelay()
     {
@@ -1055,10 +1012,6 @@ public class Inimigo : MonoBehaviour
             chaseLoopAudio.volume = chaseLoopOriginalVolume;
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Gizmos
-    // -------------------------------------------------------------------------
 
     private void OnDrawGizmosSelected()
     {
