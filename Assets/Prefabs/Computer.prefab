@@ -18,7 +18,7 @@ GameObject:
   - component: {fileID: 8083172580762175372}
   m_Layer: 7
   m_Name: Computer
-  m_TagString: Untagged
+  m_TagString: Interactable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -110,7 +110,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -155,7 +155,6 @@ MonoBehaviour:
   interactHoldAction: {fileID: 1781555164194001046, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   qteInputAction: {fileID: -3584173731427154646, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   tutorialTracker: {fileID: 8083172580762175372}
-  qteTutorialHighlightTarget: {fileID: 0}
 --- !u!114 &7431876056195251285
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -177,7 +176,7 @@ MonoBehaviour:
   saveID: Generator_01
   completed: 0
   blockIfCompleted: 1
-  tutorialTracker: {fileID: 0}
+  tutorialTracker: {fileID: 8083172580762175372}
   failAlertRadius: 40
   enemyLayer:
     serializedVersion: 2
@@ -197,4 +196,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GeneratorTutorialTracker
   tutorialData: {fileID: 11400000, guid: cb567b3ea2da7104882175591b92e3c2, type: 2}
   tutorialUI: {fileID: 0}
-  forceShowForDebug: 1
+  forceShowForDebug: 0

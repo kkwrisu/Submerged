@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -15,7 +13,6 @@ public class DialogueManager : MonoBehaviour
 
     [Header("Choices UI")]
     public Transform choicesContainer;
-    public GameObject choiceButtonPrefab;
 
     [Header("UI Elements to Hide During Dialogue")]
     public GameObject[] uiElementsToHide;
@@ -42,8 +39,6 @@ public class DialogueManager : MonoBehaviour
 
     private bool isCutsceneMode = false;
 
-    private readonly List<GameObject> spawnedChoices = new List<GameObject>();
-
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -55,7 +50,7 @@ public class DialogueManager : MonoBehaviour
         if (dialoguePanel != null)
             dialoguePanel.SetActive(false);
 
-        ClearChoices();
+        HideAllChoiceButtons();
     }
 
     // -------------------------------------------------------------------------
@@ -68,14 +63,12 @@ public class DialogueManager : MonoBehaviour
             StopCoroutine(typewriterCoroutine);
 
         IsTyping = true;
-
         typewriterCoroutine = StartCoroutine(TypewriterRoutine(text, tickClip, tickVolume, tickEveryN));
     }
 
     private IEnumerator TypewriterRoutine(string text, AudioClip tickClip, float tickVolume, int tickEveryN)
     {
         dialogueText.text = "";
-
         float delay = 1f / typewriterSpeed;
         int charCount = 0;
 
@@ -117,14 +110,10 @@ public class DialogueManager : MonoBehaviour
                 t => t.name == "DialoguePanel"
             );
             if (found != null) dialoguePanel = found.gameObject;
-            Debug.Log("[DialogueManager] Reconectando dialoguePanel: " + dialoguePanel);
         }
 
         if (dialogueText == null && dialoguePanel != null)
-        {
             dialogueText = dialoguePanel.GetComponentInChildren<TextMeshProUGUI>(true);
-            Debug.Log("[DialogueManager] Reconectando dialogueText: " + dialogueText);
-        }
 
         if (choicesContainer == null && dialoguePanel != null)
         {
@@ -133,7 +122,6 @@ public class DialogueManager : MonoBehaviour
                 t => t.name == "ChoicesContainer"
             );
             if (found != null) choicesContainer = found;
-            Debug.Log("[DialogueManager] Reconectando choicesContainer: " + choicesContainer);
         }
 
         if (crosshair == null || playerMovementScript == null || playerLookScript == null)
@@ -145,7 +133,6 @@ public class DialogueManager : MonoBehaviour
                     playerMovementScript = player.GetComponent<PlayerMovement>();
                 if (playerLookScript == null)
                     playerLookScript = player.GetComponentInChildren<PlayerLook>();
-                Debug.Log("[DialogueManager] Reconectando scripts do player: " + player.name);
             }
 
             if (crosshair == null && GameUI.Instance != null)
@@ -160,28 +147,19 @@ public class DialogueManager : MonoBehaviour
     }
 
     // -------------------------------------------------------------------------
-    // Diálogo normal (interactable)
+    // Diálogo normal
     // -------------------------------------------------------------------------
 
     public void StartDialogue(Interactable interactable)
     {
         TryReconnectUI();
 
-        if (interactable == null)
-        {
-            Debug.LogWarning("[DialogueManager] interactable é null.");
+        if (interactable == null || interactable.dialogueNodes == null || interactable.dialogueNodes.Length == 0)
             return;
-        }
-
-        if (interactable.dialogueNodes == null || interactable.dialogueNodes.Length == 0)
-        {
-            Debug.LogWarning("[DialogueManager] Sem dialogue nodes.");
-            return;
-        }
 
         if (dialoguePanel == null)
         {
-            Debug.LogError("[DialogueManager] dialoguePanel é NULL mesmo após reconexão.");
+            Debug.LogError("[DialogueManager] dialoguePanel é NULL.");
             return;
         }
 
@@ -209,22 +187,16 @@ public class DialogueManager : MonoBehaviour
     }
 
     // -------------------------------------------------------------------------
-    // Diálogo de cutscene (automático, chamado pelo CutsceneManager)
+    // Diálogo de cutscene
     // -------------------------------------------------------------------------
 
     public void ShowCutsceneDialogue(string text, AudioClip tickClip = null, float tickVolume = 0.3f, int tickEveryN = 2)
     {
         TryReconnectUI();
 
-        if (dialoguePanel == null)
+        if (dialoguePanel == null || dialogueText == null)
         {
-            Debug.LogError("[DialogueManager] ShowCutsceneDialogue: dialoguePanel é NULL. Verifique se o GameUI está na cena.");
-            return;
-        }
-
-        if (dialogueText == null)
-        {
-            Debug.LogError("[DialogueManager] ShowCutsceneDialogue: dialogueText é NULL.");
+            Debug.LogError("[DialogueManager] dialoguePanel ou dialogueText é NULL.");
             return;
         }
 
@@ -264,12 +236,11 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
-        ClearChoices();
+        HideAllChoiceButtons();
         waitingForChoice = false;
         currentNodeIndex = nodeIndex;
 
         Interactable.DialogueNode node = nodes[currentNodeIndex];
-
         StartTypewriter(node.text);
 
         bool hasChoices = node.choices != null && node.choices.Length > 0;
@@ -277,32 +248,35 @@ public class DialogueManager : MonoBehaviour
         if (hasChoices)
         {
             waitingForChoice = true;
-            SpawnChoices(node.choices);
+            ShowChoices(node.choices);
         }
     }
 
-    private void SpawnChoices(Interactable.DialogueChoice[] choices)
+    private void ShowChoices(Interactable.DialogueChoice[] choices)
     {
-        if (choicesContainer == null || choiceButtonPrefab == null) return;
+        if (choicesContainer == null) return;
 
-        for (int i = 0; i < choices.Length; i++)
+        foreach (var choice in choices)
         {
-            Interactable.DialogueChoice choiceData = choices[i];
-            GameObject choiceObj = Instantiate(choiceButtonPrefab, choicesContainer);
-            spawnedChoices.Add(choiceObj);
+            if (choice.choiceButtonPrefab == null)
+            {
+                Debug.LogWarning("[DialogueManager] choiceButtonPrefab é NULL numa choice.");
+                continue;
+            }
 
-            DialogueChoiceButton choiceButton = choiceObj.GetComponent<DialogueChoiceButton>();
-            if (choiceButton != null)
-                choiceButton.Setup(choiceData, this);
+            GameObject obj = Instantiate(choice.choiceButtonPrefab, choicesContainer);
+            DialogueChoiceButton btn = obj.GetComponent<DialogueChoiceButton>();
+            if (btn != null)
+                btn.Setup(choice, this);
         }
     }
 
-    private void ClearChoices()
+    private void HideAllChoiceButtons()
     {
-        for (int i = 0; i < spawnedChoices.Count; i++)
-            if (spawnedChoices[i] != null) Destroy(spawnedChoices[i]);
+        if (choicesContainer == null) return;
 
-        spawnedChoices.Clear();
+        foreach (Transform child in choicesContainer)
+            Destroy(child.gameObject);
     }
 
     // -------------------------------------------------------------------------
@@ -338,8 +312,7 @@ public class DialogueManager : MonoBehaviour
         if (choice.triggerAction)
             Debug.Log(choice.actionDebugMessage);
 
-        if (choice.onChoiceSelected != null)
-            choice.onChoiceSelected.Invoke();
+        choice.onChoiceSelected?.Invoke();
 
         if (choice.closeDialogue)
         {
@@ -357,7 +330,7 @@ public class DialogueManager : MonoBehaviour
     }
 
     // -------------------------------------------------------------------------
-    // Fim do diálogo normal
+    // Fim do diálogo
     // -------------------------------------------------------------------------
 
     private void EndDialogue()
@@ -372,8 +345,7 @@ public class DialogueManager : MonoBehaviour
             StopCoroutine(typewriterCoroutine);
 
         IsTyping = false;
-
-        ClearChoices();
+        HideAllChoiceButtons();
 
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
 

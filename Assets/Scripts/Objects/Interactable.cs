@@ -6,13 +6,17 @@ public class Interactable : MonoBehaviour
     [System.Serializable]
     public class DialogueChoice
     {
-        [TextArea(1, 2)]
-        public string choiceText;
+        public GameObject choiceButtonPrefab;
+        public Sprite normalSprite;
+        public Sprite hoverSprite;
         public int nextNodeIndex = -1;
         public bool closeDialogue = false;
         public bool triggerAction = false;
         public string actionDebugMessage;
         public UnityEvent onChoiceSelected;
+
+        [Header("Elevator (opcional)")]
+        public string sceneNameToCheck;
     }
 
     [System.Serializable]
@@ -38,16 +42,12 @@ public class Interactable : MonoBehaviour
         Debug.Log("Interactable.Interact() chamado em: " + gameObject.name);
 
         if (triggerActionOnInteract)
-        {
             Debug.Log(interactActionDebugMessage);
-        }
 
         onInteract?.Invoke();
 
         if (dialogueNodes == null || dialogueNodes.Length == 0)
-        {
             return;
-        }
 
         if (DialogueManager.Instance == null)
         {

@@ -27,8 +27,6 @@ public class GeneratorTutorialTracker : MonoBehaviour
         IsApproachTutorialActive = true;
         MarkSeen(SUFFIX_APPROACH);
 
-        // Tutorial abre na interação — o cursor já está travado e o jogo rodando.
-        // Libera o cursor para o jogador clicar no botão "Próximo/Entendido".
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -38,7 +36,6 @@ public class GeneratorTutorialTracker : MonoBehaviour
             IsApproachTutorialActive = false;
             Time.timeScale = 1f;
 
-            // Retrava o cursor ao fechar o tutorial
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
@@ -51,7 +48,7 @@ public class GeneratorTutorialTracker : MonoBehaviour
 
     // ── QTE Tutorial ──────────────────────────────────────────────────────────
 
-    public bool TryShowQteTutorial(RectTransform qteElement, System.Action onFinished = null)
+    public bool TryShowQteTutorial(System.Action onFinished = null)
     {
         if (!CanShow(SUFFIX_QTE)) return false;
 
@@ -60,7 +57,7 @@ public class GeneratorTutorialTracker : MonoBehaviour
 
         Time.timeScale = 0f;
 
-        tutorialUI.ShowQTE(tutorialData, qteElement, () =>
+        tutorialUI.ShowQTE(tutorialData, () =>
         {
             IsQteTutorialActive = false;
             Time.timeScale = 1f;

@@ -6,9 +6,6 @@ public class GeneratorTutorialData : ScriptableObject
     [System.Serializable]
     public class TutorialSlide
     {
-        [Tooltip("Título exibido no topo do slide.")]
-        public string title;
-
         [TextArea(2, 5)]
         [Tooltip("Descrição explicativa da mecânica.")]
         public string description;

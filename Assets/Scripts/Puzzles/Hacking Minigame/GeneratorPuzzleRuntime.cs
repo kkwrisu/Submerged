@@ -2,10 +2,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Gerencia toda a lógica do minigame de gerador estilo DBD.
-/// Roda na cena de gameplay principal.
-/// </summary>
 public class GeneratorPuzzleRuntime : MonoBehaviour
 {
     [Header("Progresso")]
@@ -30,10 +26,7 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
     public InputActionReference qteInputAction;
 
     [Header("Tutorial")]
-    [Tooltip("Referência ao GeneratorTutorialTracker do objeto do gerador na cena.")]
     public GeneratorTutorialTracker tutorialTracker;
-    [Tooltip("RectTransform do QTEPanel na UI — será enaltecido durante o tutorial de QTE.")]
-    public RectTransform qteTutorialHighlightTarget;
 
     private GeneratorPuzzleUI _ui;
     private GeneratorPuzzleInteractable _currentInteractable;
@@ -42,7 +35,7 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
     private bool _isInteracting = false;
     private bool _isOpen = false;
     private bool _qteActive = false;
-    private bool _qteTutorialPending = false; // QTE aguardando tutorial terminar
+    private bool _qteTutorialPending = false;
     private float _qteTimer = 0f;
     private float _nextQteThreshold = 0f;
     private bool _playerLocked = false;
@@ -73,7 +66,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
 
     private void Update()
     {
-        // Regressão silenciosa — UI fechada, apenas decai o progresso em memória
         if (!_isOpen)
         {
             if (_progress > 0f)
@@ -84,12 +76,9 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
             return;
         }
 
-        // ── Tutorial de QTE pendente: jogo pausado, aguarda callback ─────────
-        // (Time.timeScale == 0 — o Update ainda roda mas não devemos processar input)
         if (_qteTutorialPending)
             return;
 
-        // ── QTE ativo ─────────────────────────────────────────────────────────
         if (_qteActive)
         {
             _qteTimer -= Time.deltaTime;
@@ -114,14 +103,12 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
             return;
         }
 
-        // ── Não está segurando: fecha UI e regride ────────────────────────────
         if (!_isInteracting)
         {
             CloseUI();
             return;
         }
 
-        // ── Progresso ─────────────────────────────────────────────────────────
         _progress += fillSpeed * Time.deltaTime;
         _progress = Mathf.Clamp01(_progress);
         _ui?.SetProgress(_progress);
@@ -178,17 +165,11 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
 
     private void TriggerQTE()
     {
-        // Para o progresso imediatamente
         _isInteracting = false;
 
-        // Tenta abrir o tutorial de QTE (só na primeira vez)
-        // O tracker pausa o jogo (timeScale = 0) e chama OnQteTutorialFinished ao fechar
         if (tutorialTracker != null)
         {
-            bool tutorialOpened = tutorialTracker.TryShowQteTutorial(
-                qteTutorialHighlightTarget,
-                onFinished: OnQteTutorialFinished
-            );
+            bool tutorialOpened = tutorialTracker.TryShowQteTutorial(OnQteTutorialFinished);
 
             if (tutorialOpened)
             {
@@ -198,11 +179,9 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
             }
         }
 
-        // Tutorial já visto (ou não configurado): inicia QTE direto
         StartQTE();
     }
 
-    /// <summary>Chamado pelo GeneratorTutorialTracker quando o tutorial de QTE fecha.</summary>
     private void OnQteTutorialFinished()
     {
         _qteTutorialPending = false;

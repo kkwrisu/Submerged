@@ -739,7 +739,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CutsceneTrigger
   cutsceneData: {fileID: 11400000, guid: cc9c75f8d33d19448842325a6a9039b4, type: 2}
-  playOnStart: 0
+  playOnStart: 1
 --- !u!4 &98782438
 Transform:
   m_ObjectHideFlags: 0
@@ -793,7 +793,7 @@ GameObject:
   - component: {fileID: 101793304}
   - component: {fileID: 101793303}
   m_Layer: 6
-  m_Name: Lever (Left) (1)
+  m_Name: Painel Elevador
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -827,9 +827,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Elevator
   destinations:
+  - floorName: Primeiro Andar
+    sceneName: Prototype
+    spawnId: Elevador_Primeiro_Andar
   - floorName: Segundo Andar
     sceneName: Segundo_Andar_Teste
     spawnId: elevador_segundo_andar
+  - floorName: Terceiro Andar
+    sceneName: 
+    spawnId: 
 --- !u!114 &101793304
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -847,7 +853,9 @@ MonoBehaviour:
     nextNodeIndex: 0
     endDialogueHere: 0
     choices:
-    - choiceText: Segundo Andar
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: 425009f1f1899cc479508328113492eb, type: 3}
+      normalSprite: {fileID: 21300000, guid: b2745f16d458a5147a701ea6fa950048, type: 3}
+      hoverSprite: {fileID: 21300000, guid: ac0c372ee91fa5942afebd3a96a2a1e9, type: 3}
       nextNodeIndex: -1
       closeDialogue: 1
       triggerAction: 0
@@ -867,7 +875,56 @@ MonoBehaviour:
               m_StringArgument: 
               m_BoolArgument: 0
             m_CallState: 2
-    - choiceText: Cancelar
+      sceneNameToCheck: Prototype
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: e4e6e375223fbd24ba8e16135e2cc7f1, type: 3}
+      normalSprite: {fileID: 21300000, guid: a694e1770d89f404cb4b5e0d6c4133f0, type: 3}
+      hoverSprite: {fileID: 21300000, guid: c40ce31072d86d74f8cfb9797ec8a32f, type: 3}
+      nextNodeIndex: -1
+      closeDialogue: 1
+      triggerAction: 0
+      actionDebugMessage: 
+      onChoiceSelected:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 101793303}
+            m_TargetAssemblyTypeName: Elevator, Assembly-CSharp
+            m_MethodName: GoToFloor
+            m_Mode: 3
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 1
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+      sceneNameToCheck: Segundo_Andar_Teste
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: 84921827aeacb9e489b708f22bc2aa59, type: 3}
+      normalSprite: {fileID: 21300000, guid: 7db10f446499103479eba59b9f612eff, type: 3}
+      hoverSprite: {fileID: 21300000, guid: de13132a272ed7740b436b493953a883, type: 3}
+      nextNodeIndex: -1
+      closeDialogue: 1
+      triggerAction: 0
+      actionDebugMessage: 
+      onChoiceSelected:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 101793303}
+            m_TargetAssemblyTypeName: Elevator, Assembly-CSharp
+            m_MethodName: GoToFloor
+            m_Mode: 3
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 2
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+      sceneNameToCheck: Segundo_Andar_Teste
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: 3667fb4cdfc73724b90eea73cbf6da85, type: 3}
+      normalSprite: {fileID: 21300000, guid: c5d411a4f4ea57f42a3016d4b0d7a5e0, type: 3}
+      hoverSprite: {fileID: 21300000, guid: cfcad0c6dc04ed240b48c12cba430091, type: 3}
       nextNodeIndex: -1
       closeDialogue: 1
       triggerAction: 0
@@ -875,6 +932,7 @@ MonoBehaviour:
       onChoiceSelected:
         m_PersistentCalls:
           m_Calls: []
+      sceneNameToCheck: 
   triggerActionOnInteract: 0
   interactActionDebugMessage: 
   onInteract:
@@ -1832,6 +1890,7 @@ Transform:
   - {fileID: 706820141}
   - {fileID: 773165024}
   - {fileID: 1678199170}
+  - {fileID: 1835982241}
   - {fileID: 101793302}
   - {fileID: 1298543280}
   - {fileID: 414755589}
@@ -3654,7 +3713,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -121, y: 194.38605}
+  m_AnchoredPosition: {x: -136, y: 377.38605}
   m_SizeDelta: {x: 260, y: 0}
   m_Pivot: {x: 1, y: 0}
 --- !u!114 &534623179
@@ -3689,7 +3748,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 2
-  m_Spacing: 10
+  m_Spacing: 0
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 1
@@ -4474,6 +4533,159 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 340468354}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &704682261
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 704682264}
+  - component: {fileID: 704682263}
+  - component: {fileID: 704682262}
+  m_Layer: 0
+  m_Name: DialogueManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!82 &704682262
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704682261}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &704682263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704682261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a598abb46cfd8ea48ac96ce89fd49fc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueManager
+  dialoguePanel: {fileID: 669168908}
+  dialogueText: {fileID: 1242372965}
+  choicesContainer: {fileID: 534623178}
+  uiElementsToHide:
+  - {fileID: 1401404597}
+  crosshair: {fileID: 1401404598}
+  playerMovementScript: {fileID: 2001152426}
+  playerLookScript: {fileID: 330585548}
+  inputBlockAfterStart: 0.15
+  typewriterSpeed: 40
+  typewriterAudioSource: {fileID: 704682262}
+--- !u!4 &704682264
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704682261}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.79335195, z: -0, w: 0.60876334}
+  m_LocalPosition: {x: 36.39095, y: -0.54457, z: -17.821949}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &706820140
 GameObject:
@@ -7944,7 +8156,7 @@ MonoBehaviour:
   onAccessDenied:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1481159042541029755}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: 
         m_MethodName: 
         m_Mode: 0
@@ -9910,6 +10122,37 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 5192293760262708679, guid: 8ddcc287527954f4f95927c6a80f6bee, type: 3}
+--- !u!1 &1835982240
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1835982241}
+  m_Layer: 6
+  m_Name: Elevador_Primeiro_Andar
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1835982241
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1835982240}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 28.099, y: 1.83, z: 8.46675}
+  m_LocalScale: {x: 0.32225996, y: 0.9470017, z: 0.7170921}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 340468354}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!64 &1844939135
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -10626,21 +10869,17 @@ PrefabInstance:
       propertyPath: musicSlider
       value: 
       objectReference: {fileID: 1238613007}
-    - target: {fileID: 6347347674880110577, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: -0.25881574
-      objectReference: {fileID: 0}
-    - target: {fileID: 6347347674880110577, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0.9659267
-      objectReference: {fileID: 0}
-    - target: {fileID: 6347347674880110577, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -210
-      objectReference: {fileID: 0}
     - target: {fileID: 6932248327732184117, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: m_Name
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 8003518601886855652, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
+      propertyPath: m_ActionEvents.Array.data[3].m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 704682263}
+    - target: {fileID: 8003518601886855652, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
+      propertyPath: m_ActionEvents.Array.data[3].m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: OnNextDialogue
       objectReference: {fileID: 0}
     - target: {fileID: 8699847934946646076, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: m_LocalPosition.x
@@ -10682,41 +10921,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9168392171515724901, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: crosshair
-      value: 
-      objectReference: {fileID: 1401404598}
-    - target: {fileID: 9168392171515724901, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: dialogueText
-      value: 
-      objectReference: {fileID: 1242372965}
-    - target: {fileID: 9168392171515724901, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: dialoguePanel
-      value: 
-      objectReference: {fileID: 669168908}
-    - target: {fileID: 9168392171515724901, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: choicesContainer
-      value: 
-      objectReference: {fileID: 534623178}
-    - target: {fileID: 9168392171515724901, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: typewriterAudioSource
-      value: 
-      objectReference: {fileID: 1481159042541029757}
-    - target: {fileID: 9168392171515724901, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: uiElementsToHide.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9168392171515724901, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      propertyPath: 'uiElementsToHide.Array.data[0]'
-      value: 
-      objectReference: {fileID: 1401404597}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5401361516627570310, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1481159042541029757}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
 --- !u!114 &1481159042541029753 stripped
 MonoBehaviour:
@@ -10740,113 +10948,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9ab1aded0aaa5e478f6a5aa84b38467, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player_Status
---- !u!1 &1481159042541029755 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5401361516627570310, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
-  m_PrefabInstance: {fileID: 1481159042541029752}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1481159042541029756 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6347347674880110577, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
   m_PrefabInstance: {fileID: 1481159042541029752}
   m_PrefabAsset: {fileID: 0}
---- !u!82 &1481159042541029757
-AudioSource:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1481159042541029755}
-  m_Enabled: 1
-  serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
-  m_PlayOnAwake: 0
-  m_Volume: 1
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Spatialize: 0
-  SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  reverbZoneMixCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
 --- !u!1001 &1624020604606721162
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10901,6 +11007,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4728901880316137590, guid: 6dca07afd639a784c91bdd8f671e486e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7637308837438554633, guid: 6dca07afd639a784c91bdd8f671e486e, type: 3}
+      propertyPath: dialogueNodes.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7637308837438554633, guid: 6dca07afd639a784c91bdd8f671e486e, type: 3}
+      propertyPath: dialogueNodes.Array.data[0].choices.Array.size
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -11228,6 +11342,7 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 1159625813}
   - {fileID: 1125128992}
+  - {fileID: 704682264}
   - {fileID: 1481159042541029752}
   - {fileID: 1401404596}
   - {fileID: 885224344}

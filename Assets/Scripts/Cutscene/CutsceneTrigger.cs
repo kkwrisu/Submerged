@@ -10,9 +10,18 @@ public class CutsceneTrigger : MonoBehaviour
     private void Start()
     {
         if (playOnStart && cutsceneData != null)
-            Play();
+        {
+            bool hasSave = SaveManager.Instance != null && SaveManager.Instance.HasSave();
+
+            if (hasSave)
+                GameUI.Instance?.ShowImmediate();
+            else
+                Play();
+        }
         else
+        {
             GameUI.Instance?.ShowImmediate();
+        }
     }
 
     public void Play()

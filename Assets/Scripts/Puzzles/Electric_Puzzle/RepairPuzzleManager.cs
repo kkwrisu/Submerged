@@ -139,18 +139,19 @@ public class RepairPuzzleManager : MonoBehaviour
             SaveManager.Instance.UnregisterPuzzleScene();
 
         if (GameUI.Instance != null)
+        {
             GameUI.Instance.RefreshForScene(previousScene.name);
+            GameUI.Instance.ShowImmediate();
+        }
 
         if (pauseGameWhilePuzzleIsOpen)
             Time.timeScale = 1f;
 
-        // Garante que o PauseMenu não fique em estado pausado após fechar o puzzle
         if (PauseMenu.Instance != null && PauseMenu.Instance.IsPaused())
             PauseMenu.Instance.ResumeGame();
 
         LockPlayer(false);
 
-        // Só agora marca como fechado
         isOpen = false;
         isClosing = false;
 
@@ -179,7 +180,7 @@ public class RepairPuzzleManager : MonoBehaviour
             playerAudioListener.enabled = !locked;
 
         Cursor.lockState = locked ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = locked ? true : false;
+        Cursor.visible = locked;
     }
 
     private string GetRandomScene(RepairPuzzleDifficulty difficulty)
@@ -209,8 +210,5 @@ public class RepairPuzzleManager : MonoBehaviour
         return pool[randomIndex];
     }
 
-    /// <summary>
-    /// Retorna true enquanto o puzzle estiver aberto OU fechando.
-    /// </summary>
     public bool IsPuzzleOpen() => isOpen || isClosing;
 }

@@ -17,4 +17,11 @@ public class ButtonHoverImage : MonoBehaviour, IPointerEnterHandler, IPointerExi
     {
         targetImage.sprite = normalSprite;
     }
+
+    public void SetSprites(Sprite normal, Sprite hover)
+    {
+        normalSprite = normal;
+        hoverSprite = hover;
+        targetImage.sprite = normalSprite;
+    }
 }

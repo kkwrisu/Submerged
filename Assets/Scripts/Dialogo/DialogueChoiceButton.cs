@@ -1,12 +1,15 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 
-public class DialogueChoiceButton : MonoBehaviour
+public class DialogueChoiceButton : MonoBehaviour, IPointerClickHandler
 {
     [Header("UI")]
     public Button button;
     public TextMeshProUGUI buttonText;
+    public ButtonHoverImage buttonHoverImage;
 
     private Interactable.DialogueChoice choiceData;
     private DialogueManager dialogueManager;
@@ -16,21 +19,38 @@ public class DialogueChoiceButton : MonoBehaviour
         choiceData = choice;
         dialogueManager = manager;
 
-        if (buttonText != null)
-            buttonText.text = choice.choiceText;
+        if (buttonHoverImage != null)
+            buttonHoverImage.SetSprites(choice.normalSprite, choice.hoverSprite);
 
         if (button != null)
         {
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(OnClick);
+
+            if (!string.IsNullOrEmpty(choice.sceneNameToCheck))
+                button.interactable = choice.sceneNameToCheck != SceneManager.GetActiveScene().name;
+        }
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (button == null) return;
+
+        if (button.interactable)
+        {
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayButtonClick();
+        }
+        else
+        {
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayButtonDisabled();
         }
     }
 
     private void OnClick()
     {
         if (dialogueManager != null && choiceData != null)
-        {
             dialogueManager.Choose(choiceData);
-        }
     }
 }
