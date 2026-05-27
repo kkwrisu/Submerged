@@ -1,0 +1,113 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6f9f18c1411a4c4d9d06b4e8a950f4a, type: 3}
+  m_Name: Prologue Cutscene
+  m_EditorClassIdentifier: Assembly-CSharp::CutsceneData
+  steps:
+  - dialogueText: ...
+    showDialogue: 1
+    cameraTargetIndex: -1
+    cameraRotateSpeed: 0
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 0}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  - dialogueText: "J\xE1 amanheceu\u2026"
+    showDialogue: 1
+    cameraTargetIndex: 0
+    cameraRotateSpeed: 1
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 0}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  - dialogueText: "Dois dias dormindo no ch\xE3o\u2026 Minhas costas est\xE3o morrendo."
+    showDialogue: 1
+    cameraTargetIndex: 0
+    cameraRotateSpeed: 0
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 0}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  - dialogueText: "Crestauta, \xE9? A j\xF3ia do pa\xEDs, diziam. Claramente nunca
+      pisaram nesse fim de mundo."
+    showDialogue: 1
+    cameraTargetIndex: 1
+    cameraRotateSpeed: 1
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 0}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  - dialogueText: "Bem, j\xE1 chega de dormir no ch\xE3o por hoje. \xC9 melhor eu
+      terminar as anota\xE7\xF5es no di\xE1rio e me apressar logo."
+    showDialogue: 1
+    cameraTargetIndex: 2
+    cameraRotateSpeed: 1
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 0}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  - dialogueText: '*Folheia*'
+    showDialogue: 1
+    cameraTargetIndex: -1
+    cameraRotateSpeed: 1
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 8300000, guid: e0075bfcd4a3e5b4d955217c93ced81d, type: 3}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  - dialogueText: 13/12 - Terceiro Dia em Crestauta
+    showDialogue: 1
+    cameraTargetIndex: -1
+    cameraRotateSpeed: 0
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 8300000, guid: 84e6a8b4a0b1b2b42bd912b4df442875, type: 3}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  - dialogueText: "Confirmado: os moradores daqui apresentam os mesmos sintomas da
+      Lily. A progress\xE3o parece estar mais avan\xE7ada nos idosos e crian\xE7as,
+      que aparentam ser grande parte da popula\xE7\xE3o daqui. "
+    showDialogue: 1
+    cameraTargetIndex: -1
+    cameraRotateSpeed: 0
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 8300000, guid: 84e6a8b4a0b1b2b42bd912b4df442875, type: 3}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  - dialogueText: "Isso n\xE3o pode ser coincid\xEAncia. Algu\xE9m naquela torre
+      com certeza deve saber mais do que dizem sobre o Sudarium. Sempre sabem."
+    showDialogue: 1
+    cameraTargetIndex: -1
+    cameraRotateSpeed: 0
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 8300000, guid: 84e6a8b4a0b1b2b42bd912b4df442875, type: 3}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  - dialogueText: "Espere por mim, Lily. O papai vai achar a cura pra voc\xEA."
+    showDialogue: 1
+    cameraTargetIndex: -1
+    cameraRotateSpeed: 0
+    holdTimeAfterTyping: 3
+    voiceClip: {fileID: 8300000, guid: 84e6a8b4a0b1b2b42bd912b4df442875, type: 3}
+    typewriterTickClip: {fileID: 0}
+    tickVolume: 0
+    tickEveryNChars: 0
+  typewriterSpeed: 40
+  introDelay: 0.5
+  cameraResetSpeed: 3

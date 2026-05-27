@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -13,6 +14,8 @@ public class GameUI : MonoBehaviour
 
     [Header("Sempre desativados (controlados por outros scripts)")]
     public GameObject[] managedElsewhere;
+
+    private CanvasGroup canvasGroup;
 
     private void Awake()
     {
@@ -30,6 +33,10 @@ public class GameUI : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
         Debug.Log("[GameUI] Registrado no SceneManager.");
+
+        canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
     }
 
     private void OnDestroy()
@@ -47,6 +54,9 @@ public class GameUI : MonoBehaviour
     {
         bool shouldHide = System.Array.Exists(hiddenInScenes, s => s == sceneName);
         Debug.Log($"[GameUI] RefreshForScene: {sceneName} | shouldHide: {shouldHide}");
+
+        // Começa invisível em cenas de gameplay — cutscene ou ShowImmediate vão reativar
+        canvasGroup.alpha = shouldHide ? 1f : 0f;
 
         foreach (var el in uiElements)
         {
@@ -66,5 +76,52 @@ public class GameUI : MonoBehaviour
             if (el != null)
                 el.SetActive(false);
         }
+    }
+
+    public void ShowImmediate()
+    {
+        canvasGroup.alpha = 1f;
+    }
+
+    public IEnumerator FadeIn(float duration)
+    {
+        canvasGroup.alpha = 0f;
+
+        if (duration <= 0f)
+        {
+            canvasGroup.alpha = 1f;
+            yield break;
+        }
+
+        // Piscadas iniciais — simula boot
+        int flickerCount = 4;
+        float flickerSpeed = duration * 0.08f;
+
+        for (int i = 0; i < flickerCount; i++)
+        {
+            canvasGroup.alpha = 1f;
+            yield return new WaitForSecondsRealtime(flickerSpeed);
+            canvasGroup.alpha = 0f;
+            yield return new WaitForSecondsRealtime(flickerSpeed * (1f + i * 0.3f));
+        }
+
+        // Última piscada longa antes de estabilizar
+        canvasGroup.alpha = 1f;
+        yield return new WaitForSecondsRealtime(flickerSpeed * 2f);
+        canvasGroup.alpha = 0f;
+        yield return new WaitForSecondsRealtime(flickerSpeed);
+
+        // Estabiliza com fade suave
+        float elapsed = 0f;
+        float stabilizeDuration = duration * 0.4f;
+
+        while (elapsed < stabilizeDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            canvasGroup.alpha = Mathf.Clamp01(elapsed / stabilizeDuration);
+            yield return null;
+        }
+
+        canvasGroup.alpha = 1f;
     }
 }

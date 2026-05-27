@@ -206,8 +206,6 @@ public class PauseMenu : MonoBehaviour
         isPaused = false;
     }
 
-    // Chamado pelo Unity Event (Player Input → Invoke Unity Events → Pause)
-    // O binding no Inspector deve apontar para este método.
     public void OnPause(InputAction.CallbackContext context)
     {
         if (!context.performed)
@@ -218,12 +216,13 @@ public class PauseMenu : MonoBehaviour
 
     private void TogglePause()
     {
-        // Proteção 1: puzzle aberto ou fechando
         if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen())
             return;
 
-        // Proteção 2: ESC ainda pressionado após fechar o puzzle
         if (waitingForEscRelease)
+            return;
+
+        if (CutsceneManager.Instance != null && CutsceneManager.Instance.IsActive())
             return;
 
         if (settingsPanel != null && settingsPanel.activeSelf)
@@ -244,17 +243,11 @@ public class PauseMenu : MonoBehaviour
         PauseGame();
     }
 
-    /// <summary>
-    /// Chamado pelo RepairPuzzleRuntime ao fechar o puzzle via ESC,
-    /// ANTES de qualquer outra coisa no mesmo frame.
-    /// Bloqueia o PauseMenu até que o ESC seja fisicamente solto.
-    /// </summary>
     public void BlockPauseUntilEscReleased()
     {
         waitingForEscRelease = true;
     }
 
-    // Mantido por compatibilidade com chamadas existentes no RepairPuzzleRuntime
     public void BlockPauseForOneFrame()
     {
         waitingForEscRelease = true;
@@ -262,7 +255,6 @@ public class PauseMenu : MonoBehaviour
 
     public void PauseGame()
     {
-        // Proteção: nunca pausa durante o puzzle nem enquanto ESC não foi solto
         if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen())
             return;
 
