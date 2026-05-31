@@ -13170,6 +13170,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6459697444325630510, guid: f8d1a1861eed5d54996c4f878ae81775, type: 3}
       insertIndex: -1
       addedObject: {fileID: 913814244}
+    - targetCorrespondingSourceObject: {fileID: 6459697444325630510, guid: f8d1a1861eed5d54996c4f878ae81775, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 913814246}
+    - targetCorrespondingSourceObject: {fileID: 6459697444325630510, guid: f8d1a1861eed5d54996c4f878ae81775, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 913814245}
     - targetCorrespondingSourceObject: {fileID: -2841695311940077995, guid: f8d1a1861eed5d54996c4f878ae81775, type: 3}
       insertIndex: -1
       addedObject: {fileID: 910487278}
@@ -44585,6 +44591,39 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 2733448660354597953, guid: f8d1a1861eed5d54996c4f878ae81775, type: 3}
+--- !u!114 &913814245
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 158866283}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ce6bc12a2bf60544b75d9df8143fad3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Elevator
+  destinations: []
+--- !u!114 &913814246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 158866283}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92a835afc79ec4f4189513113017350b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneTransition
+  fadeImage: {fileID: 0}
+  fadeDuration: 0.4
+  loadingPanel: {fileID: 0}
+  loadingBar: {fileID: 0}
+  loadingText: {fileID: 0}
+  minimumLoadingTime: 1.5
+  loadingBarSmoothSpeed: 1.5
+  finalFillSpeed: 2.5
 --- !u!64 &914492387
 MeshCollider:
   m_ObjectHideFlags: 0
