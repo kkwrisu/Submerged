@@ -4077,7 +4077,9 @@ MonoBehaviour:
     Level Designer\nIgor Silva \u2014 3D Modeler | Level Designer\nGiovana Couto
     Rios \u2014 Concept Artist | UI Artist\n\nEngineering & Design\nPedro Terezzino
     \u2014 Game Designer | Programmer\nGabriel Mezet \u2014 SFX Designer\n\nNarrative\nGabriel
-    Mezet \u2014 Narrative Designer\nPedro Terezzino \u2014 Narrative Designer\n"
+    Mezet \u2014 Narrative Designer\nPedro Terezzino \u2014 Narrative Designer\n\nThird-Party
+    Assets\n\"Underwater Skybox\" by BreathlesSherpa \u2014 skfb.ly/ozRVW\nLicensed
+    under CC BY 4.0 \u2014 creativecommons.org/licenses/by/4.0\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37d4e38453c7de44798df317bae6e3d7, type: 2}
   m_sharedMaterial: {fileID: -7935885489429363998, guid: 37d4e38453c7de44798df317bae6e3d7, type: 2}
@@ -4104,8 +4106,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 32
-  m_fontSizeBase: 32
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

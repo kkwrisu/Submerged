@@ -99,7 +99,6 @@ public class PlayerMovement : MonoBehaviour
     private float climbStartY;
     private Vector3 pullUpTarget;
 
-    // Quando true, ao terminar o pull-up o player agacha automaticamente
     private bool pullUpForceCrouch;
 
     [Header("Crouch")]
@@ -137,18 +136,8 @@ public class PlayerMovement : MonoBehaviour
     public float wallJumpCooldown = 0.15f;
     public LayerMask wallMask;
 
-    [Header("Wall Slide")]
-    [Tooltip("Velocidade de queda enquanto deslizando na parede.")]
-    public float wallSlideSpeed = 1.8f;
-    [Tooltip("Quão rápido o player desacelera até o wallSlideSpeed ao encostar na parede.")]
-    public float wallSlideGravityDamp = 12f;
-
-    [Tooltip("Dot product mínimo entre a normal atual e a última parede para considerar paredes DIFERENTES.")]
-    public float wallNormalDifferenceThreshold = 0.3f;
-
     private float wallJumpCooldownTimer;
     private Vector3 lastWallNormal = Vector3.zero;
-    private bool isWallSliding;
     private Vector3 currentWallNormal;
 
     [Header("Ladder")]
@@ -268,7 +257,6 @@ public class PlayerMovement : MonoBehaviour
         HandleClimb();
         HandlePullUp();
         HandleSlide();
-        HandleWallSlide();
         HandleMovement();
 
         UpdateStealthStatus();
@@ -331,7 +319,6 @@ public class PlayerMovement : MonoBehaviour
         if (isGrounded)
         {
             lastWallNormal = Vector3.zero;
-            isWallSliding = false;
         }
 
         if (!wasGroundedLastFrame && isGrounded && stealthStatus != null)
@@ -469,9 +456,7 @@ public class PlayerMovement : MonoBehaviour
         if (stealthStatus != null)
             stealthStatus.TriggerJumpNoise();
 
-        FootstepAudio footsteps =
-            GetComponent<FootstepAudio>();
-
+        FootstepAudio footsteps = GetComponent<FootstepAudio>();
         if (footsteps != null)
             footsteps.PlayJumpSound();
     }
@@ -501,56 +486,6 @@ public class PlayerMovement : MonoBehaviour
         return false;
     }
 
-    void HandleWallSlide()
-    {
-        if (isGrounded || isCrouching || isClimbing || isHanging || isDroppingToHang ||
-            isPullingUp || isOnLadder || isExitingLadderTop || isSliding || ledgeGrabThisFrame)
-        {
-            isWallSliding = false;
-            return;
-        }
-
-        Vector3 normal;
-        bool wallFound = DetectWall(out normal);
-
-        if (!wallFound)
-        {
-            isWallSliding = false;
-            return;
-        }
-
-        bool wallIsNew = lastWallNormal == Vector3.zero ||
-                         Vector3.Dot(normal, lastWallNormal) < wallNormalDifferenceThreshold;
-
-        if (!wallIsNew)
-        {
-            isWallSliding = false;
-            return;
-        }
-
-        isWallSliding = true;
-        currentWallNormal = normal;
-    }
-
-    void DoWallJump()
-    {
-        lastWallNormal = currentWallNormal;
-        wallJumpCooldownTimer = wallJumpCooldown;
-        isWallSliding = false;
-
-        currentVelocity = currentWallNormal * wallJumpAwayForce;
-        yVelocity = Mathf.Sqrt(wallJumpUpForce * -2f * gravity);
-
-        if (stealthStatus != null)
-            stealthStatus.TriggerJumpNoise();
-
-        FootstepAudio footsteps =
-            GetComponent<FootstepAudio>();
-
-        if (footsteps != null)
-            footsteps.PlayJumpSound();
-    }
-
     void HandleMovement()
     {
         if (isClimbing || isHanging || isDroppingToHang || isPullingUp || isOnLadder || isExitingLadderTop || isSliding) return;
@@ -573,22 +508,12 @@ public class PlayerMovement : MonoBehaviour
 
         controller.Move(currentVelocity * Time.deltaTime);
 
-        if (isWallSliding)
-        {
-            yVelocity = Mathf.MoveTowards(yVelocity, -wallSlideSpeed, wallSlideGravityDamp * Time.deltaTime);
-        }
-        else if (yVelocity < 0)
-        {
+        if (yVelocity < 0)
             yVelocity += gravity * fallMultiplier * Time.deltaTime;
-        }
         else if (yVelocity > 0)
-        {
             yVelocity += gravity * lowJumpMultiplier * Time.deltaTime;
-        }
         else
-        {
             yVelocity += gravity * Time.deltaTime;
-        }
 
         controller.Move(Vector3.up * yVelocity * Time.deltaTime);
     }
@@ -778,7 +703,6 @@ public class PlayerMovement : MonoBehaviour
         pullUpTarget = transform.position + transform.forward * pullUpForward + Vector3.up * pullUpUpward;
         isSprinting = false;
 
-        // Verifica se não cabe em pé no destino — se sim, vai agachar ao terminar
         float radius = controller.radius * 0.9f;
         Vector3 standCenter = pullUpTarget + standingCenter;
         float halfStand = Mathf.Max(standingHeight * 0.5f, radius);
@@ -937,18 +861,11 @@ public class PlayerMovement : MonoBehaviour
         float climbAmount = 0f;
 
         if (verticalInput > 0.01f)
-        {
             climbAmount = ladderClimbUpSpeed;
-        }
         else if (verticalInput < -0.01f)
-        {
-            bool fastSlideDown = sprintHeld;
-            climbAmount = fastSlideDown ? -ladderFastDownSpeed : -ladderClimbDownSpeed;
-        }
+            climbAmount = sprintHeld ? -ladderFastDownSpeed : -ladderClimbDownSpeed;
         else
-        {
-            climbAmount = ladderStayStillWhenIdle ? 0f : 0f;
-        }
+            climbAmount = 0f;
 
         Vector3 climbMotion = ladderUp * climbAmount;
         controller.Move(climbMotion * Time.deltaTime);
@@ -1027,9 +944,7 @@ public class PlayerMovement : MonoBehaviour
             if (stealthStatus != null)
                 stealthStatus.TriggerJumpNoise();
 
-            FootstepAudio footsteps =
-                GetComponent<FootstepAudio>();
-
+            FootstepAudio footsteps = GetComponent<FootstepAudio>();
             if (footsteps != null)
                 footsteps.PlayJumpSound();
 
@@ -1049,18 +964,21 @@ public class PlayerMovement : MonoBehaviour
             if (stealthStatus != null)
                 stealthStatus.TriggerJumpNoise();
 
-            FootstepAudio footsteps =
-                GetComponent<FootstepAudio>();
-
+            FootstepAudio footsteps = GetComponent<FootstepAudio>();
             if (footsteps != null)
                 footsteps.PlayJumpSound();
 
             return;
         }
 
-        if (isWallSliding && wallJumpCooldownTimer <= 0f)
+        if (wallJumpCooldownTimer <= 0f)
         {
-            DoWallJump();
+            Vector3 wallNormal;
+            if (DetectWall(out wallNormal))
+            {
+                currentWallNormal = wallNormal;
+                DoWallJump();
+            }
         }
     }
 
@@ -1090,6 +1008,22 @@ public class PlayerMovement : MonoBehaviour
             if (isSliding)
                 StopSlide();
         }
+    }
+
+    void DoWallJump()
+    {
+        lastWallNormal = currentWallNormal;
+        wallJumpCooldownTimer = wallJumpCooldown;
+
+        currentVelocity = currentWallNormal * wallJumpAwayForce;
+        yVelocity = Mathf.Sqrt(wallJumpUpForce * -2f * gravity);
+
+        if (stealthStatus != null)
+            stealthStatus.TriggerJumpNoise();
+
+        FootstepAudio footsteps = GetComponent<FootstepAudio>();
+        if (footsteps != null)
+            footsteps.PlayJumpSound();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -1183,7 +1117,6 @@ public class PlayerMovement : MonoBehaviour
         slideCooldownTimer = 0f;
         shiftGraceTimer = 0f;
 
-        isWallSliding = false;
         lastWallNormal = Vector3.zero;
         wallJumpCooldownTimer = 0f;
 
@@ -1212,5 +1145,5 @@ public class PlayerMovement : MonoBehaviour
     public bool IsCrouching() => isCrouching;
     public bool IsOnLadder() => isOnLadder;
     public bool IsSliding() => isSliding;
-    public bool IsWallSliding() => isWallSliding;
+    public bool IsWallSliding() => false;
 }
