@@ -13,6 +13,9 @@ public class RepairPuzzleRuntime : MonoBehaviour
     public LineRenderer wireRendererA;
     public LineRenderer wireRendererB;
 
+    [Header("Grid Background")]
+    public SpriteRenderer gridBackground;
+
     [Header("Input Actions")]
     public InputActionReference clickAction;
     public InputActionReference resetAction;
@@ -98,11 +101,32 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         BuildMap();
         FindSpecialNodes();
+        FitBackgroundToGrid(gridBackground);
         ResetPuzzle();
 
         RepairPuzzleTutorialTracker tracker = GetComponent<RepairPuzzleTutorialTracker>();
         if (tracker != null)
             StartCoroutine(TryShowTutorialNextFrame(tracker));
+    }
+
+    private void FitBackgroundToGrid(SpriteRenderer bg)
+    {
+        if (bg == null || nodes.Count == 0) return;
+
+        bg.transform.position = new Vector3(
+            gridBounds.center.x,
+            gridBounds.center.y,
+            bg.transform.position.z
+        );
+
+        float spriteW = bg.sprite.bounds.size.x;
+        float spriteH = bg.sprite.bounds.size.y;
+
+        bg.transform.localScale = new Vector3(
+            gridBounds.size.x / spriteW,
+            gridBounds.size.y / spriteH,
+            1f
+        );
     }
 
     private IEnumerator TryShowTutorialNextFrame(RepairPuzzleTutorialTracker tracker)

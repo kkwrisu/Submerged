@@ -50,8 +50,8 @@ MonoBehaviour:
     typewriterTickClip: {fileID: 0}
     tickVolume: 0
     tickEveryNChars: 0
-  - dialogueText: "Bem, j\xE1 chega de dormir no ch\xE3o por hoje. \xC9 melhor eu
-      terminar as anota\xE7\xF5es no di\xE1rio e me apressar logo."
+  - dialogueText: "\xC9 melhor eu terminar as anota\xE7\xF5es no di\xE1rio e me apressar
+      logo pra sair daqui antes que esse fedor me fa\xE7a desmaiar."
     showDialogue: 1
     cameraTargetIndex: 2
     cameraRotateSpeed: 1
@@ -110,4 +110,5 @@ MonoBehaviour:
     tickEveryNChars: 0
   typewriterSpeed: 40
   introDelay: 0.5
-  cameraResetSpeed: 3
+  endDelay: 0.5
+  uiFadeDuration: 0.5

@@ -20,6 +20,10 @@ public class CutsceneManager : MonoBehaviour
     public PlayerInput playerInput;
     public GameObject[] uiElementsToHide;
 
+    [Header("Inimigos")]
+    [Tooltip("Deixe vazio para pausar todos os inimigos da cena automaticamente")]
+    public Inimigo[] inimigosParaPausar;
+
     [Header("Áudio")]
     public AudioSource audioSource;
 
@@ -29,6 +33,8 @@ public class CutsceneManager : MonoBehaviour
 
     private AudioClip currentVoiceClip;
     private float voiceClipPausedTime;
+
+    private Inimigo[] _inimigosCache;
 
     private void Awake()
     {
@@ -192,6 +198,17 @@ public class CutsceneManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
+        // Reativa os inimigos ao fim da cutscene
+        if (_inimigosCache != null)
+        {
+            foreach (var inimigo in _inimigosCache)
+            {
+                if (inimigo == null) continue;
+                inimigo.enabled = true;
+                if (inimigo.agent != null) inimigo.agent.isStopped = false;
+            }
+        }
+
         if (GameUI.Instance != null)
             yield return StartCoroutine(GameUI.Instance.FadeIn(currentData.uiFadeDuration));
 
@@ -217,6 +234,18 @@ public class CutsceneManager : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        // Usa o array manual se preenchido no Inspector; senão busca todos na cena
+        _inimigosCache = (inimigosParaPausar != null && inimigosParaPausar.Length > 0)
+            ? inimigosParaPausar
+            : FindObjectsByType<Inimigo>(FindObjectsSortMode.None);
+
+        foreach (var inimigo in _inimigosCache)
+        {
+            if (inimigo == null) continue;
+            inimigo.enabled = false;
+            if (inimigo.agent != null) inimigo.agent.isStopped = true;
+        }
     }
 
     public bool IsActive() => isActive;

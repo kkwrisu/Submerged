@@ -11,6 +11,9 @@ TagManager:
   - Gravel
   - Water
   - Sand
+  - Wood
+  - Metal
+  - Tile
   layers:
   - Default
   - TransparentFX

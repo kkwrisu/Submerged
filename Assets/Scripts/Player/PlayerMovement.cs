@@ -92,7 +92,9 @@ public class PlayerMovement : MonoBehaviour
     private bool isHanging;
     private bool isPullingUp;
 
+#pragma warning disable 0414
     private bool ledgeGrabThisFrame;
+#pragma warning restore 0414
 
     private Vector3 climbTarget;
     private Vector3 hangTargetPosition;
@@ -977,6 +979,10 @@ public class PlayerMovement : MonoBehaviour
             if (DetectWall(out wallNormal))
             {
                 currentWallNormal = wallNormal;
+
+                if (Vector3.Dot(currentWallNormal, lastWallNormal) > 0.7f)
+                    return;
+
                 DoWallJump();
             }
         }

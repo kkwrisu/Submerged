@@ -1,0 +1,266 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &9156487815315721074
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4305542608223222675}
+  - component: {fileID: 3171486193310802570}
+  - component: {fileID: 270295337397732197}
+  - component: {fileID: 6175062629657190000}
+  - component: {fileID: 3098804393571206723}
+  - component: {fileID: 5123120898790690781}
+  - component: {fileID: 4845470277874671345}
+  m_Layer: 6
+  m_Name: Painel Elevador
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &4305542608223222675
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9156487815315721074}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 28.099, y: 1.83, z: 10.061}
+  m_LocalScale: {x: 0.32226, y: 0.9470017, z: 0.71709216}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!33 &3171486193310802570
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9156487815315721074}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &270295337397732197
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9156487815315721074}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &6175062629657190000
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9156487815315721074}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3098804393571206723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9156487815315721074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77a0138ebb59f5745aa6ba953f0005fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChangeColor
+  color: {r: 0.16567281, g: 0.60194176, b: 0.6886792, a: 1}
+--- !u!114 &5123120898790690781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9156487815315721074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc88e98598e100f4594256635b4aff5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Interactable
+  dialogueNodes:
+  - text: Ir para qual andar?
+    nextNodeIndex: 0
+    endDialogueHere: 0
+    choices:
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: 425009f1f1899cc479508328113492eb, type: 3}
+      normalSprite: {fileID: 21300000, guid: b2745f16d458a5147a701ea6fa950048, type: 3}
+      hoverSprite: {fileID: 21300000, guid: ac0c372ee91fa5942afebd3a96a2a1e9, type: 3}
+      nextNodeIndex: -1
+      closeDialogue: 1
+      triggerAction: 0
+      actionDebugMessage: 
+      onChoiceSelected:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 4845470277874671345}
+            m_TargetAssemblyTypeName: Elevator, Assembly-CSharp
+            m_MethodName: GoToFloor
+            m_Mode: 3
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+      sceneNameToCheck: Prototype
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: e4e6e375223fbd24ba8e16135e2cc7f1, type: 3}
+      normalSprite: {fileID: 21300000, guid: a694e1770d89f404cb4b5e0d6c4133f0, type: 3}
+      hoverSprite: {fileID: 21300000, guid: c40ce31072d86d74f8cfb9797ec8a32f, type: 3}
+      nextNodeIndex: -1
+      closeDialogue: 1
+      triggerAction: 0
+      actionDebugMessage: 
+      onChoiceSelected:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 4845470277874671345}
+            m_TargetAssemblyTypeName: Elevator, Assembly-CSharp
+            m_MethodName: GoToFloor
+            m_Mode: 3
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 1
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+      sceneNameToCheck: Segundo_Andar_Teste
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: 84921827aeacb9e489b708f22bc2aa59, type: 3}
+      normalSprite: {fileID: 21300000, guid: 7db10f446499103479eba59b9f612eff, type: 3}
+      hoverSprite: {fileID: 21300000, guid: de13132a272ed7740b436b493953a883, type: 3}
+      nextNodeIndex: -1
+      closeDialogue: 1
+      triggerAction: 0
+      actionDebugMessage: 
+      onChoiceSelected:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 4845470277874671345}
+            m_TargetAssemblyTypeName: Elevator, Assembly-CSharp
+            m_MethodName: GoToFloor
+            m_Mode: 3
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 2
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+      sceneNameToCheck: Segundo_Andar_Teste
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: 3667fb4cdfc73724b90eea73cbf6da85, type: 3}
+      normalSprite: {fileID: 21300000, guid: c5d411a4f4ea57f42a3016d4b0d7a5e0, type: 3}
+      hoverSprite: {fileID: 21300000, guid: cfcad0c6dc04ed240b48c12cba430091, type: 3}
+      nextNodeIndex: -1
+      closeDialogue: 1
+      triggerAction: 0
+      actionDebugMessage: 
+      onChoiceSelected:
+        m_PersistentCalls:
+          m_Calls: []
+      sceneNameToCheck: 
+  triggerActionOnInteract: 0
+  interactActionDebugMessage: 
+  onInteract:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: Levers, Assembly-CSharp
+        m_MethodName: ActivateLever
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &4845470277874671345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9156487815315721074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ce6bc12a2bf60544b75d9df8143fad3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Elevator
+  destinations:
+  - floorName: Primeiro Andar
+    sceneName: Prototype
+    spawnId: Elevador_Primeiro_Andar
+  - floorName: Segundo Andar
+    sceneName: Segundo_Andar_Teste
+    spawnId: elevador_segundo_andar
+  - floorName: Terceiro Andar
+    sceneName: 
+    spawnId: 

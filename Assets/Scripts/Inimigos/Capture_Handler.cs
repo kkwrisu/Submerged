@@ -29,6 +29,9 @@ public class CaptureHandler : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        if (captureText == null)
+            captureText = GetComponentInChildren<TextMeshProUGUI>(true);
+
         if (captureText != null)
         {
             captureText.text = captureMessage;
@@ -51,16 +54,11 @@ public class CaptureHandler : MonoBehaviour
     {
         isHandlingCapture = true;
 
-        // Congela a câmera IMEDIATAMENTE — antes do fade começar.
-        // Isso garante que o knockback para no mesmo frame que o fade inicia,
-        // sem nenhum frame de reset visível durante a transição.
         PlayerLook playerLook = FindFirstObjectByType<PlayerLook>();
         playerLook?.FreezeAndReset();
 
-        // Fade para preto
         yield return StartCoroutine(FadeOut());
 
-        // Tela 100% preta — teleporta e reseta o player
         if (SaveManager.Instance != null)
             SaveManager.Instance.RespawnPlayerAtCheckpoint();
 
@@ -68,7 +66,6 @@ public class CaptureHandler : MonoBehaviour
         if (playerMovement != null)
             playerMovement.ResetAllStates();
 
-        // Mostra o texto com fade
         if (captureText != null)
         {
             captureText.gameObject.SetActive(true);
@@ -84,10 +81,8 @@ public class CaptureHandler : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(0.1f);
 
-        // Volta a mostrar a cena
         yield return StartCoroutine(FadeIn());
 
-        // Devolve o controle da câmera só após o fade de entrada completar
         playerLook?.Unfreeze();
 
         isHandlingCapture = false;

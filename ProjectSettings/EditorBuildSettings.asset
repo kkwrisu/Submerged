@@ -6,14 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Bootstrapper.unity
+    guid: 055a8d7c1d43f004da519746a6dc5a11
+  - enabled: 1
     path: Assets/Scenes/MainMenu.unity
     guid: 19240dadb1666d34ba6243c465a8d662
   - enabled: 1
     path: Assets/Scenes/Prototype.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Segundo_Andar_Teste.unity
-    guid: 9cb175f2ff11bff4eaae00eecd739f27
+    guid: 9e6fd15a8bb1fb24c9724001d6eb17b0
   - enabled: 1
     path: Assets/Scenes/Dificuldade 1/Repair_D1_01.unity
     guid: bdd3173127f0ac64f80c7b58c611e008
@@ -50,6 +53,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Dificuldade 4/Repair_D4_03.unity
     guid: 053140c1488b2154794c4caa17dde7f4
+  - enabled: 1
+    path: Assets/Scenes/Hospital.unity
+    guid: d895d813cbcb0574cb0bc18e6f51e6ab
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 40b848556b70fc94092c9749dc261f34, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
