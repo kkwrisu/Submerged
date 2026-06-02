@@ -6455,6 +6455,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7637308837438554633, guid: 6dca07afd639a784c91bdd8f671e486e, type: 3}
+      propertyPath: dialogueNodes.Array.data[0].endDialogueHere
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7637308837438554633, guid: 6dca07afd639a784c91bdd8f671e486e, type: 3}
       propertyPath: dialogueNodes.Array.data[0].choices.Array.size
       value: 0
       objectReference: {fileID: 0}
