@@ -7531,6 +7531,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1972186041548088947, guid: 6c08491206c2a5b4a86595f9d13741c1, type: 3}
+      propertyPath: wireTiler
+      value: 
+      objectReference: {fileID: 7243397306466464578}
+    - target: {fileID: 1972186041548088947, guid: 6c08491206c2a5b4a86595f9d13741c1, type: 3}
       propertyPath: puzzleCamera
       value: 
       objectReference: {fileID: 1397195351}
@@ -7557,8 +7561,33 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4549641970064348197, guid: 6c08491206c2a5b4a86595f9d13741c1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7243397306466464578}
   m_SourcePrefab: {fileID: 100100000, guid: 6c08491206c2a5b4a86595f9d13741c1, type: 3}
+--- !u!1 &7243397306466464577 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4549641970064348197, guid: 6c08491206c2a5b4a86595f9d13741c1, type: 3}
+  m_PrefabInstance: {fileID: 7243397306466464576}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7243397306466464578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7243397306466464577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb2285223443daf4b978ed283004c98b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RepairPuzzleWireTiler
+  spriteStretch: {fileID: 21300000, guid: fd7b76a16da32534ba9be73100d833fc, type: 3}
+  spriteCurve: {fileID: 21300000, guid: 65fab802c171c9b4096488afafd12fac, type: 3}
+  wireZOffset: -0.1
+  sortingOrder: 5
+  sortingLayerName: Default
 --- !u!1001 &7942619414377167042
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1935,7 +1935,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CutsceneTrigger
   cutsceneData: {fileID: 11400000, guid: cc9c75f8d33d19448842325a6a9039b4, type: 2}
-  playOnStart: 1
+  playOnStart: 0
 --- !u!4 &98782438
 Transform:
   m_ObjectHideFlags: 0
@@ -56886,7 +56886,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8699847934946646076, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 82.557
+      value: 247.45
       objectReference: {fileID: 0}
     - target: {fileID: 8699847934946646076, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: m_LocalPosition.y
@@ -56894,7 +56894,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8699847934946646076, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 48.12
+      value: -224.03
       objectReference: {fileID: 0}
     - target: {fileID: 8699847934946646076, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
       propertyPath: m_LocalRotation.w

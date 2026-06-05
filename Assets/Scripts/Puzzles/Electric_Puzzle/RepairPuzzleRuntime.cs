@@ -13,15 +13,17 @@ public class RepairPuzzleRuntime : MonoBehaviour
     public LineRenderer wireRendererA;
     public LineRenderer wireRendererB;
 
-    [Header("Grid Background")]
-    public SpriteRenderer gridBackground;
-
     [Header("Input Actions")]
     public InputActionReference clickAction;
     public InputActionReference resetAction;
 
     [Header("Visual")]
     public float wireZOffset = -0.1f;
+
+    [Header("Wire Tiler")]
+    [Tooltip("Componente responsável por desenhar o fio com sprites. " +
+             "Arraste aqui o RepairPuzzleWireTiler do mesmo GameObject.")]
+    public RepairPuzzleWireTiler wireTiler;
 
     [Header("Portal Wire Visual")]
     [Tooltip("Largura do fio gerado após portal.")]
@@ -46,7 +48,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
     {
         public List<RepairPuzzleNode> path = new List<RepairPuzzleNode>();
         public RepairPuzzleNode expectedEnd;
-        public LineRenderer lineRenderer;
+        public LineRenderer lineRenderer;   // mantido apenas para compatibilidade; nunca desenha
         public bool complete;
     }
 
@@ -65,6 +67,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
     private InputAction click;
     private InputAction reset;
+
+    // ── Unity lifecycle ────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -101,7 +105,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         BuildMap();
         FindSpecialNodes();
-        FitBackgroundToGrid(gridBackground);
         ResetPuzzle();
 
         RepairPuzzleTutorialTracker tracker = GetComponent<RepairPuzzleTutorialTracker>();
@@ -109,25 +112,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
             StartCoroutine(TryShowTutorialNextFrame(tracker));
     }
 
-    private void FitBackgroundToGrid(SpriteRenderer bg)
-    {
-        if (bg == null || nodes.Count == 0) return;
-
-        bg.transform.position = new Vector3(
-            gridBounds.center.x,
-            gridBounds.center.y,
-            bg.transform.position.z
-        );
-
-        float spriteW = bg.sprite.bounds.size.x;
-        float spriteH = bg.sprite.bounds.size.y;
-
-        bg.transform.localScale = new Vector3(
-            gridBounds.size.x / spriteW,
-            gridBounds.size.y / spriteH,
-            1f
-        );
-    }
+    // ── Helpers de inicialização ───────────────────────────────────────────────
 
     private IEnumerator TryShowTutorialNextFrame(RepairPuzzleTutorialTracker tracker)
     {
@@ -147,6 +132,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
         lockedByTutorial = false;
         Debug.Log("[Runtime] Desbloqueado pelo tutorial — jogo começa agora.");
     }
+
+    // ── Update ────────────────────────────────────────────────────────────────
 
     private void Update()
     {
@@ -207,6 +194,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
             RefreshVisuals();
         }
     }
+
+    // ── Build ─────────────────────────────────────────────────────────────────
 
     private Camera FindPuzzleCameraInMyScene()
     {
@@ -289,8 +278,11 @@ public class RepairPuzzleRuntime : MonoBehaviour
         }
     }
 
+    // ── Reset ─────────────────────────────────────────────────────────────────
+
     public void ResetPuzzle()
     {
+        // Destrói LineRenderers de portais criados em runtime
         for (int i = 0; i < segments.Count; i++)
         {
             if (segments[i].lineRenderer != null &&
@@ -311,6 +303,9 @@ public class RepairPuzzleRuntime : MonoBehaviour
         activeSegmentIndex = 0;
         isDragging = false;
 
+        if (wireTiler != null)
+            wireTiler.ClearTiles();
+
         SpawnPortalGhosts();
 
         WireSegment segA = new WireSegment();
@@ -328,6 +323,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         RefreshVisuals();
     }
+
+    // ── Drag / Path ───────────────────────────────────────────────────────────
 
     private void TryStartDrag(RepairPuzzleNode node)
     {
@@ -378,6 +375,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (targetNode == currentEnd) return;
         if (!AreOrthogonallyAdjacent(currentEnd, targetNode)) return;
 
+        // Backtrack
         if (active.path.Count >= 2 && targetNode == active.path[active.path.Count - 2])
         {
             active.path.RemoveAt(active.path.Count - 1);
@@ -431,6 +429,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
         RefreshVisuals();
         CheckCompletion();
     }
+
+    // ── Portal ────────────────────────────────────────────────────────────────
 
     private void SpawnPortalGhosts()
     {
@@ -536,35 +536,9 @@ public class RepairPuzzleRuntime : MonoBehaviour
         CheckCompletion();
     }
 
-    private RepairPuzzleNode FindEndForSegment()
-    {
-        List<RepairPuzzleNode> allEnds = new List<RepairPuzzleNode>();
-
-        if (endA != null) allEnds.Add(endA);
-        if (endB != null) allEnds.Add(endB);
-
-        for (int i = 0; i < allEnds.Count; i++)
-        {
-            bool alreadyClaimed = false;
-
-            for (int j = 0; j < segments.Count; j++)
-            {
-                if (segments[j].expectedEnd == allEnds[i])
-                {
-                    alreadyClaimed = true;
-                    break;
-                }
-            }
-
-            if (!alreadyClaimed)
-                return allEnds[i];
-        }
-
-        return null;
-    }
-
     private LineRenderer CreatePortalLineRenderer()
     {
+        // LR vazio — o desenho real é feito pelo WireTiler.
         int count = 0;
 
         for (int i = 0; i < segments.Count; i++)
@@ -574,30 +548,16 @@ public class RepairPuzzleRuntime : MonoBehaviour
                 count++;
         }
 
-        int portalWireIndex = count % portalWireColors.Length;
-
         GameObject obj = new GameObject("PortalWire_" + count);
         obj.transform.SetParent(transform);
 
         LineRenderer lr = obj.AddComponent<LineRenderer>();
-
-        if (wireRendererA != null)
-        {
-            lr.material = wireRendererA.material;
-            lr.widthMultiplier = wireRendererA.widthMultiplier;
-            lr.startWidth = wireRendererA.startWidth;
-            lr.endWidth = wireRendererA.endWidth;
-            lr.sortingLayerID = wireRendererA.sortingLayerID;
-            lr.sortingOrder = wireRendererA.sortingOrder;
-        }
-
-        Color wireColor = portalWireColors[portalWireIndex];
-        lr.startColor = wireColor;
-        lr.endColor = wireColor;
         lr.positionCount = 0;
 
         return lr;
     }
+
+    // ── Completion ────────────────────────────────────────────────────────────
 
     private void CheckCompletion()
     {
@@ -644,6 +604,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
         return true;
     }
 
+    // ── Helpers de path ───────────────────────────────────────────────────────
+
     private bool IsNodeInAnyPath(RepairPuzzleNode node)
     {
         for (int i = 0; i < segments.Count; i++)
@@ -683,11 +645,15 @@ public class RepairPuzzleRuntime : MonoBehaviour
         return dx + dy == 1;
     }
 
+    // ── Visuais ───────────────────────────────────────────────────────────────
+
     private void RefreshVisuals()
     {
+        // Reseta cor de todos os nós
         foreach (var pair in nodes)
             pair.Value.SetNormal();
 
+        // Marca nós no path
         for (int i = 0; i < segments.Count; i++)
         {
             for (int j = 0; j < segments[i].path.Count; j++)
@@ -713,36 +679,24 @@ public class RepairPuzzleRuntime : MonoBehaviour
             }
         }
 
-        for (int i = 0; i < segments.Count; i++)
+        // Zera LineRenderers (mantidos apenas por compatibilidade)
+        if (wireRendererA != null) wireRendererA.positionCount = 0;
+        if (wireRendererB != null) wireRendererB.positionCount = 0;
+
+        // WireTiler: reconstrói todos os sprites de fio
+        if (wireTiler != null)
         {
-            bool isActive = i == activeSegmentIndex && isDragging && !segments[i].complete;
-            UpdateLineRenderer(segments[i].lineRenderer, segments[i].path, isActive);
+            wireTiler.ClearTiles();
+
+            for (int i = 0; i < segments.Count; i++)
+            {
+                if (segments[i].path.Count == 0) continue;
+                wireTiler.BuildTiles(segments[i].path, Color.white);
+            }
         }
     }
 
-    private void UpdateLineRenderer(LineRenderer lr, List<RepairPuzzleNode> path, bool drawPreviewToMouse)
-    {
-        if (lr == null) return;
-
-        if (path.Count == 0)
-        {
-            lr.positionCount = 0;
-            return;
-        }
-
-        int extraPoint = drawPreviewToMouse ? 1 : 0;
-        lr.positionCount = path.Count + extraPoint;
-
-        for (int i = 0; i < path.Count; i++)
-        {
-            Vector3 pos = path[i].transform.position;
-            pos.z += wireZOffset;
-            lr.SetPosition(i, pos);
-        }
-
-        if (drawPreviewToMouse)
-            lr.SetPosition(path.Count, GetPointerWorldPosition());
-    }
+    // ── Input helpers ─────────────────────────────────────────────────────────
 
     private Vector3 GetPointerWorldPosition()
     {
@@ -780,6 +734,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         return null;
     }
+
+    // ── API pública ───────────────────────────────────────────────────────────
 
     public List<RepairPuzzleNode> GetNodesByType(RepairPuzzleNodeType type)
     {
