@@ -1,45 +1,43 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Substitui o LineRenderer por sprites individuais em cada nó do path.
-/// Attach no mesmo GameObject que RepairPuzzleRuntime (ou em qualquer lugar da cena do puzzle).
-/// </summary>
 public class RepairPuzzleWireTiler : MonoBehaviour
 {
     [Header("Sprites")]
-    [Tooltip("Sprite de fio reto — deve apontar horizontalmente (→) por padrão.")]
     public Sprite spriteStretch;
-
-    [Tooltip("Sprite de curva — deve curvar de → para ↑ (saindo direita, chegando cima) por padrão.")]
-    public Sprite spriteCurve;
+    public Sprite spriteCurveDown;
+    public Sprite spriteCurveUp;
 
     [Header("Visual")]
     public float wireZOffset = -0.1f;
     public int sortingOrder = 5;
     public string sortingLayerName = "Default";
 
-    private readonly List<GameObject> activeTiles = new List<GameObject>();
+    private readonly Dictionary<int, List<GameObject>> segmentTiles = new Dictionary<int, List<GameObject>>();
 
-    // ── API pública ───────────────────────────────────────────────────────────
-
-    public void ClearTiles()
+    public void RebuildSegment(int segmentIndex, List<RepairPuzzleNode> path, float forcedCellSize = 0f, bool skipFirstNode = false)
     {
-        for (int i = 0; i < activeTiles.Count; i++)
-            if (activeTiles[i] != null) Destroy(activeTiles[i]);
-        activeTiles.Clear();
-    }
-
-    public void BuildTiles(List<RepairPuzzleNode> path, Color wireColor)
-    {
-        ClearTiles();
+        if (segmentTiles.TryGetValue(segmentIndex, out List<GameObject> old))
+        {
+            for (int i = 0; i < old.Count; i++)
+                if (old[i] != null) Destroy(old[i]);
+            segmentTiles.Remove(segmentIndex);
+        }
 
         if (path == null || path.Count == 0) return;
 
-        float cellSize = path[0].cellSize; // pega do primeiro nó
+        float cellSize = forcedCellSize > 0f
+            ? forcedCellSize
+            : path.Count >= 2
+                ? Vector3.Distance(path[0].transform.position, path[1].transform.position)
+                : path[0].cellSize;
+
+        List<GameObject> bucket = new List<GameObject>();
 
         for (int i = 0; i < path.Count; i++)
         {
+            if (i == 0 && skipFirstNode) continue;
+
             Vector2Int? fromDir = i > 0
                 ? GridDir(path[i - 1], path[i])
                 : (Vector2Int?)null;
@@ -48,110 +46,109 @@ public class RepairPuzzleWireTiler : MonoBehaviour
                 ? GridDir(path[i], path[i + 1])
                 : (Vector2Int?)null;
 
-            SpritePiece piece = ResolvePiece(fromDir, toDir);
-            SpawnTile(path[i].transform.position, piece, wireColor, cellSize);
+            ResolvePiece(fromDir, toDir, out Sprite sprite, out float rotation);
+            GameObject tile = SpawnTile(path[i].transform.position, sprite, rotation, cellSize);
+            if (tile != null) bucket.Add(tile);
         }
+
+        segmentTiles[segmentIndex] = bucket;
     }
 
-    // ── Internos ──────────────────────────────────────────────────────────────
-
-    private enum SpritePiece
+    public void ClearAll()
     {
-        Horizontal,
-        Vertical,
-        CurveRightUp,
-        CurveRightDown,
-        CurveLeftUp,
-        CurveLeftDown,
+        foreach (var kv in segmentTiles)
+            for (int i = 0; i < kv.Value.Count; i++)
+                if (kv.Value[i] != null) Destroy(kv.Value[i]);
+
+        segmentTiles.Clear();
     }
 
-    private SpritePiece ResolvePiece(Vector2Int? from, Vector2Int? to)
+    private void ResolvePiece(Vector2Int? from, Vector2Int? to, out Sprite sprite, out float rotation)
     {
-        // Nó inicial: só tem "to"
-        if (from == null && to != null)
-            return IsHorizontal(to.Value) ? SpritePiece.Horizontal : SpritePiece.Vertical;
+        if (from == null && to == null)
+        {
+            sprite = spriteStretch;
+            rotation = 0f;
+            return;
+        }
 
-        // Nó final: só tem "from"
-        if (from != null && to == null)
-            return IsHorizontal(from.Value) ? SpritePiece.Horizontal : SpritePiece.Vertical;
+        if (from == null || to == null)
+        {
+            Vector2Int dir = (from ?? to).Value;
+            sprite = spriteStretch;
+            rotation = IsHorizontal(dir) ? 0f : 90f;
+            return;
+        }
 
         Vector2Int f = from.Value;
         Vector2Int t = to.Value;
 
-        // Mesmo eixo → reta
         if (f == t || f == -t)
-            return IsHorizontal(f) ? SpritePiece.Horizontal : SpritePiece.Vertical;
+        {
+            sprite = spriteStretch;
+            rotation = IsHorizontal(f) ? 0f : 90f;
+            return;
+        }
 
-        // Curva
-        Vector2Int arrive = -f; // direção de chegada ao nó
-        Vector2Int leave = t;  // direção de saída do nó
-
-        return CurveFor(arrive, leave);
+        Vector2Int arrive = -f;
+        Vector2Int leave = t;
+        ResolveCurve(arrive, leave, out sprite, out rotation);
     }
 
-    private SpritePiece CurveFor(Vector2Int arrive, Vector2Int leave)
+    private void ResolveCurve(Vector2Int arrive, Vector2Int leave, out Sprite sprite, out float rotation)
     {
-        if ((arrive == Vector2Int.right && leave == Vector2Int.up) ||
-            (arrive == Vector2Int.down && leave == Vector2Int.left))
-            return SpritePiece.CurveRightUp;
+        if (arrive == Vector2Int.left && leave == Vector2Int.down)
+        { sprite = spriteCurveDown; rotation = 0f; return; }
 
-        if ((arrive == Vector2Int.right && leave == Vector2Int.down) ||
-            (arrive == Vector2Int.up && leave == Vector2Int.left))
-            return SpritePiece.CurveRightDown;
+        if (arrive == Vector2Int.down && leave == Vector2Int.right)
+        { sprite = spriteCurveDown; rotation = 90f; return; }
 
-        if ((arrive == Vector2Int.left && leave == Vector2Int.up) ||
-            (arrive == Vector2Int.down && leave == Vector2Int.right))
-            return SpritePiece.CurveLeftUp;
+        if (arrive == Vector2Int.right && leave == Vector2Int.up)
+        { sprite = spriteCurveDown; rotation = 180f; return; }
 
-        if ((arrive == Vector2Int.left && leave == Vector2Int.down) ||
-            (arrive == Vector2Int.up && leave == Vector2Int.right))
-            return SpritePiece.CurveLeftDown;
+        if (arrive == Vector2Int.up && leave == Vector2Int.left)
+        { sprite = spriteCurveDown; rotation = 270f; return; }
 
-        return SpritePiece.Horizontal;
+        if (arrive == Vector2Int.left && leave == Vector2Int.up)
+        { sprite = spriteCurveUp; rotation = 0f; return; }
+
+        if (arrive == Vector2Int.down && leave == Vector2Int.left)
+        { sprite = spriteCurveUp; rotation = 90f; return; }
+
+        if (arrive == Vector2Int.right && leave == Vector2Int.down)
+        { sprite = spriteCurveUp; rotation = 180f; return; }
+
+        if (arrive == Vector2Int.up && leave == Vector2Int.right)
+        { sprite = spriteCurveUp; rotation = 270f; return; }
+
+        sprite = spriteStretch;
+        rotation = 0f;
     }
 
-    private void SpawnTile(Vector3 worldPos, SpritePiece piece, Color color, float cellSize)
+    private GameObject SpawnTile(Vector3 worldPos, Sprite sprite, float rotation, float cellSize)
     {
-        bool isCurve = piece != SpritePiece.Horizontal && piece != SpritePiece.Vertical;
-        Sprite sprite = isCurve ? spriteCurve : spriteStretch;
-
-        if (sprite == null) return;
+        if (sprite == null) return null;
 
         GameObject go = new GameObject("WireTile");
         go.transform.SetParent(transform);
         go.transform.position = new Vector3(worldPos.x, worldPos.y, worldPos.z + wireZOffset);
+        go.transform.rotation = Quaternion.Euler(0f, 0f, rotation);
 
         SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = sprite;
-        sr.color = color;
+        sr.color = Color.white;
         sr.sortingLayerName = sortingLayerName;
         sr.sortingOrder = sortingOrder;
 
-        // Escala o sprite para caber exatamente numa célula do grid
-        float spriteSize = sprite.bounds.size.x; // assume sprite quadrado
-        float scale = cellSize / spriteSize;
-        go.transform.localScale = new Vector3(scale, scale, 1f);
+        float spriteLocalSize = sprite.rect.width / sprite.pixelsPerUnit;
+        float parentLossyScale = transform.lossyScale.x;
+        float localScale = (spriteLocalSize > 0f && parentLossyScale > 0f)
+            ? cellSize / (spriteLocalSize * parentLossyScale)
+            : 1f;
 
-        go.transform.rotation = Quaternion.Euler(0f, 0f, GetRotation(piece));
-        activeTiles.Add(go);
-    }
+        go.transform.localScale = new Vector3(localScale, localScale, 1f);
 
-    private float GetRotation(SpritePiece piece)
-    {
-        // Convenção do sprite:
-        //   spriteStretch  → horizontal (0°)
-        //   spriteCurve    → chega pela esquerda (←), sai para cima (↑) = CurveLeftUp a 0°
-        //   Ajuste as rotações abaixo se o seu sprite tiver orientação diferente!
-        switch (piece)
-        {
-            case SpritePiece.Horizontal: return 0f;
-            case SpritePiece.Vertical: return 90f;
-            case SpritePiece.CurveLeftUp: return 0f;
-            case SpritePiece.CurveRightUp: return 90f;
-            case SpritePiece.CurveRightDown: return 180f;
-            case SpritePiece.CurveLeftDown: return 270f;
-            default: return 0f;
-        }
+        return go;
     }
 
     private bool IsHorizontal(Vector2Int dir)

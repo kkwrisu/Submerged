@@ -6,17 +6,17 @@ public class RepairPuzzleTutorialData : ScriptableObject
     [System.Serializable]
     public class TutorialSlide
     {
-        [Tooltip("Título curto exibido no topo do slide.")]
+        [HideInInspector]
         public string title;
 
         [TextArea(2, 5)]
-        [Tooltip("Descrição explicativa do elemento ou mecânica.")]
+        [Tooltip("Texto exibido no painel cyberpunk. Igual ao campo description do GeneratorTutorialData.")]
         public string description;
 
-        [Tooltip("Se false, nenhum objeto será destacado neste slide.")]
+        [Tooltip("Se false, nenhum objeto é destacado neste slide.")]
         public bool hasHighlight = false;
 
-        [Tooltip("Tipos de nó que serão destacados neste slide. Cada tipo pode ter sua própria cor.")]
+        [Tooltip("Nós a destacar neste slide, cada um com cor própria.")]
         public HighlightEntry[] highlightEntries;
     }
 
