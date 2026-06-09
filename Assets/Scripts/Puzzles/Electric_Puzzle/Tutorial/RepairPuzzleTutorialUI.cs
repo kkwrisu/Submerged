@@ -33,7 +33,8 @@ public class RepairPuzzleTutorialUI : MonoBehaviour
     [Header("Animação")]
     public float fadeDuration = 0.35f;
     public float slideFadeDuration = 0.18f;
-    public Image overlayImage;
+    public Image overlayImage;      // balão de diálogo (inalterado)
+    public Image backgroundDimmer;  // Image preta cobrindo a tela toda
 
     private RepairPuzzleTutorialData data;
     private RepairPuzzleRuntime runtime;
@@ -41,6 +42,12 @@ public class RepairPuzzleTutorialUI : MonoBehaviour
     private Action onFinished;
     private Coroutine fadeCoroutine;
     private List<RepairPuzzleTutorialHighlight> activeHighlights = new();
+
+    private Vector2 _panelDefaultPosition;
+    private bool _defaultPositionCaptured;
+
+    private Vector2 _overlayDefaultPosition;
+    private bool _overlayDefaultPositionCaptured;
 
     // ── API Pública ───────────────────────────────────────────────────────────
 
@@ -64,11 +71,60 @@ public class RepairPuzzleTutorialUI : MonoBehaviour
             nextBtn.onClick.AddListener(OnNext);
         }
 
+        // Garante que overlayImage renderiza acima dos highlights (sortingOrder 1000)
+        if (overlayImage != null)
+        {
+            Canvas overlayCanvas = overlayImage.GetComponent<Canvas>();
+            if (overlayCanvas == null)
+                overlayCanvas = overlayImage.gameObject.AddComponent<Canvas>();
+            overlayCanvas.overrideSorting = true;
+            overlayCanvas.sortingOrder = 1001;
+
+            if (overlayImage.GetComponent<GraphicRaycaster>() == null)
+                overlayImage.gameObject.AddComponent<GraphicRaycaster>();
+        }
+
+        // Garante que panelRoot (botão + texto) também renderiza acima dos highlights
+        if (panelRoot != null)
+        {
+            Canvas panelCanvas = panelRoot.GetComponent<Canvas>();
+            if (panelCanvas == null)
+                panelCanvas = panelRoot.AddComponent<Canvas>();
+            panelCanvas.overrideSorting = true;
+            panelCanvas.sortingOrder = 1002;
+
+            if (panelRoot.GetComponent<GraphicRaycaster>() == null)
+                panelRoot.AddComponent<GraphicRaycaster>();
+        }
+
+        // Captura posição padrão do painel uma única vez
+        if (!_defaultPositionCaptured && panelRoot != null)
+        {
+            RectTransform rt = panelRoot.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                _panelDefaultPosition = rt.anchoredPosition;
+                _defaultPositionCaptured = true;
+            }
+        }
+
+        // Captura posição padrão do overlay uma única vez
+        if (!_overlayDefaultPositionCaptured && overlayImage != null)
+        {
+            RectTransform rt = overlayImage.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                _overlayDefaultPosition = rt.anchoredPosition;
+                _overlayDefaultPositionCaptured = true;
+            }
+        }
+
         if (tutorialRoot != null) tutorialRoot.SetActive(true);
         if (panelRoot != null) panelRoot.SetActive(true);
 
         SetOverlayAlpha(0f);
         SetPanelAlpha(0f);
+        SetDimmerAlpha(0f);
 
         if (fadeCoroutine != null) StopCoroutine(fadeCoroutine);
         fadeCoroutine = StartCoroutine(FadeIn());
@@ -136,6 +192,22 @@ public class RepairPuzzleTutorialUI : MonoBehaviour
             foreach (var entry in slide.highlightEntries)
                 ActivateHighlights(entry.nodeType, entry.highlightColor);
         }
+
+        // Move o painel (botão + texto)
+        if (panelRoot != null)
+        {
+            RectTransform rt = panelRoot.GetComponent<RectTransform>();
+            if (rt != null)
+                rt.anchoredPosition = slide.overridePosition ? slide.panelPosition : _panelDefaultPosition;
+        }
+
+        // Move o overlay (balão) independentemente
+        if (overlayImage != null)
+        {
+            RectTransform rt = overlayImage.GetComponent<RectTransform>();
+            if (rt != null)
+                rt.anchoredPosition = slide.overrideOverlayPosition ? slide.overlayPosition : _overlayDefaultPosition;
+        }
     }
 
     // ── Transições ────────────────────────────────────────────────────────────
@@ -174,6 +246,7 @@ public class RepairPuzzleTutorialUI : MonoBehaviour
     private IEnumerator FadeIn()
     {
         const float targetOverlay = 0.82f;
+        const float targetDimmer = 0.75f;
         CanvasGroup cg = GetPanelCG();
         float t = 0f;
 
@@ -182,17 +255,20 @@ public class RepairPuzzleTutorialUI : MonoBehaviour
             t += Time.unscaledDeltaTime;
             float p = t / fadeDuration;
             SetOverlayAlpha(Mathf.Lerp(0f, targetOverlay, p));
+            SetDimmerAlpha(Mathf.Lerp(0f, targetDimmer, p));
             if (cg != null) cg.alpha = Mathf.Lerp(0f, 1f, p);
             yield return null;
         }
 
         SetOverlayAlpha(targetOverlay);
+        SetDimmerAlpha(targetDimmer);
         if (cg != null) cg.alpha = 1f;
     }
 
     private IEnumerator FadeOutAndClose()
     {
         float startOverlay = overlayImage != null ? overlayImage.color.a : 0f;
+        float startDimmer = backgroundDimmer != null ? backgroundDimmer.color.a : 0f;
         CanvasGroup cg = GetPanelCG();
         float startPanel = cg != null ? cg.alpha : 1f;
         float t = 0f;
@@ -202,11 +278,13 @@ public class RepairPuzzleTutorialUI : MonoBehaviour
             t += Time.unscaledDeltaTime;
             float p = t / fadeDuration;
             SetOverlayAlpha(Mathf.Lerp(startOverlay, 0f, p));
+            SetDimmerAlpha(Mathf.Lerp(startDimmer, 0f, p));
             if (cg != null) cg.alpha = Mathf.Lerp(startPanel, 0f, p);
             yield return null;
         }
 
         SetOverlayAlpha(0f);
+        SetDimmerAlpha(0f);
         if (panelRoot != null) panelRoot.SetActive(false);
         if (tutorialRoot != null) tutorialRoot.SetActive(false);
     }
@@ -249,6 +327,14 @@ public class RepairPuzzleTutorialUI : MonoBehaviour
         Color c = overlayImage.color;
         c.a = a;
         overlayImage.color = c;
+    }
+
+    private void SetDimmerAlpha(float a)
+    {
+        if (backgroundDimmer == null) return;
+        Color c = backgroundDimmer.color;
+        c.a = a;
+        backgroundDimmer.color = c;
     }
 
     private void SetPanelAlpha(float a)

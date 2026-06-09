@@ -16,33 +16,65 @@ MonoBehaviour:
   slides:
   - title: Tutorial
     description: "Durante a explora\xE7\xE3o em Crestauta, \xE9 poss\xEDvel encontrar
-      pain\xE9is de eletricidade precisando de conserto. Pressione o clique esquerdo
-      do mouse em um fio (amarelo) e segure para arrast\xE1-lo. Conecte o fio \xE0
-      outra ponta para completar o minigame."
+      pain\xE9is de eletricidade precisando de conserto."
     hasHighlight: 1
     highlightEntries:
     - nodeType: 3
       highlightColor: {r: 1, g: 1, b: 1, a: 0}
+    overridePosition: 1
+    panelPosition: {x: 459, y: -547}
+    overrideOverlayPosition: 1
+    overlayPosition: {x: -664, y: -587}
+  - title: Tutorial
+    description: "Pressione o clique esquerdo do mouse em uma sa\xEDda de fia\xE7\xE3o
+      e arraste para percorrer o trajeto."
+    hasHighlight: 0
+    highlightEntries:
+    - nodeType: 3
+      highlightColor: {r: 0, g: 0, b: 0, a: 0}
+    overridePosition: 1
+    panelPosition: {x: 459, y: -547}
+    overrideOverlayPosition: 1
+    overlayPosition: {x: -664, y: -587}
+  - title: Tutorial
+    description: "Conecte o fio \xE0 outra ponta para concluir o conserto."
+    hasHighlight: 0
+    highlightEntries:
     - nodeType: 4
       highlightColor: {r: 1, g: 1, b: 1, a: 0}
+    overridePosition: 1
+    panelPosition: {x: 210, y: 75}
+    overrideOverlayPosition: 1
+    overlayPosition: {x: -913, y: 35}
   - title: Tutorial
     description: Hazards Vermelhos destroem fios que passarem por casas adjacentes
       ortogonais ao mesmo.
     hasHighlight: 1
     highlightEntries:
-    - nodeType: 2
-      highlightColor: {r: 1, g: 0, b: 0, a: 0}
+    - nodeType: 8
+      highlightColor: {r: 1, g: 1, b: 1, a: 0}
+    overridePosition: 0
+    panelPosition: {x: 0, y: 0}
+    overrideOverlayPosition: 0
+    overlayPosition: {x: 0, y: 0}
   - title: Tutorial
-    description: "Nem sempre ser\xE1 poss\xEDvel conectar um fio at\xE9 a sua liga\xE7\xE3o
-      normalmente. Para isso, voc\xEA pode ligar o fio inicial em uma das Zonas de
-      Conex\xF5es roxas e energizar um outro fio presente na fia\xE7\xE3o, continuando
-      o caminho atrav\xE9s dele. "
+    description: "Nem sempre ser\xE1 poss\xEDvel conectar duas fia\xE7\xF5es normalmente.
+      Para isso, conecte o fio \xE0 uma conduite e continue o trajeto \xE0 partir
+      de sua sa\xEDda. "
     hasHighlight: 1
     highlightEntries:
-    - nodeType: 7
+    - nodeType: 9
       highlightColor: {r: 1, g: 1, b: 1, a: 0}
+    overridePosition: 1
+    panelPosition: {x: 210, y: 75}
+    overrideOverlayPosition: 1
+    overlayPosition: {x: -913, y: 35}
   - title: Tutorial
     description: "Cuidado com inimigos por perto! Em caso de falha no conserto, voc\xEA
       poder\xE1 causar um curto-circuito que acionar\xE1 inimigos nas proximidades. "
     hasHighlight: 0
     highlightEntries: []
+    overridePosition: 1
+    panelPosition: {x: 210, y: 75}
+    overrideOverlayPosition: 1
+    overlayPosition: {x: -913, y: 35}

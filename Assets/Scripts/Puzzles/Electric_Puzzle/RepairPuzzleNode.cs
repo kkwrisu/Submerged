@@ -9,7 +9,9 @@ public enum RepairPuzzleNodeType
     EndA,
     StartB,
     EndB,
-    Portal
+    Portal,
+    RedHazardIcon,
+    PortalIcon
 }
 
 [RequireComponent(typeof(Collider2D))]
