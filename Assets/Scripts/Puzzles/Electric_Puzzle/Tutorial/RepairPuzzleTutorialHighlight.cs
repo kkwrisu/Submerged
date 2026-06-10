@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(SpriteRenderer))]
@@ -20,8 +20,7 @@ public class RepairPuzzleTutorialHighlight : MonoBehaviour
     private void Awake()
     {
         mainRenderer = GetComponent<SpriteRenderer>();
-        CreateGlowRenderer();
-        DisableGlow();
+        CreateGlowRenderer(); // glowRenderer já nasce com enabled = false
     }
 
     public void EnableGlow(Color color)
@@ -35,7 +34,7 @@ public class RepairPuzzleTutorialHighlight : MonoBehaviour
         originalMainOrder = mainRenderer.sortingOrder;
         originalGlowOrder = glowRenderer.sortingOrder;
 
-        // Coloca � frente do backgroundDimmer do Canvas
+        // Coloca à frente do backgroundDimmer do Canvas
         mainRenderer.sortingOrder = 999;
         glowRenderer.sortingOrder = 1000;
 
@@ -48,6 +47,12 @@ public class RepairPuzzleTutorialHighlight : MonoBehaviour
 
     public void DisableGlow()
     {
+        if (pulseCoroutine != null)
+        {
+            StopCoroutine(pulseCoroutine);
+            pulseCoroutine = null;
+        }
+
         if (glowRenderer != null)
             glowRenderer.enabled = false;
 
@@ -57,12 +62,6 @@ public class RepairPuzzleTutorialHighlight : MonoBehaviour
 
         if (glowRenderer != null)
             glowRenderer.sortingOrder = originalGlowOrder;
-
-        if (pulseCoroutine != null)
-        {
-            StopCoroutine(pulseCoroutine);
-            pulseCoroutine = null;
-        }
     }
 
     private void CreateGlowRenderer()
@@ -84,6 +83,7 @@ public class RepairPuzzleTutorialHighlight : MonoBehaviour
         glowRenderer.sprite = mainRenderer.sprite;
         glowRenderer.sortingLayerID = mainRenderer.sortingLayerID;
         glowRenderer.sortingOrder = mainRenderer.sortingOrder + 1;
+        glowRenderer.enabled = false; // começa desativado — sem chamar DisableGlow()
 
         Color c = glowColor;
         c.a = 0f;

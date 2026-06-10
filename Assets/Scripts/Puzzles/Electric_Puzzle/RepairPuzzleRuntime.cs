@@ -33,7 +33,26 @@ public class RepairPuzzleRuntime : MonoBehaviour
         new Color(0.2f, 1f, 0.5f),
     };
 
-    private readonly Dictionary<Vector2Int, RepairPuzzleNode> nodes = new Dictionary<Vector2Int, RepairPuzzleNode>();
+    [Header("Fail Animation")]
+    [Tooltip("Pausa (segundos) entre o hazard aparecer e o fio começar a quebrar.")]
+    public float failHazardToWireDelay = 0.15f;
+    [Tooltip("Pausa (segundos) após o fio quebrar antes de fechar o puzzle.")]
+    public float failAfterBreakDelay = 0.3f;
+    [Tooltip("SFX tocado quando o fio quebra no hazard.")]
+    public AudioClip failWireBreakSFX;
+
+    [Header("Success Animation")]
+    [Tooltip("Sprite verde do EndA exibido ao concluir.")]
+    public Sprite endSuccessSprite;
+    [Tooltip("Quantas vezes o EndA pisca ao concluir.")]
+    public int successBlinkCount = 3;
+    [Tooltip("Duração de cada piscada (segundos).")]
+    public float successBlinkInterval = 0.12f;
+    [Tooltip("SFX tocado ao concluir o puzzle.")]
+    public AudioClip successSFX;
+
+    private readonly Dictionary<Vector2Int, RepairPuzzleNode> nodes =
+        new Dictionary<Vector2Int, RepairPuzzleNode>();
 
     private RepairPuzzleNode startA;
     private RepairPuzzleNode endA;
@@ -52,15 +71,17 @@ public class RepairPuzzleRuntime : MonoBehaviour
     private int activeSegmentIndex = 0;
     private bool isDragging;
 
-    private readonly Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost> portalGhosts
-        = new Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost>();
+    private readonly Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost> portalGhosts =
+        new Dictionary<RepairPuzzleNode, RepairPuzzlePortalGhost>();
 
-    private readonly Dictionary<RepairPuzzleNode, int> portalColorIndex
-        = new Dictionary<RepairPuzzleNode, int>();
+    private readonly Dictionary<RepairPuzzleNode, int> portalColorIndex =
+        new Dictionary<RepairPuzzleNode, int>();
 
     private Bounds gridBounds;
     private float nodeSpacing = 1f;
     private bool lockedByTutorial;
+    private bool isFailing;
+    private bool isSucceeding;
 
     private InputAction click;
     private InputAction reset;
@@ -138,7 +159,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
             return;
         }
 
-        if (lockedByTutorial)
+        if (isFailing || isSucceeding || lockedByTutorial)
             return;
 
         bool resetPressed =
@@ -190,10 +211,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
         Camera[] allCameras = FindObjectsByType<Camera>(FindObjectsSortMode.None);
 
         for (int i = 0; i < allCameras.Length; i++)
-        {
             if (allCameras[i].gameObject.scene == gameObject.scene)
                 return allCameras[i];
-        }
 
         return null;
     }
@@ -210,7 +229,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
                 continue;
 
             allNodes[i].UpdateGridPosition();
-
             Vector2Int pos = new Vector2Int(allNodes[i].x, allNodes[i].y);
 
             if (!nodes.ContainsKey(pos))
@@ -242,10 +260,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
             Vector2Int pos = new Vector2Int(pair.Value.x, pair.Value.y);
             Vector2Int[] offsets = { Vector2Int.right, Vector2Int.up };
             foreach (var off in offsets)
-            {
                 if (nodes.TryGetValue(pos + off, out RepairPuzzleNode neighbor))
                     return Vector3.Distance(pair.Value.transform.position, neighbor.transform.position);
-            }
         }
         return 1f;
     }
@@ -282,6 +298,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
         segments.Clear();
         activeSegmentIndex = 0;
         isDragging = false;
+        isFailing = false;
+        isSucceeding = false;
 
         if (wireTiler != null)
             wireTiler.ClearAll();
@@ -307,15 +325,12 @@ public class RepairPuzzleRuntime : MonoBehaviour
         if (node == null) return;
 
         WireSegment active = segments[activeSegmentIndex];
-
         if (active.complete) return;
 
         if (active.path.Count == 0)
         {
             RepairPuzzleNode expectedStart = GetExpectedStart(activeSegmentIndex);
-
-            if (node != expectedStart)
-                return;
+            if (node != expectedStart) return;
 
             active.path.Add(node);
             isDragging = true;
@@ -330,17 +345,13 @@ public class RepairPuzzleRuntime : MonoBehaviour
     private RepairPuzzleNode GetExpectedStart(int segmentIndex)
     {
         if (segmentIndex == 0) return startA;
-
-        if (difficulty == RepairPuzzleDifficulty.Difficulty4 && segmentIndex == 1)
-            return startB;
-
+        if (difficulty == RepairPuzzleDifficulty.Difficulty4 && segmentIndex == 1) return startB;
         return segments[segmentIndex].path.Count > 0 ? segments[segmentIndex].path[0] : null;
     }
 
     private void TryExtendPath(RepairPuzzleNode targetNode)
     {
         WireSegment active = segments[activeSegmentIndex];
-
         if (active.complete) return;
 
         RepairPuzzleNode currentEnd = active.path.Count > 0
@@ -370,7 +381,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
         {
             if (IsDangerForStep(targetNode))
             {
-                FailPuzzle();
+                TriggerFailSequence(targetNode);
                 return;
             }
         }
@@ -382,13 +393,13 @@ public class RepairPuzzleRuntime : MonoBehaviour
             if (!targetNode.IsWalkable())
             {
                 if (targetNode.nodeType == RepairPuzzleNodeType.RedHazard)
-                    FailPuzzle();
+                    TriggerFailSequence(targetNode);
                 return;
             }
 
             if (IsDangerForStep(targetNode))
             {
-                FailPuzzle();
+                TriggerFailSequence(targetNode);
                 return;
             }
         }
@@ -405,6 +416,102 @@ public class RepairPuzzleRuntime : MonoBehaviour
         CheckCompletion();
     }
 
+    private void TriggerFailSequence(RepairPuzzleNode triggerHazard)
+    {
+        if (isFailing) return;
+        isFailing = true;
+        isDragging = false;
+
+        RepairPuzzleNode hazardNode = FindAdjacentHazard(triggerHazard) ?? triggerHazard;
+        StartCoroutine(FailSequenceRoutine(hazardNode));
+    }
+
+    private IEnumerator FailSequenceRoutine(RepairPuzzleNode hazardNode)
+    {
+        if (failWireBreakSFX != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySFX(failWireBreakSFX);
+
+        bool hazardDone = false;
+        if (hazardNode != null)
+            hazardNode.PlayHazardReveal(() => hazardDone = true);
+        else
+            hazardDone = true;
+
+        while (!hazardDone)
+            yield return null;
+
+        float wait = failHazardToWireDelay;
+        while (wait > 0f) { wait -= Time.unscaledDeltaTime; yield return null; }
+
+        bool wireDone = false;
+        if (wireTiler != null)
+            wireTiler.PlayBreakAnimationAll(() => wireDone = true);
+        else
+            wireDone = true;
+
+        while (!wireDone)
+            yield return null;
+
+        float afterBreak = failAfterBreakDelay;
+        while (afterBreak > 0f) { afterBreak -= Time.unscaledDeltaTime; yield return null; }
+
+        FailPuzzle();
+    }
+
+    private RepairPuzzleNode FindAdjacentHazard(RepairPuzzleNode node)
+    {
+        if (node == null) return null;
+        if (node.nodeType == RepairPuzzleNodeType.RedHazard) return node;
+
+        Vector2Int pos = new Vector2Int(node.x, node.y);
+        Vector2Int[] offsets = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+        for (int i = 0; i < offsets.Length; i++)
+            if (nodes.TryGetValue(pos + offsets[i], out RepairPuzzleNode neighbor))
+                if (neighbor != null && neighbor.nodeType == RepairPuzzleNodeType.RedHazard)
+                    return neighbor;
+
+        return null;
+    }
+
+    private void TriggerSuccessSequence()
+    {
+        if (isSucceeding) return;
+        isSucceeding = true;
+        isDragging = false;
+
+        StartCoroutine(SuccessSequenceRoutine());
+    }
+
+    private IEnumerator SuccessSequenceRoutine()
+    {
+        if (successSFX != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySFX(successSFX);
+
+        if (endA != null && endA.spriteRenderer != null && endSuccessSprite != null)
+        {
+            Sprite originalSprite = endA.spriteRenderer.sprite;
+
+            for (int i = 0; i < successBlinkCount; i++)
+            {
+                endA.spriteRenderer.sprite = endSuccessSprite;
+                float t = 0f;
+                while (t < successBlinkInterval) { t += Time.unscaledDeltaTime; yield return null; }
+
+                endA.spriteRenderer.sprite = originalSprite;
+                t = 0f;
+                while (t < successBlinkInterval) { t += Time.unscaledDeltaTime; yield return null; }
+            }
+
+            endA.spriteRenderer.sprite = endSuccessSprite;
+        }
+
+        float afterSuccess = successBlinkInterval * 2f;
+        while (afterSuccess > 0f) { afterSuccess -= Time.unscaledDeltaTime; yield return null; }
+
+        SuccessPuzzle();
+    }
+
     private void SpawnPortalGhosts()
     {
         int pairIndex = 0;
@@ -412,7 +519,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         foreach (var pair in nodes)
         {
             RepairPuzzleNode entry = pair.Value;
-
             if (entry.nodeType != RepairPuzzleNodeType.Portal) continue;
             if (entry.portalTarget == null) continue;
             if (portalGhosts.ContainsKey(entry)) continue;
@@ -459,7 +565,6 @@ public class RepairPuzzleRuntime : MonoBehaviour
         float minDist = Mathf.Min(dLeft, dRight, dBottom, dTop);
 
         Vector3 elbow;
-
         if (minDist == dLeft) elbow = new Vector3(left, midY, z);
         else if (minDist == dRight) elbow = new Vector3(right, midY, z);
         else if (minDist == dBottom) elbow = new Vector3(midX, bottom, z);
@@ -480,7 +585,7 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         if (IsDangerForStep(portalExit))
         {
-            FailPuzzle();
+            TriggerFailSequence(portalExit);
             return;
         }
 
@@ -492,8 +597,10 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         if (wireTiler != null)
         {
-            bool isOriginalPortalSegment = (activeSegmentIndex == 0 || (difficulty == RepairPuzzleDifficulty.Difficulty4 && activeSegmentIndex == 1));
-            wireTiler.RebuildSegment(activeSegmentIndex, segments[activeSegmentIndex].path, nodeSpacing, isOriginalPortalSegment);
+            bool isOriginalPortalSegment = (activeSegmentIndex == 0 ||
+                (difficulty == RepairPuzzleDifficulty.Difficulty4 && activeSegmentIndex == 1));
+            wireTiler.RebuildSegment(activeSegmentIndex, segments[activeSegmentIndex].path,
+                                     nodeSpacing, isOriginalPortalSegment, false);
         }
 
         segments[activeSegmentIndex].complete = true;
@@ -509,35 +616,27 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         activeSegmentIndex = segments.Count - 1;
 
-        Debug.Log("[Portal] Entrada conectada. Novo segmento ativado na saída: " + portalExit.name);
-
         RefreshVisuals();
     }
 
     private LineRenderer CreatePortalLineRenderer()
     {
         int count = 0;
-
         for (int i = 0; i < segments.Count; i++)
-        {
-            if (segments[i].lineRenderer != wireRendererA &&
-                segments[i].lineRenderer != wireRendererB)
+            if (segments[i].lineRenderer != wireRendererA && segments[i].lineRenderer != wireRendererB)
                 count++;
-        }
 
         GameObject obj = new GameObject("PortalWire_" + count);
         obj.transform.SetParent(transform);
 
         LineRenderer lr = obj.AddComponent<LineRenderer>();
         lr.positionCount = 0;
-
         return lr;
     }
 
     private void CheckCompletion()
     {
         WireSegment active = segments[activeSegmentIndex];
-
         if (active.path.Count == 0) return;
 
         RepairPuzzleNode last = active.path[active.path.Count - 1];
@@ -547,11 +646,9 @@ public class RepairPuzzleRuntime : MonoBehaviour
             active.complete = true;
             isDragging = false;
 
-            Debug.Log("[Runtime] Segmento " + activeSegmentIndex + " completo.");
-
             if (AllSegmentsComplete())
             {
-                SuccessPuzzle();
+                TriggerSuccessSequence();
                 return;
             }
 
@@ -571,22 +668,14 @@ public class RepairPuzzleRuntime : MonoBehaviour
     private bool AllSegmentsComplete()
     {
         for (int i = 0; i < segments.Count; i++)
-        {
-            if (!segments[i].complete)
-                return false;
-        }
-
+            if (!segments[i].complete) return false;
         return true;
     }
 
     private bool IsNodeInAnyPath(RepairPuzzleNode node)
     {
         for (int i = 0; i < segments.Count; i++)
-        {
-            if (segments[i].path.Contains(node))
-                return true;
-        }
-
+            if (segments[i].path.Contains(node)) return true;
         return false;
     }
 
@@ -600,13 +689,9 @@ public class RepairPuzzleRuntime : MonoBehaviour
         Vector2Int[] offsets = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
         for (int i = 0; i < offsets.Length; i++)
-        {
             if (nodes.TryGetValue(pos + offsets[i], out RepairPuzzleNode neighbor))
-            {
                 if (neighbor != null && neighbor.nodeType == RepairPuzzleNodeType.RedHazard)
                     return true;
-            }
-        }
 
         return false;
     }
@@ -622,29 +707,21 @@ public class RepairPuzzleRuntime : MonoBehaviour
     {
         if (wireRendererA != null) wireRendererA.positionCount = 0;
         if (wireRendererB != null) wireRendererB.positionCount = 0;
-
         if (wireTiler == null) return;
 
         for (int i = 0; i < segments.Count; i++)
         {
             if (segments[i].complete) continue;
+
             bool isOriginalSegment = (i == 0 || (difficulty == RepairPuzzleDifficulty.Difficulty4 && i == 1));
-            wireTiler.RebuildSegment(i, segments[i].path, nodeSpacing, isOriginalSegment);
+
+            List<RepairPuzzleNode> path = segments[i].path;
+            bool skipLast = path.Count > 0 &&
+                            (path[path.Count - 1].nodeType == RepairPuzzleNodeType.EndA ||
+                             path[path.Count - 1].nodeType == RepairPuzzleNodeType.EndB);
+
+            wireTiler.RebuildSegment(i, path, nodeSpacing, isOriginalSegment, skipLast);
         }
-    }
-
-    private Vector3 GetPointerWorldPosition()
-    {
-        if (puzzleCamera == null || Mouse.current == null)
-            return Vector3.zero;
-
-        Vector2 screenPos = Mouse.current.position.ReadValue();
-        Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(
-            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z))
-        );
-
-        worldPos.z = wireZOffset;
-        return worldPos;
     }
 
     private RepairPuzzleNode GetNodeUnderPointer()
@@ -653,11 +730,9 @@ public class RepairPuzzleRuntime : MonoBehaviour
 
         Vector2 screenPos = Mouse.current.position.ReadValue();
         Vector3 worldPos = puzzleCamera.ScreenToWorldPoint(
-            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z))
-        );
+            new Vector3(screenPos.x, screenPos.y, Mathf.Abs(puzzleCamera.transform.position.z)));
 
         Collider2D[] hits = Physics2D.OverlapPointAll(new Vector2(worldPos.x, worldPos.y));
-
         if (hits == null || hits.Length == 0) return null;
 
         for (int i = 0; i < hits.Length; i++)
@@ -675,10 +750,8 @@ public class RepairPuzzleRuntime : MonoBehaviour
         List<RepairPuzzleNode> result = new List<RepairPuzzleNode>();
 
         foreach (var pair in nodes)
-        {
             if (pair.Value != null && pair.Value.nodeType == type)
                 result.Add(pair.Value);
-        }
 
         return result;
     }

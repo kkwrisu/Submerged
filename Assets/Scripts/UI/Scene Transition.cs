@@ -64,11 +64,27 @@ public class SceneTransition : MonoBehaviour
         StartCoroutine(DoTransition(sceneName));
     }
 
+    /// <summary>
+    /// Fade apenas para preto (sem trocar de cena).
+    /// </summary>
+    public IEnumerator FadeInOnly(float duration = -1f)
+    {
+        yield return Fade(0f, 1f, duration > 0f ? duration : fadeDuration);
+    }
+
+    /// <summary>
+    /// Fade apenas para transparente (sem trocar de cena).
+    /// </summary>
+    public IEnumerator FadeOutOnly(float duration = -1f)
+    {
+        yield return Fade(1f, 0f, duration > 0f ? duration : fadeDuration);
+    }
+
     private IEnumerator DoTransition(string sceneName)
     {
         isTransitioning = true;
 
-        yield return Fade(0f, 1f);
+        yield return Fade(0f, 1f, fadeDuration);
 
         if (loadingPanel != null)
             loadingPanel.SetActive(true);
@@ -140,12 +156,12 @@ public class SceneTransition : MonoBehaviour
         if (loadingPanel != null)
             loadingPanel.SetActive(false);
 
-        yield return Fade(1f, 0f);
+        yield return Fade(1f, 0f, fadeDuration);
 
         isTransitioning = false;
     }
 
-    private IEnumerator Fade(float startAlpha, float endAlpha)
+    private IEnumerator Fade(float startAlpha, float endAlpha, float duration)
     {
         if (fadeImage == null)
             yield break;
@@ -157,14 +173,12 @@ public class SceneTransition : MonoBehaviour
         c.a = startAlpha;
         fadeImage.color = c;
 
-        while (elapsed < fadeDuration)
+        while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / fadeDuration);
-
+            float t = Mathf.Clamp01(elapsed / duration);
             c.a = Mathf.Lerp(startAlpha, endAlpha, t);
             fadeImage.color = c;
-
             yield return null;
         }
 

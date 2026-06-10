@@ -37,6 +37,10 @@ public class RepairPuzzleManager : MonoBehaviour
     [Header("Pause World")]
     public bool pauseGameWhilePuzzleIsOpen = true;
 
+    [Header("Fade")]
+    [Tooltip("Duração do fade ao abrir e fechar o puzzle. -1 usa o valor padrão do SceneTransition.")]
+    public float puzzleFadeDuration = 0.3f;
+
     private string loadedScene;
     private Scene previousScene;
     private RepairPuzzleInteractable currentInteractable;
@@ -98,6 +102,10 @@ public class RepairPuzzleManager : MonoBehaviour
         if (pauseGameWhilePuzzleIsOpen)
             Time.timeScale = 0f;
 
+        // ── Fade para preto antes de carregar ─────────────────────────────────
+        if (SceneTransition.Instance != null)
+            yield return SceneTransition.Instance.FadeInOnly(puzzleFadeDuration);
+
         if (SaveManager.Instance != null)
             SaveManager.Instance.RegisterPuzzleScene(sceneName);
 
@@ -109,6 +117,10 @@ public class RepairPuzzleManager : MonoBehaviour
         Scene scene = SceneManager.GetSceneByName(sceneName);
         if (scene.IsValid())
             SceneManager.SetActiveScene(scene);
+
+        // ── Fade para revelar o puzzle ────────────────────────────────────────
+        if (SceneTransition.Instance != null)
+            yield return SceneTransition.Instance.FadeOutOnly(puzzleFadeDuration);
 
         Debug.Log("Cena do puzzle carregada: " + sceneName);
     }
@@ -123,6 +135,10 @@ public class RepairPuzzleManager : MonoBehaviour
 
     private IEnumerator CloseRoutine(RepairPuzzleResult result)
     {
+        // ── Fade para preto antes de descarregar ──────────────────────────────
+        if (SceneTransition.Instance != null)
+            yield return SceneTransition.Instance.FadeInOnly(puzzleFadeDuration);
+
         if (previousScene.IsValid())
             SceneManager.SetActiveScene(previousScene);
 
@@ -160,6 +176,10 @@ public class RepairPuzzleManager : MonoBehaviour
             currentInteractable.OnPuzzleFinished(result);
             currentInteractable = null;
         }
+
+        // ── Fade para revelar o gameplay ──────────────────────────────────────
+        if (SceneTransition.Instance != null)
+            yield return SceneTransition.Instance.FadeOutOnly(puzzleFadeDuration);
     }
 
     private void LockPlayer(bool locked)

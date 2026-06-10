@@ -174,6 +174,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!61 &23346883
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -439,6 +442,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &55742801
 GameObject:
   m_ObjectHideFlags: 0
@@ -494,6 +500,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!61 &55742804
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -654,6 +663,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!61 &91791668
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -919,6 +931,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &191857778
 GameObject:
   m_ObjectHideFlags: 0
@@ -1079,6 +1094,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &206732835
 GameObject:
   m_ObjectHideFlags: 0
@@ -1239,6 +1257,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &214210373
 GameObject:
   m_ObjectHideFlags: 0
@@ -1399,6 +1420,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &217747075
 GameObject:
   m_ObjectHideFlags: 0
@@ -1559,6 +1583,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!114 &273713506 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8198095654453813563, guid: 200280f296752a1479be72c0b1da9173, type: 3}
@@ -1806,6 +1833,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &379707282
 GameObject:
   m_ObjectHideFlags: 0
@@ -1966,6 +1996,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &466461884
 GameObject:
   m_ObjectHideFlags: 0
@@ -2162,6 +2195,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!61 &526569294
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -2427,6 +2463,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &681990642
 GameObject:
   m_ObjectHideFlags: 0
@@ -2587,6 +2626,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &697660223
 GameObject:
   m_ObjectHideFlags: 0
@@ -2747,6 +2789,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &701704742
 GameObject:
   m_ObjectHideFlags: 0
@@ -2907,6 +2952,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &722690723
 GameObject:
   m_ObjectHideFlags: 0
@@ -3067,6 +3115,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &730896546
 GameObject:
   m_ObjectHideFlags: 0
@@ -3318,6 +3369,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &827636156
 GameObject:
   m_ObjectHideFlags: 0
@@ -3478,6 +3532,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &924263467
 GameObject:
   m_ObjectHideFlags: 0
@@ -3638,6 +3695,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &967187212
 GameObject:
   m_ObjectHideFlags: 0
@@ -3798,6 +3858,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1003327273
 GameObject:
   m_ObjectHideFlags: 0
@@ -3958,6 +4021,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1023691047
 GameObject:
   m_ObjectHideFlags: 0
@@ -4013,6 +4079,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!61 &1023691050
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -4278,6 +4347,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1065189420
 GameObject:
   m_ObjectHideFlags: 0
@@ -4438,6 +4510,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1116766463
 GameObject:
   m_ObjectHideFlags: 0
@@ -4493,6 +4568,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!61 &1116766466
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -4758,6 +4836,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1190127879
 GameObject:
   m_ObjectHideFlags: 0
@@ -4918,6 +4999,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1194709355
 GameObject:
   m_ObjectHideFlags: 0
@@ -4973,6 +5057,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!61 &1194709358
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -5238,6 +5325,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1257925412
 GameObject:
   m_ObjectHideFlags: 0
@@ -5398,6 +5488,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1299966870
 GameObject:
   m_ObjectHideFlags: 0
@@ -5558,6 +5651,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1385209033
 GameObject:
   m_ObjectHideFlags: 0
@@ -5718,6 +5814,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1392283439
 GameObject:
   m_ObjectHideFlags: 0
@@ -5878,6 +5977,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1397195348
 GameObject:
   m_ObjectHideFlags: 0
@@ -6171,6 +6273,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1685182319
 GameObject:
   m_ObjectHideFlags: 0
@@ -6331,6 +6436,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1760439222
 GameObject:
   m_ObjectHideFlags: 0
@@ -6491,6 +6599,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1770174339
 GameObject:
   m_ObjectHideFlags: 0
@@ -6651,6 +6762,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1811786756
 GameObject:
   m_ObjectHideFlags: 0
@@ -6811,6 +6925,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &1817884548
 GameObject:
   m_ObjectHideFlags: 0
@@ -7113,6 +7230,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 21300000, guid: 280f4efe566eb1046a3fc86d7f931a48, type: 3}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1 &2056412541
 GameObject:
   m_ObjectHideFlags: 0
@@ -7168,6 +7288,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!61 &2056412544
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -7433,6 +7556,9 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   pathColor: {r: 0, g: 1, b: 0, a: 1}
   blockedColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hazardRevealSprite: {fileID: 0}
+  hazardRevealDuration: 0.45
+  hazardPulseScale: 1.35
 --- !u!1001 &3260713164250500987
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7558,6 +7684,10 @@ PrefabInstance:
       propertyPath: wireRendererB
       value: 
       objectReference: {fileID: 1817884549}
+    - target: {fileID: 1972186041548088947, guid: 6c08491206c2a5b4a86595f9d13741c1, type: 3}
+      propertyPath: endSuccessSprite
+      value: 
+      objectReference: {fileID: 21300000, guid: ed5b0e4de0a7a224bb4c795d36c564a5, type: 3}
     - target: {fileID: 4549641970064348197, guid: 6c08491206c2a5b4a86595f9d13741c1, type: 3}
       propertyPath: m_Name
       value: RepairPuzzleRuntime
@@ -7601,6 +7731,9 @@ MonoBehaviour:
   wireZOffset: -0.1
   sortingOrder: 5
   sortingLayerName: Default
+  breakDuration: 0.4
+  breakScatter: 0.18
+  breakFlashColor: {r: 1, g: 0.3, b: 0.1, a: 1}
 --- !u!1001 &7942619414377167042
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -21,6 +21,8 @@ MonoBehaviour:
     highlightEntries:
     - nodeType: 3
       highlightColor: {r: 1, g: 1, b: 1, a: 0}
+    - nodeType: 4
+      highlightColor: {r: 1, g: 1, b: 1, a: 0}
     overridePosition: 1
     panelPosition: {x: 459, y: -547}
     overrideOverlayPosition: 1
@@ -28,7 +30,7 @@ MonoBehaviour:
   - title: Tutorial
     description: "Pressione o clique esquerdo do mouse em uma sa\xEDda de fia\xE7\xE3o
       e arraste para percorrer o trajeto."
-    hasHighlight: 0
+    hasHighlight: 1
     highlightEntries:
     - nodeType: 3
       highlightColor: {r: 0, g: 0, b: 0, a: 0}
@@ -43,9 +45,9 @@ MonoBehaviour:
     - nodeType: 4
       highlightColor: {r: 1, g: 1, b: 1, a: 0}
     overridePosition: 1
-    panelPosition: {x: 210, y: 75}
+    panelPosition: {x: 459, y: -547}
     overrideOverlayPosition: 1
-    overlayPosition: {x: -913, y: 35}
+    overlayPosition: {x: -664, y: -587}
   - title: Tutorial
     description: Hazards Vermelhos destroem fios que passarem por casas adjacentes
       ortogonais ao mesmo.
