@@ -1,6 +1,6 @@
 using System.Collections;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CaptureHandler : MonoBehaviour
 {
@@ -9,12 +9,15 @@ public class CaptureHandler : MonoBehaviour
     [Header("Timing")]
     public float blackScreenDuration = 2.5f;
 
-    [Header("Capture Text")]
-    public TextMeshProUGUI captureText;
-    public string captureMessage = "Você foi capturado";
-    public float textFadeInDuration = 0.5f;
-    public float textHoldDuration = 1f;
-    public float textFadeOutDuration = 0.5f;
+    [Header("References")]
+    public Image fadeImage;
+    public Image captureImage;
+    public float fadeDuration = 0.4f;
+
+    [Header("Capture Timing")]
+    public float imageFadeInDuration = 0.5f;
+    public float imageHoldDuration = 1f;
+    public float imageFadeOutDuration = 0.5f;
 
     private bool isHandlingCapture = false;
 
@@ -29,16 +32,21 @@ public class CaptureHandler : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (captureText == null)
-            captureText = GetComponentInChildren<TextMeshProUGUI>(true);
-
-        if (captureText != null)
+        if (fadeImage != null)
         {
-            captureText.text = captureMessage;
-            Color c = captureText.color;
+            Color c = fadeImage.color;
             c.a = 0f;
-            captureText.color = c;
-            captureText.gameObject.SetActive(false);
+            fadeImage.color = c;
+            fadeImage.raycastTarget = false;
+            fadeImage.gameObject.SetActive(false);
+        }
+
+        if (captureImage != null)
+        {
+            Color c = captureImage.color;
+            c.a = 0f;
+            captureImage.color = c;
+            captureImage.gameObject.SetActive(false);
         }
     }
 
@@ -66,13 +74,13 @@ public class CaptureHandler : MonoBehaviour
         if (playerMovement != null)
             playerMovement.ResetAllStates();
 
-        if (captureText != null)
+        if (captureImage != null)
         {
-            captureText.gameObject.SetActive(true);
-            yield return StartCoroutine(FadeText(0f, 1f, textFadeInDuration));
-            yield return new WaitForSecondsRealtime(textHoldDuration);
-            yield return StartCoroutine(FadeText(1f, 0f, textFadeOutDuration));
-            captureText.gameObject.SetActive(false);
+            captureImage.gameObject.SetActive(true);
+            yield return StartCoroutine(FadeImage(captureImage, 0f, 1f, imageFadeInDuration));
+            yield return new WaitForSecondsRealtime(imageHoldDuration);
+            yield return StartCoroutine(FadeImage(captureImage, 1f, 0f, imageFadeOutDuration));
+            captureImage.gameObject.SetActive(false);
         }
         else
         {
@@ -88,65 +96,42 @@ public class CaptureHandler : MonoBehaviour
         isHandlingCapture = false;
     }
 
-    private IEnumerator FadeText(float startAlpha, float endAlpha, float duration)
+    private IEnumerator FadeImage(Image image, float startAlpha, float endAlpha, float duration)
     {
-        if (captureText == null) yield break;
+        if (image == null) yield break;
 
         float elapsed = 0f;
-        Color c = captureText.color;
+        Color c = image.color;
 
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
             c.a = Mathf.Lerp(startAlpha, endAlpha, Mathf.Clamp01(elapsed / duration));
-            captureText.color = c;
+            image.color = c;
             yield return null;
         }
 
         c.a = endAlpha;
-        captureText.color = c;
+        image.color = c;
     }
 
     private IEnumerator FadeOut()
     {
-        SceneTransition st = SceneTransition.Instance;
-        if (st == null || st.fadeImage == null) yield break;
+        if (fadeImage == null) yield break;
 
-        st.fadeImage.raycastTarget = true;
+        fadeImage.gameObject.SetActive(true);
+        fadeImage.raycastTarget = true;
 
-        float elapsed = 0f;
-        Color c = st.fadeImage.color;
-
-        while (elapsed < st.fadeDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            c.a = Mathf.Clamp01(elapsed / st.fadeDuration);
-            st.fadeImage.color = c;
-            yield return null;
-        }
-
-        c.a = 1f;
-        st.fadeImage.color = c;
+        yield return StartCoroutine(FadeImage(fadeImage, 0f, 1f, fadeDuration));
     }
 
     private IEnumerator FadeIn()
     {
-        SceneTransition st = SceneTransition.Instance;
-        if (st == null || st.fadeImage == null) yield break;
+        if (fadeImage == null) yield break;
 
-        float elapsed = 0f;
-        Color c = st.fadeImage.color;
+        yield return StartCoroutine(FadeImage(fadeImage, 1f, 0f, fadeDuration));
 
-        while (elapsed < st.fadeDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            c.a = Mathf.Clamp01(1f - (elapsed / st.fadeDuration));
-            st.fadeImage.color = c;
-            yield return null;
-        }
-
-        c.a = 0f;
-        st.fadeImage.color = c;
-        st.fadeImage.raycastTarget = false;
+        fadeImage.raycastTarget = false;
+        fadeImage.gameObject.SetActive(false);
     }
 }
