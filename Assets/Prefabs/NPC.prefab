@@ -13,6 +13,9 @@ GameObject:
   - component: {fileID: 8323571035708720615}
   - component: {fileID: 8357124113751993703}
   - component: {fileID: 7637308837438554633}
+  - component: {fileID: 9164008130284472596}
+  - component: {fileID: 4590522102921124710}
+  - component: {fileID: 4676829909971100135}
   m_Layer: 0
   m_Name: NPC
   m_TagString: Interactable
@@ -132,7 +135,9 @@ MonoBehaviour:
     nextNodeIndex: -1
     endDialogueHere: 0
     choices:
-    - choiceText: Sim
+    - choiceButtonPrefab: {fileID: 0}
+      normalSprite: {fileID: 0}
+      hoverSprite: {fileID: 0}
       nextNodeIndex: 1
       closeDialogue: 0
       triggerAction: 0
@@ -140,7 +145,10 @@ MonoBehaviour:
       onChoiceSelected:
         m_PersistentCalls:
           m_Calls: []
-    - choiceText: "N\xE3o"
+      sceneNameToCheck: 
+    - choiceButtonPrefab: {fileID: 0}
+      normalSprite: {fileID: 0}
+      hoverSprite: {fileID: 0}
       nextNodeIndex: -1
       closeDialogue: 1
       triggerAction: 0
@@ -148,6 +156,7 @@ MonoBehaviour:
       onChoiceSelected:
         m_PersistentCalls:
           m_Calls: []
+      sceneNameToCheck: 
   - text: "Pressione E para interagir com os bot\xF5es. Quando ambos estiverem pressionados,
       ela abrir\xE1."
     nextNodeIndex: -1
@@ -158,3 +167,62 @@ MonoBehaviour:
   onInteract:
     m_PersistentCalls:
       m_Calls: []
+--- !u!95 &9164008130284472596
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 375160409432472296}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 22100000, guid: dd75521abfc344f4d9604b0ab97c8375, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!195 &4590522102921124710
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 375160409432472296}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 1
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &4676829909971100135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 375160409432472296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0e712ea3f8d6a2449b25d96ec652216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCAnimator
+  gestureIntervalMin: 6
+  gestureIntervalMax: 14
+  useAnnoyedGesture: 1

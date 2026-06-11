@@ -1935,7 +1935,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CutsceneTrigger
   cutsceneData: {fileID: 11400000, guid: cc9c75f8d33d19448842325a6a9039b4, type: 2}
-  playOnStart: 1
+  playOnStart: 0
 --- !u!4 &98782438
 Transform:
   m_ObjectHideFlags: 0
@@ -41084,6 +41084,7 @@ MonoBehaviour:
   playerCamera: {fileID: 330585545}
   playerAudioListener: {fileID: 0}
   pauseGameWhilePuzzleIsOpen: 1
+  puzzleFadeDuration: 0.3
 --- !u!1 &1413729713 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4065254168416790284, guid: 150f485f894ab9c439ad1e14062c05b4, type: 3}
