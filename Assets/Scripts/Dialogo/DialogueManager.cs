@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -6,6 +7,8 @@ using UnityEngine.InputSystem;
 public class DialogueManager : MonoBehaviour
 {
     public static DialogueManager Instance;
+
+    public static event Action<Interactable> OnDialogueEnded;
 
     [Header("UI")]
     public GameObject dialoguePanel;
@@ -29,6 +32,8 @@ public class DialogueManager : MonoBehaviour
 
     private Interactable.DialogueNode[] nodes;
     private int currentNodeIndex;
+
+    private Interactable currentInteractable;
 
     private bool isActive = false;
     private bool waitingForChoice = false;
@@ -164,6 +169,7 @@ public class DialogueManager : MonoBehaviour
         }
 
         isCutsceneMode = false;
+        currentInteractable = interactable;
         nodes = interactable.dialogueNodes;
         currentNodeIndex = 0;
         isActive = true;
@@ -335,6 +341,9 @@ public class DialogueManager : MonoBehaviour
 
     private void EndDialogue()
     {
+        Interactable endedWith = currentInteractable;
+        currentInteractable = null;
+
         isActive = false;
         waitingForChoice = false;
         isCutsceneMode = false;
@@ -359,6 +368,9 @@ public class DialogueManager : MonoBehaviour
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        if (endedWith != null)
+            OnDialogueEnded?.Invoke(endedWith);
     }
 
     // -------------------------------------------------------------------------

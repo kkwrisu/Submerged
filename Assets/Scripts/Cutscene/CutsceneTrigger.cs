@@ -7,6 +7,10 @@ public class CutsceneTrigger : MonoBehaviour
     [Tooltip("Se true, dispara automaticamente no Start")]
     public bool playOnStart = true;
 
+    [Header("Diálogo Pós-Cutscene")]
+    [Tooltip("Se preenchido, este Interactable é usado para abrir um diálogo (via DialogueManager) imediatamente após o gameplay ser liberado ao fim desta cutscene. Útil para explicar comandos ao jogador.")]
+    public Interactable postCutsceneDialogue;
+
     private void Start()
     {
         if (playOnStart && cutsceneData != null)
@@ -27,7 +31,7 @@ public class CutsceneTrigger : MonoBehaviour
     public void Play()
     {
         if (CutsceneManager.Instance != null)
-            CutsceneManager.Instance.PlayCutscene(cutsceneData);
+            CutsceneManager.Instance.PlayCutscene(cutsceneData, postCutsceneDialogue);
         else
             Debug.LogWarning("[CutsceneTrigger] CutsceneManager.Instance não encontrado.");
     }

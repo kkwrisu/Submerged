@@ -152,13 +152,48 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
     public void StopInteract(GeneratorPuzzleInteractable interactable)
     {
         if (_currentInteractable != interactable) return;
+
         _isInteracting = false;
+
+        // Libera a referência — sem isso, IsCurrentInteractable continua true
+        // para sempre, e qualquer "E" pressionado em qualquer lugar do mapa
+        // seria tratado como interação com este notebook específico, mesmo
+        // o jogador estando longe dele.
+        _currentInteractable = null;
+
         Debug.Log("[GenPuzzle] Interação interrompida.");
     }
 
     public bool IsCurrentInteractable(GeneratorPuzzleInteractable interactable)
     {
         return _currentInteractable == interactable;
+    }
+
+    // ── Force Close (interrupção externa) ────────────────────────────────────
+
+    /// <summary>
+    /// Fecha o puzzle do gerador à força, incluindo qualquer tutorial pendente.
+    /// Usado quando outro sistema (ex: RepairPuzzleManager) precisa assumir o
+    /// controle do player e do timeScale enquanto este puzzle estava ativo.
+    /// </summary>
+    public void ForceClose()
+    {
+        if (tutorialTracker != null)
+            tutorialTracker.ForceClose();
+
+        _isInteracting = false;
+        _qteActive = false;
+        _qteTutorialPending = false;
+        _isOpen = false;
+
+        _currentInteractable = null;
+
+        _ui?.HideQTE();
+        _ui?.Hide();
+
+        LockPlayer(false);
+
+        Debug.Log("[GenPuzzle] ForceClose chamado.");
     }
 
     // ── QTE ───────────────────────────────────────────────────────────────────

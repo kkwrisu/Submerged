@@ -35,7 +35,6 @@ public class GeneratorTutorialTracker : MonoBehaviour
         {
             IsApproachTutorialActive = false;
             Time.timeScale = 1f;
-
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
@@ -61,11 +60,35 @@ public class GeneratorTutorialTracker : MonoBehaviour
         {
             IsQteTutorialActive = false;
             Time.timeScale = 1f;
+
             Debug.Log("[GenTutorial] QTE tutorial concluído. Retomando jogo.");
             onFinished?.Invoke();
         });
 
         return true;
+    }
+
+    // ── Force Close (interrupção externa) ───────────────────────────────────
+
+    /// <summary>
+    /// Fecha o tutorial à força (ex: jogador abriu outro puzzle no meio).
+    /// Restaura timeScale, cursor e flags sem chamar callbacks.
+    /// </summary>
+    public void ForceClose()
+    {
+        if (!IsApproachTutorialActive && !IsQteTutorialActive) return;
+
+        IsApproachTutorialActive = false;
+        IsQteTutorialActive = false;
+
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        if (tutorialUI != null && tutorialUI.panelRoot != null)
+            tutorialUI.panelRoot.SetActive(false);
+
+        Debug.Log("[GenTutorial] ForceClose — tutorial fechado por interrupção externa.");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -98,6 +121,7 @@ public class GeneratorTutorialTracker : MonoBehaviour
     private bool HasSeenTutorial(string id)
     {
         if (SaveManager.Instance?.CurrentSave == null) return false;
+
         return SaveDataTutorialExtensions.HasSeenTutorial(
             SaveManager.Instance.CurrentSave.seenTutorials, id);
     }
@@ -114,6 +138,7 @@ public class GeneratorTutorialTracker : MonoBehaviour
         SaveDataTutorialExtensions.MarkTutorialSeen(
             SaveManager.Instance.CurrentSave.seenTutorials, fullID);
         SaveManager.Instance.SaveGame();
+
         Debug.Log($"[GenTutorial] '{fullID}' marcado como visto.");
     }
 }

@@ -3,6 +3,9 @@ using UnityEngine.Events;
 
 public class Interactable : MonoBehaviour
 {
+    [Header("Identificação (para save/quests)")]
+    public string interactableId;
+
     [System.Serializable]
     public class DialogueChoice
     {

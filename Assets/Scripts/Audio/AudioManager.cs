@@ -47,27 +47,66 @@ public class AudioManager : MonoBehaviour
         LoadVolumes();
         ApplyVolumes();
         SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
     }
 
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        enemiesInChase = 0;
-
+        // Procura música configurada para a cena recém-carregada
         foreach (var entry in sceneMusics)
         {
             if (entry.sceneName == scene.name)
             {
+                enemiesInChase = 0;
                 currentClipVolume = entry.volume;
                 PlayMusic(entry.clip, entry.fadeDuration);
                 return;
             }
         }
+
+        // ── Cena carregada aditivamente sem música própria (ex: minigames) ──
+        // Não para a música da cena de gameplay por baixo. Apenas cenas
+        // carregadas em modo Single (troca de cena "de verdade") devem
+        // parar a música caso não tenham trilha configurada.
+        if (mode == LoadSceneMode.Additive)
+            return;
+
+        enemiesInChase = 0;
         StopMusic();
+    }
+
+    private void OnSceneUnloaded(Scene scene)
+    {
+        // ── Restaura a música da cena ativa ao fechar uma cena aditiva ──
+        // Quando o RepairPuzzle (ou outro minigame em cena aditiva) é
+        // descarregado, nenhum evento sceneLoaded dispara para a cena de
+        // gameplay por baixo — então a música precisa ser retomada aqui.
+        Scene activeScene = SceneManager.GetActiveScene();
+
+        // Evita reagir ao unload da própria cena ativa (ex: troca de cena Single)
+        if (scene.name == activeScene.name)
+            return;
+
+        foreach (var entry in sceneMusics)
+        {
+            if (entry.sceneName == activeScene.name)
+            {
+                currentClipVolume = entry.volume;
+
+                // Se a música certa já está tocando (nunca foi parada), não faz nada
+                if (musicSource.clip == entry.clip && musicSource.isPlaying)
+                    return;
+
+                PlayMusic(entry.clip, entry.fadeDuration);
+                return;
+            }
+        }
     }
 
     private void PlayMusic(AudioClip clip, float fadeDuration)

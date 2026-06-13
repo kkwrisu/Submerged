@@ -13,6 +13,7 @@ public class SaveData
     public List<DoorSaveRecord> doors = new List<DoorSaveRecord>();
     public List<PuzzleSaveRecord> puzzles = new List<PuzzleSaveRecord>();
     public List<TutorialSeenRecord> seenTutorials = new List<TutorialSeenRecord>();
+    public List<QuestProgressRecord> questProgress = new List<QuestProgressRecord>();
 
     /// <summary>
     /// JsonUtility.FromJson não inicializa listas na build compilada.
@@ -25,6 +26,17 @@ public class SaveData
         if (doors == null) doors = new List<DoorSaveRecord>();
         if (puzzles == null) puzzles = new List<PuzzleSaveRecord>();
         if (seenTutorials == null) seenTutorials = new List<TutorialSeenRecord>();
+        if (questProgress == null) questProgress = new List<QuestProgressRecord>();
+
+        for (int i = 0; i < questProgress.Count; i++)
+        {
+            if (questProgress[i].talkedNpcIds == null)
+            {
+                QuestProgressRecord r = questProgress[i];
+                r.talkedNpcIds = new List<string>();
+                questProgress[i] = r;
+            }
+        }
     }
 }
 
@@ -48,6 +60,14 @@ public struct PuzzleSaveRecord
 {
     public string id;
     public bool completed;
+}
+
+[Serializable]
+public struct QuestProgressRecord
+{
+    public string questId;
+    public bool completed;
+    public List<string> talkedNpcIds;
 }
 
 [Serializable]

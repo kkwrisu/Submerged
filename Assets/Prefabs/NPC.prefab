@@ -21,7 +21,7 @@ GameObject:
   m_TagString: Interactable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &4728901880316137590
 Transform:
@@ -130,38 +130,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc88e98598e100f4594256635b4aff5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
-  dialogueNodes:
-  - text: "Ol\xE1! Voc\xEA veio aqui para descobrir como abrir a porta?"
-    nextNodeIndex: -1
-    endDialogueHere: 0
-    choices:
-    - choiceButtonPrefab: {fileID: 0}
-      normalSprite: {fileID: 0}
-      hoverSprite: {fileID: 0}
-      nextNodeIndex: 1
-      closeDialogue: 0
-      triggerAction: 0
-      actionDebugMessage: 
-      onChoiceSelected:
-        m_PersistentCalls:
-          m_Calls: []
-      sceneNameToCheck: 
-    - choiceButtonPrefab: {fileID: 0}
-      normalSprite: {fileID: 0}
-      hoverSprite: {fileID: 0}
-      nextNodeIndex: -1
-      closeDialogue: 1
-      triggerAction: 0
-      actionDebugMessage: 
-      onChoiceSelected:
-        m_PersistentCalls:
-          m_Calls: []
-      sceneNameToCheck: 
-  - text: "Pressione E para interagir com os bot\xF5es. Quando ambos estiverem pressionados,
-      ela abrir\xE1."
-    nextNodeIndex: -1
-    endDialogueHere: 1
-    choices: []
+  interactableId: 
+  dialogueNodes: []
   triggerActionOnInteract: 0
   interactActionDebugMessage: 
   onInteract:
@@ -223,6 +193,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0e712ea3f8d6a2449b25d96ec652216, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCAnimator
+  patrolPoints: []
+  patrolSpeed: 2
+  waitTime: 2
+  reachDistance: 0.8
   gestureIntervalMin: 6
   gestureIntervalMax: 14
   useAnnoyedGesture: 1

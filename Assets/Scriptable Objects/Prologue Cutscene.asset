@@ -50,8 +50,8 @@ MonoBehaviour:
     typewriterTickClip: {fileID: 0}
     tickVolume: 0
     tickEveryNChars: 0
-  - dialogueText: "\xC9 melhor eu terminar as anota\xE7\xF5es no di\xE1rio e me apressar
-      logo pra sair daqui antes que esse fedor me fa\xE7a desmaiar."
+  - dialogueText: "\xC9 melhor eu terminar as anota\xE7\xF5es no meu di\xE1rio e
+      ir embora desse lugar antes que a patrulha da cidade me alcance."
     showDialogue: 1
     cameraTargetIndex: 2
     cameraRotateSpeed: 1

@@ -49,6 +49,22 @@ public class RepairPuzzleTutorialUI : MonoBehaviour
     private Vector2 _overlayDefaultPosition;
     private bool _overlayDefaultPositionCaptured;
 
+    // ── Unity ─────────────────────────────────────────────────────────────────
+
+    private void Awake()
+    {
+        // Garante que o tutorial começa escondido independentemente do estado
+        // salvo na cena/prefab. Sem isso, quando o tutorial já foi visto e
+        // Show() nunca é chamado nesta instância, o painel fica visível com
+        // o texto placeholder padrão ("New Text") do TextMeshPro.
+        if (tutorialRoot != null) tutorialRoot.SetActive(false);
+        if (panelRoot != null) panelRoot.SetActive(false);
+
+        SetOverlayAlpha(0f);
+        SetDimmerAlpha(0f);
+        SetPanelAlpha(0f);
+    }
+
     // ── API Pública ───────────────────────────────────────────────────────────
 
     public void Show(RepairPuzzleTutorialData tutorialData, RepairPuzzleRuntime puzzleRuntime, Action onFinishedCallback)

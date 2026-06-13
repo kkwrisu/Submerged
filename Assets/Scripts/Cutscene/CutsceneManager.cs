@@ -28,6 +28,7 @@ public class CutsceneManager : MonoBehaviour
     public AudioSource audioSource;
 
     private CutsceneData currentData;
+    private Interactable pendingPostCutsceneDialogue;
     private bool isActive;
     private Coroutine cameraRoutine;
 
@@ -46,11 +47,12 @@ public class CutsceneManager : MonoBehaviour
     // API pública
     // -------------------------------------------------------------------------
 
-    public void PlayCutscene(CutsceneData data)
+    public void PlayCutscene(CutsceneData data, Interactable postCutsceneDialogue = null)
     {
         if (isActive || data == null || data.steps == null || data.steps.Length == 0) return;
 
         currentData = data;
+        pendingPostCutsceneDialogue = postCutsceneDialogue;
         isActive = true;
 
         LockGameplay();
@@ -213,6 +215,17 @@ public class CutsceneManager : MonoBehaviour
             yield return StartCoroutine(GameUI.Instance.FadeIn(currentData.uiFadeDuration));
 
         isActive = false;
+
+        // ── Diálogo pós-cutscene ────────────────────────────────────────────
+        // Roda DEPOIS que o gameplay foi totalmente liberado e a UI já fez
+        // fade-in. O próprio DialogueManager.StartDialogue vai re-travar o
+        // player, esconder a UI e pausar o jogo de novo — então a ordem aqui
+        // é importante: primeiro libera tudo, depois o diálogo assume.
+        if (pendingPostCutsceneDialogue != null)
+        {
+            DialogueManager.Instance.StartDialogue(pendingPostCutsceneDialogue);
+            pendingPostCutsceneDialogue = null;
+        }
     }
 
     // -------------------------------------------------------------------------
