@@ -37,11 +37,13 @@ public class TunnelQuestBarrier : MonoBehaviour, ISaveable
 
     private void OnEnable()
     {
+        Debug.Log($"[TunnelQuestBarrier] OnEnable em '{gameObject.name}' (questId={questId}) — inscrevendo no evento. talkedIds atuais: {string.Join(",", talkedIds)} | questCompleted={questCompleted}");
         DialogueManager.OnDialogueEnded += HandleDialogueEnded;
     }
 
     private void OnDisable()
     {
+        Debug.Log($"[TunnelQuestBarrier] OnDisable em '{gameObject.name}' (questId={questId}) — desinscrevendo.");
         DialogueManager.OnDialogueEnded -= HandleDialogueEnded;
     }
 
@@ -112,15 +114,20 @@ public class TunnelQuestBarrier : MonoBehaviour, ISaveable
         if (questCompleted) return;
         if (interactable == null || string.IsNullOrEmpty(interactable.interactableId)) return;
 
+        Debug.Log($"[TunnelQuestBarrier] Evento recebido de '{interactable.name}' com ID '{interactable.interactableId}'");
+
         bool isRequired = false;
         for (int i = 0; i < requiredNPCs.Length; i++)
         {
+            Debug.Log($"[TunnelQuestBarrier] Comparando com requiredNPCs[{i}] = '{requiredNPCs[i]?.name}' (ID: '{requiredNPCs[i]?.interactableId}')");
             if (requiredNPCs[i] == interactable)
             {
                 isRequired = true;
                 break;
             }
         }
+
+        Debug.Log($"[TunnelQuestBarrier] isRequired = {isRequired} | talkedIds antes: {string.Join(",", talkedIds)}");
 
         if (!isRequired) return;
 
@@ -181,6 +188,8 @@ public class TunnelQuestBarrier : MonoBehaviour, ISaveable
         if (index < 0) return;
 
         QuestProgressRecord record = data.questProgress[index];
+
+        Debug.Log($"[TunnelQuestBarrier] LoadFromSave chamado para '{questId}'. completed={record.completed} | talkedNpcIds={(record.talkedNpcIds != null ? string.Join(",", record.talkedNpcIds) : "null")}");
 
         questCompleted = record.completed;
 

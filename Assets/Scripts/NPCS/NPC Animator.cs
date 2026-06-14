@@ -106,14 +106,16 @@ public class NPCAnimator : MonoBehaviour
     public void OnDialogueStart()
     {
         isInDialogue = true;
-        agent.isStopped = true;
+        if (agent != null)
+            agent.isStopped = true;
         animator?.SetTrigger(HashTalking);
     }
 
     public void OnDialogueEnd()
     {
         isInDialogue = false;
-        agent.isStopped = false;
+        if (agent != null)
+            agent.isStopped = false;
         GoTo();
     }
 
@@ -181,7 +183,11 @@ public class NPCAnimator : MonoBehaviour
 
     private void GoTo()
     {
-        if (agent.enabled && agent.isOnNavMesh)
-            agent.SetDestination(patrolPoints[patrolIndex].position);
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh) return;
+        if (patrolPoints == null || patrolPoints.Length == 0) return;
+        if (patrolIndex < 0 || patrolIndex >= patrolPoints.Length) return;
+        if (patrolPoints[patrolIndex] == null) return;
+
+        agent.SetDestination(patrolPoints[patrolIndex].position);
     }
 }

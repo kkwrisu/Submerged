@@ -346,6 +346,8 @@ public class DialogueManager : MonoBehaviour
 
     private void EndDialogue()
     {
+        Debug.Log($"[DialogueManager] EndDialogue chamado. currentInteractable = {currentInteractable?.name} | ID = {currentInteractable?.interactableId}");
+
         Interactable endedWith = currentInteractable;
         currentInteractable = null;
 

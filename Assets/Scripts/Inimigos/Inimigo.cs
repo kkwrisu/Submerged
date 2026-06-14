@@ -43,6 +43,13 @@ public class Inimigo : MonoBehaviour
     public float hearingThreshold = 0.2f;
     public float investigateSoundDuration = 2.5f;
 
+    [Header("Hearing - Direct Chase")]
+    [Tooltip("Nivel minimo de ruido (0-1) para acionar perseguicao direta ao ouvir o jogador")]
+    public float directChaseNoiseThreshold = 0.65f;
+    [Range(0f, 1f)]
+    [Tooltip("Fracao do raio de audicao efetivo dentro da qual o ruido alto aciona perseguicao direta")]
+    public float directChaseRadiusFraction = 0.4f;
+
     [Header("Movement Speeds")]
     public float chaseSpeed = 4.5f;
     public float patrolSpeed = 2f;
@@ -260,7 +267,7 @@ public class Inimigo : MonoBehaviour
         {
             case EnemyState.Patrol: UpdatePatrol(canSeePlayer, canHearPlayer); break;
             case EnemyState.Suspicious: UpdateSuspicious(canSeePlayer, canHearPlayer); break;
-            case EnemyState.Investigate: UpdateInvestigate(canSeePlayer); break;
+            case EnemyState.Investigate: UpdateInvestigate(canSeePlayer, canHearPlayer); break;
             case EnemyState.Chase: UpdateChase(canSeePlayer, canHearPlayer); break;
             case EnemyState.Catch: UpdateCatch(canSeePlayer); break;
             case EnemyState.Search: UpdateSearch(canSeePlayer, canHearPlayer); break;
@@ -269,6 +276,23 @@ public class Inimigo : MonoBehaviour
 
         hadPlayerInSightLastFrame = canSeePlayer;
         UpdateAnimator();
+    }
+
+    // ---------------------------------------------------------------------------
+    // Determina se o ruido ouvido e forte e proximo o suficiente para acionar
+    // perseguicao direta, sem passar por Suspicious/Investigate.
+    // ---------------------------------------------------------------------------
+    private bool ShouldChaseFromSound()
+    {
+        if (player == null || playerStealth == null) return false;
+
+        float noise = playerStealth.CurrentNoise;
+        if (noise < directChaseNoiseThreshold) return false;
+
+        float distance = Vector3.Distance(transform.position, player.position);
+        float effectiveRadius = hearingRadius * Mathf.Lerp(0.5f, 1.5f, noise);
+
+        return distance <= effectiveRadius * directChaseRadiusFraction;
     }
 
     private void UpdateAnimator()
@@ -327,7 +351,20 @@ public class Inimigo : MonoBehaviour
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
         if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
-        if (canHearPlayer) { EnterSuspicious(heardPosition); return; }
+
+        if (canHearPlayer)
+        {
+            if (ShouldChaseFromSound())
+            {
+                detectionMeter = detectionThreshold;
+                EnterChase();
+            }
+            else
+            {
+                EnterSuspicious(heardPosition);
+            }
+            return;
+        }
 
         if (patrolPoints == null || patrolPoints.Length == 0) return;
 
@@ -349,6 +386,14 @@ public class Inimigo : MonoBehaviour
 
         if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
 
+        // Ruido alto e proximo enquanto ja esta desconfiado: perseguicao imediata
+        if (canHearPlayer && ShouldChaseFromSound())
+        {
+            detectionMeter = detectionThreshold;
+            EnterChase();
+            return;
+        }
+
         suspiciousTimer += Time.deltaTime;
         if (canHearPlayer) suspiciousTimer = 0f;
 
@@ -362,11 +407,19 @@ public class Inimigo : MonoBehaviour
             EnterInvestigate(hasHeardSomething ? heardPosition : transform.position);
     }
 
-    private void UpdateInvestigate(bool canSeePlayer)
+    private void UpdateInvestigate(bool canSeePlayer, bool canHearPlayer)
     {
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
         if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
+
+        // Ruido alto e proximo enquanto investiga: perseguicao imediata
+        if (canHearPlayer && ShouldChaseFromSound())
+        {
+            detectionMeter = detectionThreshold;
+            EnterChase();
+            return;
+        }
 
         searchTimer += Time.deltaTime;
         searchPointTimer += Time.deltaTime;
@@ -456,7 +509,20 @@ public class Inimigo : MonoBehaviour
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
         if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
-        if (canHearPlayer) { EnterSuspicious(heardPosition); return; }
+
+        if (canHearPlayer)
+        {
+            if (ShouldChaseFromSound())
+            {
+                detectionMeter = detectionThreshold;
+                EnterChase();
+            }
+            else
+            {
+                EnterSuspicious(heardPosition);
+            }
+            return;
+        }
 
         searchTimer += Time.deltaTime;
         searchPointTimer += Time.deltaTime;
@@ -476,7 +542,20 @@ public class Inimigo : MonoBehaviour
         if (!agent.enabled || !agent.isOnNavMesh) return;
 
         if (canSeePlayer && detectionMeter >= detectionThreshold) { EnterChase(); return; }
-        if (canHearPlayer) { EnterSuspicious(heardPosition); return; }
+
+        if (canHearPlayer)
+        {
+            if (ShouldChaseFromSound())
+            {
+                detectionMeter = detectionThreshold;
+                EnterChase();
+            }
+            else
+            {
+                EnterSuspicious(heardPosition);
+            }
+            return;
+        }
 
         if (patrolPoints == null || patrolPoints.Length == 0) return;
 
@@ -583,7 +662,6 @@ public class Inimigo : MonoBehaviour
     private IEnumerator WaitForUppercutAndCatch()
     {
         isWaitingForUppercut = true;
-
         agent.isStopped = true;
 
         Vector3 lookTarget = GetPlayerPosition();
@@ -1033,6 +1111,10 @@ public class Inimigo : MonoBehaviour
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, catchRange);
+
+        // Visualiza o raio de perseguicao direta por audio (fracao do raio de audicao)
+        Gizmos.color = new Color(1f, 0.4f, 0f, 0.5f);
+        Gizmos.DrawWireSphere(transform.position, hearingRadius * directChaseRadiusFraction);
 
         if (player != null)
         {
