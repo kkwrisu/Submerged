@@ -9,13 +9,25 @@ public class NPCAnimator : MonoBehaviour
     public float waitTime = 2f;
     public float reachDistance = 0.8f;
 
+    [Header("Animation")]
+    public float animationSpeedReference = 4.5f;
+
     [Header("Idle Gestures")]
     public float gestureIntervalMin = 6f;
     public float gestureIntervalMax = 14f;
     public bool useAnnoyedGesture = true;
 
+    [Header("Dialogue")]
+    public float lookAtPlayerSpeed = 5f;
+
+    [Header("Head Look At")]
+    [Range(0f, 1f)] public float headLookWeight = 0.6f;
+
     private NavMeshAgent agent;
     private Animator animator;
+    private Transform player;
+
+    private bool isInDialogue;
 
     private int patrolIndex;
     private float waitTimer;
@@ -27,6 +39,7 @@ public class NPCAnimator : MonoBehaviour
     private static readonly int HashTurningR = Animator.StringToHash("TurningRight");
     private static readonly int HashAnnoyed = Animator.StringToHash("Annoyed");
     private static readonly int HashLookout = Animator.StringToHash("Lookout");
+    private static readonly int HashTalking = Animator.StringToHash("Talking");
 
     private void Awake()
     {
@@ -37,15 +50,83 @@ public class NPCAnimator : MonoBehaviour
 
     private void Start()
     {
+        GameObject foundPlayer = GameObject.FindGameObjectWithTag("Player");
+        if (foundPlayer != null)
+            player = foundPlayer.transform;
+
         if (agent == null || patrolPoints == null || patrolPoints.Length == 0) return;
         agent.speed = patrolSpeed;
         GoTo();
     }
 
+    private void OnEnable()
+    {
+        DialogueManager.OnDialogueEnded += HandleDialogueEnded;
+    }
+
+    private void OnDisable()
+    {
+        DialogueManager.OnDialogueEnded -= HandleDialogueEnded;
+    }
+
+    private void HandleDialogueEnded(Interactable interactable)
+    {
+        if (interactable == GetComponent<Interactable>())
+            OnDialogueEnd();
+    }
+
     private void Update()
     {
+        if (isInDialogue)
+        {
+            animator?.SetFloat(HashSpeed, 0f, 0.1f, Time.deltaTime);
+            FacePlayer();
+            return;
+        }
+
         UpdatePatrol();
         UpdateAnimator();
+    }
+
+    private void OnAnimatorIK(int layerIndex)
+    {
+        if (animator == null) return;
+
+        if (isInDialogue && player != null)
+        {
+            animator.SetLookAtWeight(headLookWeight);
+            animator.SetLookAtPosition(player.position + Vector3.up * 1.5f);
+        }
+        else
+        {
+            animator.SetLookAtWeight(0f);
+        }
+    }
+
+    public void OnDialogueStart()
+    {
+        isInDialogue = true;
+        agent.isStopped = true;
+        animator?.SetTrigger(HashTalking);
+    }
+
+    public void OnDialogueEnd()
+    {
+        isInDialogue = false;
+        agent.isStopped = false;
+        GoTo();
+    }
+
+    private void FacePlayer()
+    {
+        if (player == null) return;
+
+        Vector3 dir = (player.position - transform.position);
+        dir.y = 0f;
+        if (dir == Vector3.zero) return;
+
+        Quaternion target = Quaternion.LookRotation(dir);
+        transform.rotation = Quaternion.Slerp(transform.rotation, target, lookAtPlayerSpeed * Time.deltaTime);
     }
 
     private void UpdatePatrol()
@@ -66,7 +147,7 @@ public class NPCAnimator : MonoBehaviour
     {
         if (animator == null) return;
 
-        float speed = agent != null ? agent.velocity.magnitude / patrolSpeed : 0f;
+        float speed = agent != null ? agent.velocity.magnitude / animationSpeedReference : 0f;
         animator.SetFloat(HashSpeed, speed, 0.1f, Time.deltaTime);
 
         if (speed > 0.1f && agent != null)

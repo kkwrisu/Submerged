@@ -43,6 +43,7 @@ public class DialogueManager : MonoBehaviour
     public bool IsTyping { get; private set; }
 
     private bool isCutsceneMode = false;
+    private bool shouldPauseGame = true;
 
     private void Awake()
     {
@@ -155,7 +156,7 @@ public class DialogueManager : MonoBehaviour
     // Diálogo normal
     // -------------------------------------------------------------------------
 
-    public void StartDialogue(Interactable interactable)
+    public void StartDialogue(Interactable interactable, bool pauseGame = true)
     {
         TryReconnectUI();
 
@@ -169,6 +170,7 @@ public class DialogueManager : MonoBehaviour
         }
 
         isCutsceneMode = false;
+        shouldPauseGame = pauseGame;
         currentInteractable = interactable;
         nodes = interactable.dialogueNodes;
         currentNodeIndex = 0;
@@ -185,9 +187,12 @@ public class DialogueManager : MonoBehaviour
         if (playerMovementScript != null) playerMovementScript.enabled = false;
         if (playerLookScript != null) playerLookScript.enabled = false;
 
-        Time.timeScale = 0f;
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        if (shouldPauseGame)
+        {
+            Time.timeScale = 0f;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
 
         ShowNode(currentNodeIndex);
     }
@@ -365,7 +370,11 @@ public class DialogueManager : MonoBehaviour
         if (playerMovementScript != null) playerMovementScript.enabled = true;
         if (playerLookScript != null) playerLookScript.enabled = true;
 
-        Time.timeScale = 1f;
+        if (shouldPauseGame)
+            Time.timeScale = 1f;
+
+        shouldPauseGame = true;
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
