@@ -36137,51 +36137,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -4443384559926691238, guid: 150f485f894ab9c439ad1e14062c05b4, type: 3}
---- !u!1 &865705518
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 865705520}
-  - component: {fileID: 865705519}
-  m_Layer: 0
-  m_Name: Checkpoint Inicial
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &865705519
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 865705518}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2d360fbaaef78143b2d7f20372fb8bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::InitialCheckpoint
-  spawnPoint: {fileID: 2001152425}
---- !u!4 &865705520
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 865705518}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 86.65753, y: -2.60223, z: 47.15467}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &867928069 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -2250704686491419584, guid: 150f485f894ab9c439ad1e14062c05b4, type: 3}
@@ -95867,7 +95822,6 @@ SceneRoots:
   - {fileID: 448593019}
   - {fileID: 1412345425}
   - {fileID: 1066940629}
-  - {fileID: 865705520}
   - {fileID: 449458211}
   - {fileID: 8012472318723636188}
   - {fileID: 2144184062}
