@@ -34,6 +34,15 @@ public class PauseMenu : MonoBehaviour
         Instance = this;
     }
 
+    private void Start()
+    {
+        // Start roda depois de todos os Awakes da cena — seguro pra buscar referências
+        StartCoroutine(ReconnectAfterFrame());
+
+        Time.timeScale = 1f;
+        isPaused = false;
+    }
+
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -55,27 +64,43 @@ public class PauseMenu : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        // Só dispara em troca de cena (não na primeira — essa o Start resolve)
         StartCoroutine(ReconnectAfterFrame());
     }
 
     private IEnumerator ReconnectAfterFrame()
     {
-        yield return null;
-        yield return null;
-
-        Debug.Log("GameUI.Instance: " + GameUI.Instance);
-
-        if (GameUI.Instance != null)
+        // Espera GameUI estar pronto de verdade
+        float timeout = 5f;
+        float elapsed = 0f;
+        while (GameUI.Instance == null && elapsed < timeout)
         {
-            pauseMenuPanel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
-                .FirstOrDefault(t => t.name == "PauseMenu")?.gameObject;
-
-            settingsPanel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
-                .FirstOrDefault(t => t.name == "Settings")?.gameObject;
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
         }
 
+        if (GameUI.Instance == null)
+        {
+            Debug.LogError("[PauseMenu] GameUI.Instance ainda null após timeout — abortando reconnect.");
+            yield break;
+        }
+
+        Debug.Log("[PauseMenu] Reconectando. GameUI: " + GameUI.Instance);
+
+        pauseMenuPanel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
+            .FirstOrDefault(t => t.name == "PauseMenu")?.gameObject;
+
+        settingsPanel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
+            .FirstOrDefault(t => t.name == "Settings")?.gameObject;
+
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+
+        Debug.Log("[PauseMenu] pauseMenuPanel: " + pauseMenuPanel);
+        Debug.Log("[PauseMenu] settingsPanel: " + settingsPanel);
+
         GameObject player = GameObject.FindGameObjectWithTag("Player");
-        Debug.Log("Player encontrado: " + player);
+        Debug.Log("[PauseMenu] Player: " + player);
 
         if (player != null)
         {
@@ -83,10 +108,19 @@ public class PauseMenu : MonoBehaviour
             playerLookScript = player.GetComponent<PlayerLook>();
             playerInteractScript = player.GetComponent<PlayerInteract>();
 
+            // Busca PlayerLook nos filhos também caso não esteja no root
+            if (playerLookScript == null)
+                playerLookScript = player.GetComponentInChildren<PlayerLook>();
+
+            Debug.Log("[PauseMenu] PlayerMovement: " + playerMovementScript);
+            Debug.Log("[PauseMenu] PlayerLook: " + playerLookScript);
+            Debug.Log("[PauseMenu] PlayerInteract: " + playerInteractScript);
+
             PlayerInteract interact = player.GetComponent<PlayerInteract>();
-            if (interact != null && GameUI.Instance != null)
+            if (interact != null)
             {
-                UnityEngine.UI.Graphic crosshair = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Graphic>(true)
+                UnityEngine.UI.Graphic crosshair = GameUI.Instance
+                    .GetComponentsInChildren<UnityEngine.UI.Graphic>(true)
                     .FirstOrDefault(g => g.name == "Crosshair");
 
                 if (crosshair != null)
@@ -94,9 +128,9 @@ public class PauseMenu : MonoBehaviour
             }
 
             DialogueManager dialogue = player.GetComponentInChildren<DialogueManager>();
-            Debug.Log("DialogueManager encontrado: " + dialogue);
+            Debug.Log("[PauseMenu] DialogueManager: " + dialogue);
 
-            if (dialogue != null && GameUI.Instance != null)
+            if (dialogue != null)
             {
                 var panel = GameUI.Instance.GetComponentsInChildren<Transform>(true)
                     .FirstOrDefault(t => t.name == "DialoguePanel");
@@ -107,7 +141,8 @@ public class PauseMenu : MonoBehaviour
                 var choices = GameUI.Instance.GetComponentsInChildren<Transform>(true)
                     .FirstOrDefault(t => t.name == "ChoicesContainer");
 
-                var crosshairGraphic = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Graphic>(true)
+                var crosshairGraphic = GameUI.Instance
+                    .GetComponentsInChildren<UnityEngine.UI.Graphic>(true)
                     .FirstOrDefault(g => g.name == "Crosshair");
 
                 dialogue.dialoguePanel = panel?.gameObject;
@@ -129,22 +164,18 @@ public class PauseMenu : MonoBehaviour
     {
         if (GameUI.Instance == null) return;
 
-        UnityEngine.UI.Button resumeButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
-            .FirstOrDefault(b => b.name == "Resume");
+        var allButtons = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+        Debug.Log($"[PauseMenu] Botões encontrados ({allButtons.Length}):");
+        foreach (var b in allButtons)
+            Debug.Log($"  - '{b.name}'");
 
-        UnityEngine.UI.Button settingsButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
-            .FirstOrDefault(b => b.name == "SettingsButton");
-
-        UnityEngine.UI.Button backButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
-            .FirstOrDefault(b => b.name == "Back");
-
-        UnityEngine.UI.Button mainMenuButton = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
-            .FirstOrDefault(b => b.name == "Main Menu");
-
-        Debug.Log("[PauseMenu] Resume: " + (resumeButton != null ? "OK" : "NULL"));
-        Debug.Log("[PauseMenu] SettingsButton: " + (settingsButton != null ? "OK" : "NULL"));
-        Debug.Log("[PauseMenu] Back: " + (backButton != null ? "OK" : "NULL"));
-        Debug.Log("[PauseMenu] MainMenu: " + (mainMenuButton != null ? mainMenuButton.gameObject.name : "NULL"));
+        UnityEngine.UI.Button resumeButton = allButtons.FirstOrDefault(b => b.name == "Resume");
+        UnityEngine.UI.Button settingsButton = allButtons.FirstOrDefault(b => b.name == "SettingsButton");
+        UnityEngine.UI.Button backButton = allButtons.FirstOrDefault(b => b.name == "Back");
+        UnityEngine.UI.Button mainMenuButton = allButtons.FirstOrDefault(b =>
+            b.name == "Main Menu" || b.name == "MainMenu" ||
+            b.name == "main menu" || b.name == "main_menu" ||
+            b.name == "BtnMainMenu");
 
         if (resumeButton != null)
         {
@@ -168,62 +199,25 @@ public class PauseMenu : MonoBehaviour
         {
             mainMenuButton.onClick.RemoveAllListeners();
             mainMenuButton.onClick.AddListener(ReturnToMainMenu);
-            Debug.Log("[PauseMenu] ReturnToMainMenu conectado.");
         }
-        else
-        {
-            string[] possibleNames = { "Main Menu", "MainMenu", "main menu", "main_menu", "BtnMainMenu" };
-            foreach (string name in possibleNames)
-            {
-                var btn = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true)
-                    .FirstOrDefault(b => b.name == name);
 
-                if (btn != null)
-                {
-                    btn.onClick.RemoveAllListeners();
-                    btn.onClick.AddListener(ReturnToMainMenu);
-                    Debug.Log($"[PauseMenu] MainMenu encontrado com nome alternativo: '{name}'");
-                    break;
-                }
-            }
-
-            var allButtons = GameUI.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(true);
-            Debug.Log($"[PauseMenu] Botões encontrados na UI ({allButtons.Length}):");
-            foreach (var b in allButtons)
-                Debug.Log($"  - '{b.name}'");
-        }
-    }
-
-    private void Start()
-    {
-        if (pauseMenuPanel != null)
-            pauseMenuPanel.SetActive(false);
-
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
-
-        Time.timeScale = 1f;
-        isPaused = false;
+        Debug.Log("[PauseMenu] Resume: " + (resumeButton != null ? "OK" : "NULL"));
+        Debug.Log("[PauseMenu] Settings: " + (settingsButton != null ? "OK" : "NULL"));
+        Debug.Log("[PauseMenu] Back: " + (backButton != null ? "OK" : "NULL"));
+        Debug.Log("[PauseMenu] MainMenu: " + (mainMenuButton != null ? "OK" : "NULL"));
     }
 
     public void OnPause(InputAction.CallbackContext context)
     {
-        if (!context.performed)
-            return;
-
+        if (!context.performed) return;
         TogglePause();
     }
 
     private void TogglePause()
     {
-        if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen())
-            return;
-
-        if (waitingForEscRelease)
-            return;
-
-        if (CutsceneManager.Instance != null && CutsceneManager.Instance.IsActive())
-            return;
+        if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen()) return;
+        if (waitingForEscRelease) return;
+        if (CutsceneManager.Instance != null && CutsceneManager.Instance.IsActive()) return;
 
         if (settingsPanel != null && settingsPanel.activeSelf)
         {
@@ -237,50 +231,29 @@ public class PauseMenu : MonoBehaviour
             return;
         }
 
-        if (DialogueManager.Instance != null && DialogueManager.Instance.IsActive())
-            return;
+        if (DialogueManager.Instance != null && DialogueManager.Instance.IsActive()) return;
 
         PauseGame();
     }
 
-    public void BlockPauseUntilEscReleased()
-    {
-        waitingForEscRelease = true;
-    }
-
-    public void BlockPauseForOneFrame()
-    {
-        waitingForEscRelease = true;
-    }
+    public void BlockPauseUntilEscReleased() => waitingForEscRelease = true;
+    public void BlockPauseForOneFrame() => waitingForEscRelease = true;
 
     public void PauseGame()
     {
-        if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen())
-            return;
-
-        if (waitingForEscRelease)
-            return;
-
-        if (isPaused)
-            return;
+        if (RepairPuzzleManager.Instance != null && RepairPuzzleManager.Instance.IsPuzzleOpen()) return;
+        if (waitingForEscRelease) return;
+        if (isPaused) return;
 
         isPaused = true;
         Time.timeScale = 0f;
 
-        if (pauseMenuPanel != null)
-            pauseMenuPanel.SetActive(true);
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(true);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
 
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
-
-        if (playerMovementScript != null)
-            playerMovementScript.enabled = false;
-
-        if (playerLookScript != null)
-            playerLookScript.enabled = false;
-
-        if (playerInteractScript != null)
-            playerInteractScript.enabled = false;
+        if (playerMovementScript != null) playerMovementScript.enabled = false;
+        if (playerLookScript != null) playerLookScript.enabled = false;
+        if (playerInteractScript != null) playerInteractScript.enabled = false;
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -288,26 +261,17 @@ public class PauseMenu : MonoBehaviour
 
     public void ResumeGame()
     {
-        if (!isPaused)
-            return;
+        if (!isPaused) return;
 
         isPaused = false;
         Time.timeScale = 1f;
 
-        if (pauseMenuPanel != null)
-            pauseMenuPanel.SetActive(false);
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
 
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
-
-        if (playerMovementScript != null)
-            playerMovementScript.enabled = true;
-
-        if (playerLookScript != null)
-            playerLookScript.enabled = true;
-
-        if (playerInteractScript != null)
-            playerInteractScript.enabled = true;
+        if (playerMovementScript != null) playerMovementScript.enabled = true;
+        if (playerLookScript != null) playerLookScript.enabled = true;
+        if (playerInteractScript != null) playerInteractScript.enabled = true;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -315,20 +279,14 @@ public class PauseMenu : MonoBehaviour
 
     public void OpenSettings()
     {
-        if (pauseMenuPanel != null)
-            pauseMenuPanel.SetActive(false);
-
-        if (settingsPanel != null)
-            settingsPanel.SetActive(true);
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
     }
 
     public void CloseSettings()
     {
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
-
-        if (pauseMenuPanel != null)
-            pauseMenuPanel.SetActive(true);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (pauseMenuPanel != null) pauseMenuPanel.SetActive(true);
     }
 
     public void ReturnToMainMenu()

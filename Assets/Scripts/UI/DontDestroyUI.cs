@@ -56,7 +56,7 @@ public class GameUI : MonoBehaviour
         Debug.Log($"[GameUI] RefreshForScene: {sceneName} | shouldHide: {shouldHide}");
 
         // Começa invisível em cenas de gameplay — cutscene ou ShowImmediate vão reativar
-        canvasGroup.alpha = shouldHide ? 1f : 0f;
+        canvasGroup.alpha = shouldHide ? 0f : 1f;
 
         foreach (var el in uiElements)
         {

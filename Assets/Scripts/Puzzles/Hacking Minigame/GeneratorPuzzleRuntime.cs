@@ -43,8 +43,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
     private InputAction _interactHold;
     private InputAction _qteInput;
 
-    // ── Unity ──────────────────────────────────────────────────────────────────
-
     private void Awake()
     {
         _ui = FindFirstObjectByType<GeneratorPuzzleUI>();
@@ -109,6 +107,16 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
             return;
         }
 
+        bool earlySpacePressed =
+            (_qteInput != null && _qteInput.WasPressedThisFrame()) ||
+            (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame);
+
+        if (earlySpacePressed)
+        {
+            FailAndClose();
+            return;
+        }
+
         _progress += fillSpeed * Time.deltaTime;
         _progress = Mathf.Clamp01(_progress);
         _ui?.SetProgress(_progress);
@@ -122,8 +130,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         if (_progress >= 1f)
             CompletePuzzle();
     }
-
-    // ── API Pública ────────────────────────────────────────────────────────────
 
     public void BeginInteract(GeneratorPuzzleInteractable interactable)
     {
@@ -154,11 +160,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         if (_currentInteractable != interactable) return;
 
         _isInteracting = false;
-
-        // Libera a referência — sem isso, IsCurrentInteractable continua true
-        // para sempre, e qualquer "E" pressionado em qualquer lugar do mapa
-        // seria tratado como interação com este notebook específico, mesmo
-        // o jogador estando longe dele.
         _currentInteractable = null;
 
         Debug.Log("[GenPuzzle] Interação interrompida.");
@@ -169,13 +170,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         return _currentInteractable == interactable;
     }
 
-    // ── Force Close (interrupção externa) ────────────────────────────────────
-
-    /// <summary>
-    /// Fecha o puzzle do gerador à força, incluindo qualquer tutorial pendente.
-    /// Usado quando outro sistema (ex: RepairPuzzleManager) precisa assumir o
-    /// controle do player e do timeScale enquanto este puzzle estava ativo.
-    /// </summary>
     public void ForceClose()
     {
         if (tutorialTracker != null)
@@ -195,8 +189,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
 
         Debug.Log("[GenPuzzle] ForceClose chamado.");
     }
-
-    // ── QTE ───────────────────────────────────────────────────────────────────
 
     private void TriggerQTE()
     {
@@ -256,19 +248,25 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         else
         {
             Debug.Log("[GenPuzzle] QTE falhou.");
-
-            _progress -= failRegressAmount;
-            _progress = Mathf.Clamp01(_progress);
-
-            _nextQteThreshold = GetNextQteThreshold();
-
-            _currentInteractable?.OnPuzzleFailed();
-            _isInteracting = false;
-            CloseUI();
+            FailAndClose();
         }
     }
 
-    // ── UI Open/Close ─────────────────────────────────────────────────────────
+    private void FailAndClose()
+    {
+        _progress -= failRegressAmount;
+        _progress = Mathf.Clamp01(_progress);
+        _nextQteThreshold = GetNextQteThreshold();
+        _ui?.SetProgress(_progress);
+
+        var interactable = _currentInteractable;
+        _isInteracting = false;
+        _currentInteractable = null;
+
+        CloseUI();
+
+        interactable?.OnPuzzleFailed();
+    }
 
     private void OpenUI()
     {
@@ -283,8 +281,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         LockPlayer(false);
         _ui?.Hide();
     }
-
-    // ── Completar ─────────────────────────────────────────────────────────────
 
     private void CompletePuzzle()
     {
@@ -322,8 +318,6 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
         yield return null;
         LockPlayer(false);
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private float GetNextQteThreshold()
     {
@@ -378,7 +372,7 @@ public class GeneratorPuzzleRuntime : MonoBehaviour
     {
         if (!Application.isPlaying) return;
         GUI.Label(new Rect(10, 10, 300, 20), $"[GenPuzzle] Progress: {_progress:P0}");
-        GUI.Label(new Rect(10, 30, 300, 20), $"[GenPuzzle] Interacting: {_isInteracting} | Open: {_isOpen} | QTE: {_qteActive}");
+        GUI.Label(new Rect(10, 30, 300, 20), $"[GenPuzzle] Interating: {_isInteracting} | Open: {_isOpen} | QTE: {_qteActive}");
         GUI.Label(new Rect(10, 50, 300, 20), $"[GenPuzzle] Next QTE at: {_nextQteThreshold:P0} | TutorialPending: {_qteTutorialPending}");
     }
 #endif

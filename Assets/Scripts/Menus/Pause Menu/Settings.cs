@@ -11,7 +11,36 @@ public class Settings : MonoBehaviour
 
     private void OnEnable()
     {
+        if (musicSlider == null || sfxSlider == null)
+            ReconnectSliders();
+
         RefreshSlidersFromSavedValues();
+    }
+
+    private void ReconnectSliders()
+    {
+        Slider[] sliders = GetComponentsInChildren<Slider>(true);
+
+        foreach (Slider s in sliders)
+        {
+            if (s.name == "BGM Slider") musicSlider = s;
+            else if (s.name == "SFX Slider") sfxSlider = s;
+        }
+
+        if (musicSlider != null)
+        {
+            musicSlider.onValueChanged.RemoveAllListeners();
+            musicSlider.onValueChanged.AddListener(SetMusicVolume);
+        }
+
+        if (sfxSlider != null)
+        {
+            sfxSlider.onValueChanged.RemoveAllListeners();
+            sfxSlider.onValueChanged.AddListener(SetSFXVolume);
+        }
+
+        Debug.Log("[Settings] MusicSlider: " + (musicSlider != null ? "OK" : "NULL"));
+        Debug.Log("[Settings] SFXSlider: " + (sfxSlider != null ? "OK" : "NULL"));
     }
 
     public void SetMusicVolume(float value)
