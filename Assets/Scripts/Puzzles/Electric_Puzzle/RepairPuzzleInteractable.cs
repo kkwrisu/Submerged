@@ -1,5 +1,12 @@
 using UnityEngine;
 
+[System.Serializable]
+public class DoorUnlockEntry
+{
+    public Doors door;
+    public int lockIndex = 0;
+}
+
 public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
 {
     [Header("Save")]
@@ -14,6 +21,10 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
     public bool completed;
     public bool blockIfCompleted = false;
 
+    [Header("Portas Vinculadas (opcional)")]
+    public DoorUnlockEntry[] doorsToUnlock;
+    public Interactable[] doorBlockInteractables;
+
     [Header("Fail Alert")]
     public float failAlertRadius = 12f;
     public LayerMask enemyLayer = ~0;
@@ -22,6 +33,9 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
     private void Start()
     {
         Debug.Log($"[Puzzle] {saveID} | completed={completed}");
+
+        if (completed)
+            HideDoorInteractables();
     }
 
     public void StartRepairPuzzle()
@@ -46,7 +60,6 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
 
     public void OnPuzzleFinished(RepairPuzzleResult result)
     {
-        // ESC fecha sem consequência — nem salva nem alerta inimigos
         if (result == RepairPuzzleResult.None)
         {
             Debug.Log($"[Puzzle] {saveID} fechado pelo jogador sem resultado.");
@@ -58,6 +71,17 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
             completed = true;
             Debug.Log($"[Puzzle] {saveID} concluído. Salvando...");
 
+            if (doorsToUnlock != null)
+            {
+                foreach (var entry in doorsToUnlock)
+                {
+                    if (entry != null && entry.door != null)
+                        entry.door.UnlockLock(entry.lockIndex);
+                }
+            }
+
+            HideDoorInteractables();
+
             if (SaveManager.Instance != null)
                 SaveManager.Instance.SaveGame();
         }
@@ -65,6 +89,17 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
         {
             Debug.Log($"[Puzzle] {saveID} falhou.");
             HandlePuzzleFail();
+        }
+    }
+
+    private void HideDoorInteractables()
+    {
+        if (doorBlockInteractables == null) return;
+
+        foreach (var interactable in doorBlockInteractables)
+        {
+            if (interactable != null)
+                interactable.gameObject.SetActive(false);
         }
     }
 
@@ -78,10 +113,8 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
         for (int i = 0; i < hits.Length; i++)
         {
             Inimigo inimigo = hits[i].GetComponent<Inimigo>();
-
             if (inimigo == null)
                 inimigo = hits[i].GetComponentInParent<Inimigo>();
-
             if (inimigo == null)
                 inimigo = hits[i].GetComponentInChildren<Inimigo>();
 
