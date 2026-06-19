@@ -24819,7 +24819,7 @@ Transform:
   m_GameObject: {fileID: 1180638045}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -129.84105, y: 0.8566501, z: 54.027897}
+  m_LocalPosition: {x: -129.84105, y: 0.8566501, z: 54.512}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -60884,6 +60884,134 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 8937665938935388488, guid: 276819ddce6617840927e30f15fe29c3, type: 3}
+--- !u!1 &1609661174
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1609661178}
+  - component: {fileID: 1609661177}
+  - component: {fileID: 1609661176}
+  - component: {fileID: 1609661175}
+  m_Layer: 0
+  m_Name: interagivel_tubulacao
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1609661175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1609661174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ce6bc12a2bf60544b75d9df8143fad3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Elevator
+  destinations:
+  - floorName: Hospital_2_Andar
+    sceneName: Hospital_2
+    spawnId: tubulacao_2_andar
+--- !u!114 &1609661176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1609661174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc88e98598e100f4594256635b4aff5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Interactable
+  interactableId: 
+  dialogueNodes:
+  - text: "Deseja entrar na tubula\xE7\xE3o?"
+    nextNodeIndex: 0
+    endDialogueHere: 0
+    choices:
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: 091da73f41839084597cb2fb7fd20a28, type: 3}
+      normalSprite: {fileID: 21300000, guid: e0de5b6d63c24ae43848c9b189fad212, type: 3}
+      hoverSprite: {fileID: 21300000, guid: 26fa1d6301f28d54e87f899d3078f795, type: 3}
+      nextNodeIndex: 0
+      closeDialogue: 1
+      triggerAction: 0
+      actionDebugMessage: 
+      onChoiceSelected:
+        m_PersistentCalls:
+          m_Calls:
+          - m_Target: {fileID: 1609661175}
+            m_TargetAssemblyTypeName: Elevator, Assembly-CSharp
+            m_MethodName: GoToFloor
+            m_Mode: 3
+            m_Arguments:
+              m_ObjectArgument: {fileID: 0}
+              m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+              m_IntArgument: 0
+              m_FloatArgument: 0
+              m_StringArgument: 
+              m_BoolArgument: 0
+            m_CallState: 2
+      sceneNameToCheck: Hospital_2
+    - choiceButtonPrefab: {fileID: 1590141494187252019, guid: d74db144b6060d54f8a06831132399f4, type: 3}
+      normalSprite: {fileID: 21300000, guid: dfcbab720bb8d1b4eab15b9265515ed6, type: 3}
+      hoverSprite: {fileID: 21300000, guid: 12339144e32eb6745a33e55c962b6249, type: 3}
+      nextNodeIndex: 0
+      closeDialogue: 1
+      triggerAction: 0
+      actionDebugMessage: 
+      onChoiceSelected:
+        m_PersistentCalls:
+          m_Calls: []
+      sceneNameToCheck: 
+  triggerActionOnInteract: 0
+  interactActionDebugMessage: 
+  onInteract:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!65 &1609661177
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1609661174}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.390007, y: 3.1942883, z: 2.5006104}
+  m_Center: {x: 0.19500351, y: 0.36602116, z: 0.053977966}
+--- !u!4 &1609661178
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1609661174}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 93.29209, y: 19.1238, z: 76.29769}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1612409906 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7749646088101624262, guid: 276819ddce6617840927e30f15fe29c3, type: 3}
@@ -64738,7 +64866,7 @@ Transform:
   m_GameObject: {fileID: 1690070562}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -105.72, y: 0.8566501, z: 54.027897}
+  m_LocalPosition: {x: -105.72, y: 0.8566501, z: 54.485}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -74133,6 +74261,51 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 6158260997244302321, guid: 276819ddce6617840927e30f15fe29c3, type: 3}
+--- !u!1 &1937775476
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1937775477}
+  - component: {fileID: 1937775478}
+  m_Layer: 0
+  m_Name: tubulacao_1_andar
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1937775477
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1937775476}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 95.67, y: 19.66592, z: 76.5936}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1937775478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1937775476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da4be405126a254aa5145fd04cf6ce5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneSpawnPoint
+  spawnId: tubulacao_1_andar
 --- !u!64 &1938738499
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -79465,7 +79638,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2325608262570641606, guid: cca4918340958ba43a556c552b18e464, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 20.88
+      value: 21.27
       objectReference: {fileID: 0}
     - target: {fileID: 2325608262570641606, guid: cca4918340958ba43a556c552b18e464, type: 3}
       propertyPath: m_LocalRotation.w
@@ -82614,3 +82787,5 @@ SceneRoots:
   - {fileID: 857928685}
   - {fileID: 374434568}
   - {fileID: 1216034671}
+  - {fileID: 1609661178}
+  - {fileID: 1937775477}
