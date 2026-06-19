@@ -3571,7 +3571,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CutsceneTrigger
   cutsceneData: {fileID: 11400000, guid: cc9c75f8d33d19448842325a6a9039b4, type: 2}
-  playOnStart: 0
+  playOnStart: 1
   postCutsceneDialogue: {fileID: 2098821233}
 --- !u!4 &98782438
 Transform:
