@@ -3756,7 +3756,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c94b81e85e900c54093c76ca93a99f13, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.115
+      value: 0.138
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c94b81e85e900c54093c76ca93a99f13, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3764,7 +3764,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c94b81e85e900c54093c76ca93a99f13, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.395
+      value: 0.125
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c94b81e85e900c54093c76ca93a99f13, type: 3}
       propertyPath: m_LocalRotation.w
@@ -4464,6 +4464,8 @@ MonoBehaviour:
   saveID: Generator_01
   completed: 0
   blockIfCompleted: 1
+  requiredRepairPuzzle: {fileID: 0}
+  lockedDialogueNodes: []
   tutorialTracker: {fileID: 192655769}
   failAlertRadius: 40
   enemyLayer:
@@ -7068,11 +7070,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
   interactableId: interactable_porta_elevador_2
   dialogueNodes:
-  - text: "A porta n\xE3o abre..."
+  - text: "A porta deste andar n\xE3o abre..."
     nextNodeIndex: 1
     endDialogueHere: 0
     choices: []
-  - text: "Talvez tenha alguma fia\xE7\xE3o por perto que eu possa consertar..."
+  - text: Talvez tenha algum caminho alternativo por perto...?
     nextNodeIndex: 2
     endDialogueHere: 1
     choices: []
@@ -13256,11 +13258,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Interactable
   interactableId: interactable_porta_elevador_1
   dialogueNodes:
-  - text: "A porta n\xE3o abre..."
+  - text: "A porta deste andar n\xE3o abre..."
     nextNodeIndex: 1
     endDialogueHere: 0
     choices: []
-  - text: "Talvez tenha alguma fia\xE7\xE3o por perto que eu possa consertar..."
+  - text: Talvez tenha algum caminho alternativo por perto...?
     nextNodeIndex: 2
     endDialogueHere: 1
     choices: []
@@ -22249,6 +22251,59 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -5607798019289876059, guid: 276819ddce6617840927e30f15fe29c3, type: 3}
+--- !u!1 &1042450513
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1042450515}
+  - component: {fileID: 1042450514}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &1042450514
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1042450513}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 6.077236, y: 6.968012, z: 6.1585083}
+  m_Center: {x: -3.1185532, y: 4.1355534, z: 1.2037964}
+--- !u!4 &1042450515
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1042450513}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 28.347, y: -0.23056, z: 213.98276}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!64 &1043315194
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -25435,10 +25490,10 @@ Light:
   serializedVersion: 12
   m_Type: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 25
+  m_Intensity: 28
   m_Range: 10
-  m_SpotAngle: 68.83962
-  m_InnerSpotAngle: 21.80208
+  m_SpotAngle: 70.806656
+  m_InnerSpotAngle: 23.769114
   m_CookieSize2D: {x: 0.5, y: 0.5}
   m_Shadows:
     m_Type: 0
@@ -25497,13 +25552,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1216034668}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.82979965, y: -0.019100023, z: -0.0114642475, w: 0.5576167}
-  m_LocalPosition: {x: 52.65, y: 5.18, z: 78.82}
+  m_LocalRotation: {x: 0.7757778, y: -0.22297929, z: 0.29473144, w: 0.51145136}
+  m_LocalPosition: {x: 78.48, y: 5.18, z: 79.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 112.334, y: 6.0919952, z: 6.722}
+  m_LocalEulerAnglesHint: {x: 112.334, y: -37.096985, z: 6.722}
 --- !u!114 &1216034672
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25517,7 +25572,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LightFlicker
   minIntensity: 0
-  maxIntensity: 25
+  maxIntensity: 28
   minInterval: 0.05
   maxInterval: 0.2
 --- !u!64 &1217000793
@@ -82652,112 +82707,13 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2bbbff43f490c054faa0071399006b3a, type: 3}
---- !u!1001 &8563390933746432997
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 273809701491701427, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: doorsToUnlock.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 273809701491701427, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: doorsToUnlock.Array.data[0].door
-      value: 
-      objectReference: {fileID: 1634208165}
-    - target: {fileID: 273809701491701427, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: doorsToUnlock.Array.data[1].door
-      value: 
-      objectReference: {fileID: 968709546}
-    - target: {fileID: 273809701491701427, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: doorBlockInteractables.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 273809701491701427, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: 'doorBlockInteractables.Array.data[0]'
-      value: 
-      objectReference: {fileID: 623350229}
-    - target: {fileID: 273809701491701427, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: 'doorBlockInteractables.Array.data[1]'
-      value: 
-      objectReference: {fileID: 322947388}
-    - target: {fileID: 5388796624956922740, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: onInteract.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 8563390933746432998}
-    - target: {fileID: 5388796624956922740, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: onInteract.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: StartRepairPuzzle
-      objectReference: {fileID: 0}
-    - target: {fileID: 6175813486049498838, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_Name
-      value: eletricidade
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 52.355
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.977
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 75.994
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -90
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 3846959f370132e40be83c816f571511, type: 3}
---- !u!114 &8563390933746432998 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 273809701491701427, guid: 3846959f370132e40be83c816f571511, type: 3}
-  m_PrefabInstance: {fileID: 8563390933746432997}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85336f56676baaf4a9bd39d694bfba0c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RepairPuzzleInteractable
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1182527322}
   - {fileID: 1481159042541029752}
+  - {fileID: 1251488998}
   - {fileID: 885224344}
   - {fileID: 627793912}
   - {fileID: 1336692300}
@@ -82769,7 +82725,6 @@ SceneRoots:
   - {fileID: 865705520}
   - {fileID: 8012472318723636188}
   - {fileID: 2144184062}
-  - {fileID: 8563390933746432997}
   - {fileID: 1563050760}
   - {fileID: 192655764}
   - {fileID: 2091459640}
@@ -82782,10 +82737,10 @@ SceneRoots:
   - {fileID: 750294368}
   - {fileID: 1601739964}
   - {fileID: 1550386209}
-  - {fileID: 1251488998}
   - {fileID: 251775572}
   - {fileID: 857928685}
   - {fileID: 374434568}
   - {fileID: 1216034671}
   - {fileID: 1609661178}
   - {fileID: 1937775477}
+  - {fileID: 1042450515}

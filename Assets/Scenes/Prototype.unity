@@ -3571,7 +3571,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CutsceneTrigger
   cutsceneData: {fileID: 11400000, guid: cc9c75f8d33d19448842325a6a9039b4, type: 2}
-  playOnStart: 1
+  playOnStart: 0
   postCutsceneDialogue: {fileID: 2098821233}
 --- !u!4 &98782438
 Transform:
@@ -95517,6 +95517,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6347347674880110577, guid: f0d097835e40bd843ae5cca1e2b6e8fa, type: 3}
   m_PrefabInstance: {fileID: 1481159042541029752}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1730631128219233642
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 8411920168374330668, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_Name
+      value: eletricidade
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 247.894
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.22274923
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -235.368
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.68776053
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.68776053
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.16427265
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.16427265
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 9220826116344070038, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 21.867
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fff0eb9ffa887ae4e9cc5e53c39097d6, type: 3}
 --- !u!1001 &4924598469258534893
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -95724,82 +95781,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2bbbff43f490c054faa0071399006b3a, type: 3}
---- !u!1001 &8563390933746432997
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 5388796624956922740, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: onInteract.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 8563390933746432998}
-    - target: {fileID: 5388796624956922740, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: onInteract.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: StartRepairPuzzle
-      objectReference: {fileID: 0}
-    - target: {fileID: 6175813486049498838, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_Name
-      value: eletricidade
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 247.894
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.22274923
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -235.368
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.68776053
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0.68776053
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.16427265
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0.16427265
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -90
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6845248273842457708, guid: 3846959f370132e40be83c816f571511, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 21.867
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 3846959f370132e40be83c816f571511, type: 3}
---- !u!114 &8563390933746432998 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 273809701491701427, guid: 3846959f370132e40be83c816f571511, type: 3}
-  m_PrefabInstance: {fileID: 8563390933746432997}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85336f56676baaf4a9bd39d694bfba0c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RepairPuzzleInteractable
 --- !u!1001 &8757221442728238775
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -95904,7 +95885,7 @@ SceneRoots:
   - {fileID: 449458211}
   - {fileID: 8012472318723636188}
   - {fileID: 2144184062}
-  - {fileID: 8563390933746432997}
+  - {fileID: 1730631128219233642}
   - {fileID: 1563050760}
   - {fileID: 4924598469258534893}
   - {fileID: 2091459640}

@@ -1,11 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Coloque este componente no objeto de computador/gerador da cena.
-/// Herda de Interactable — o raycast do PlayerInteract já detecta automaticamente.
-/// Ao completar o puzzle, eleva o nível do cartão de acesso do jogador em +1.
-/// </summary>
 public class GeneratorPuzzleInteractable : Interactable, ISaveable
 {
     [Header("Save")]
@@ -15,8 +10,13 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
     public bool completed = false;
     public bool blockIfCompleted = false;
 
+    [Header("Bloqueio por Repair Puzzle (opcional)")]
+    [Tooltip("Se preenchido, este notebook só funciona após o repair puzzle indicado ser concluído.")]
+    public RepairPuzzleInteractable requiredRepairPuzzle;
+    [Tooltip("Diálogo exibido quando o notebook está bloqueado.")]
+    public DialogueNode[] lockedDialogueNodes;
+
     [Header("Tutorial")]
-    [Tooltip("Referência ao tracker de tutorial do gerador. Se preenchido, exibe o tutorial na primeira interação.")]
     public GeneratorTutorialTracker tutorialTracker;
 
     [Header("Fail Alert")]
@@ -42,6 +42,22 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
             return;
         }
 
+        // Verifica se está bloqueado por repair puzzle
+        if (requiredRepairPuzzle != null && !requiredRepairPuzzle.completed)
+        {
+            Debug.Log($"[GenPuzzle] {saveID} bloqueado — repair puzzle não concluído.");
+
+            if (lockedDialogueNodes != null && lockedDialogueNodes.Length > 0 && DialogueManager.Instance != null)
+            {
+                var originalNodes = dialogueNodes;
+                dialogueNodes = lockedDialogueNodes;
+                DialogueManager.Instance.StartDialogue(this);
+                dialogueNodes = originalNodes;
+            }
+
+            return;
+        }
+
         if (_runtime == null)
             _runtime = FindFirstObjectByType<GeneratorPuzzleRuntime>();
 
@@ -51,14 +67,10 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
             return;
         }
 
-        // Se tiver tutorial configurado, tenta exibir na primeira interação.
-        // O puzzle só abre no callback (quando o jogador fechar o tutorial).
         if (tutorialTracker != null)
         {
             bool tutorialShown = tutorialTracker.TryShowApproachTutorial();
-
-            if (tutorialShown)
-                return;
+            if (tutorialShown) return;
         }
 
         _runtime.BeginInteract(this);
@@ -67,17 +79,13 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
     private void Update()
     {
         if (_runtime == null || completed) return;
-
         if (!_runtime.IsCurrentInteractable(this)) return;
 
         bool held = Keyboard.current != null && Keyboard.current.eKey.isPressed;
         bool released = Keyboard.current != null && Keyboard.current.eKey.wasReleasedThisFrame;
 
-        if (held)
-            _runtime.HoldInteract(this);
-
-        if (released)
-            _runtime.StopInteract(this);
+        if (held) _runtime.HoldInteract(this);
+        if (released) _runtime.StopInteract(this);
     }
 
     public void OnPuzzleCompleted()
@@ -103,22 +111,14 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
         for (int i = 0; i < hits.Length; i++)
         {
             Inimigo inimigo = hits[i].GetComponent<Inimigo>();
-
-            if (inimigo == null)
-                inimigo = hits[i].GetComponentInParent<Inimigo>();
-
-            if (inimigo == null)
-                inimigo = hits[i].GetComponentInChildren<Inimigo>();
-
-            if (inimigo != null)
-                inimigo.ForceChaseFromExternalAlert();
+            if (inimigo == null) inimigo = hits[i].GetComponentInParent<Inimigo>();
+            if (inimigo == null) inimigo = hits[i].GetComponentInChildren<Inimigo>();
+            if (inimigo != null) inimigo.ForceChaseFromExternalAlert();
         }
 
         if (DungeonAlertSystem.Instance != null)
             DungeonAlertSystem.Instance.RegisterMinigameFailure();
     }
-
-    // ── ISaveable ──────────────────────────────────────────────────────────────
 
     public string GetSaveID() => saveID;
 
@@ -132,7 +132,6 @@ public class GeneratorPuzzleInteractable : Interactable, ISaveable
                 return;
             }
         }
-
         data.puzzles.Add(new PuzzleSaveRecord { id = saveID, completed = completed });
     }
 

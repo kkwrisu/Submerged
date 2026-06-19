@@ -25,6 +25,18 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
     public DoorUnlockEntry[] doorsToUnlock;
     public Interactable[] doorBlockInteractables;
 
+    [Header("Light Flicker (opcional)")]
+    [Tooltip("Componentes de flickering a desativar ao concluir o puzzle.")]
+    public MonoBehaviour[] lightFlickerComponents;
+
+    [Header("Audio Sources (opcional)")]
+    [Tooltip("AudioSources a parar e desativar ao concluir o puzzle.")]
+    public AudioSource[] audioSourcesToDisable;
+
+    [Header("Diálogo pós-conclusão (opcional)")]
+    [Tooltip("Se preenchido, dispara este diálogo ao concluir o puzzle.")]
+    public Interactable postCompletionDialogue;
+
     [Header("Fail Alert")]
     public float failAlertRadius = 12f;
     public LayerMask enemyLayer = ~0;
@@ -35,7 +47,11 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
         Debug.Log($"[Puzzle] {saveID} | completed={completed}");
 
         if (completed)
+        {
             HideDoorInteractables();
+            DisableLightFlicker();
+            DisableAudioSources();
+        }
     }
 
     public void StartRepairPuzzle()
@@ -81,9 +97,14 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
             }
 
             HideDoorInteractables();
+            DisableLightFlicker();
+            DisableAudioSources();
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.SaveGame();
+
+            if (postCompletionDialogue != null && DialogueManager.Instance != null)
+                DialogueManager.Instance.StartDialogue(postCompletionDialogue);
         }
         else
         {
@@ -97,9 +118,27 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
         if (doorBlockInteractables == null) return;
 
         foreach (var interactable in doorBlockInteractables)
-        {
             if (interactable != null)
                 interactable.gameObject.SetActive(false);
+    }
+
+    private void DisableLightFlicker()
+    {
+        if (lightFlickerComponents == null) return;
+
+        foreach (var comp in lightFlickerComponents)
+            if (comp != null) comp.enabled = false;
+    }
+
+    private void DisableAudioSources()
+    {
+        if (audioSourcesToDisable == null) return;
+
+        foreach (var src in audioSourcesToDisable)
+        {
+            if (src == null) continue;
+            src.Stop();
+            src.enabled = false;
         }
     }
 
