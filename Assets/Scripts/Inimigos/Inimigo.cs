@@ -692,6 +692,11 @@ public class Inimigo : MonoBehaviour
         PlayerLook playerLook = player?.GetComponentInChildren<PlayerLook>();
         float fallDuration = playerLook != null ? playerLook.knockbackDuration : 1.4f;
 
+        // Dispara a animacao de camera (queda pra tras) no momento do golpe.
+        // Antes so liamos knockbackDuration pra saber quanto esperar, mas
+        // nunca chamavamos o metodo que realmente inicia o efeito.
+        playerLook?.TriggerKnockback();
+
         yield return new WaitForSeconds(fallDuration);
 
         CatchPlayer();

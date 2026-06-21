@@ -8,10 +8,15 @@ public class InitialCheckpoint : MonoBehaviour
 
     private void Start()
     {
-        // Só define se não houver save anterior (primeira vez ou save deletado)
         if (SaveManager.Instance == null) return;
 
-        if (!SaveManager.Instance.HasSave())
+        string currentScene = SceneManager.GetActiveScene().name;
+        string savedScene = SaveManager.Instance.GetSavedSceneName();
+
+        // Define o checkpoint inicial se: não há save nenhum ainda,
+        // OU o save existente não pertence a esta cena (logo não há
+        // checkpoint válido aqui ainda).
+        if (!SaveManager.Instance.HasSave() || savedScene != currentScene)
             Activate();
     }
 

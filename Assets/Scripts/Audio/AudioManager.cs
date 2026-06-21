@@ -34,9 +34,12 @@ public class AudioManager : MonoBehaviour
     private bool isFading = false;
     private float currentClipVolume = 1f;
     private int enemiesInChase = 0;
+    private Coroutine _fadeCoroutine;
 
     private void Awake()
     {
+        Debug.Log($"[AudioManager] Awake | instance={GetInstanceID()} | registrando OnSceneLoaded");
+
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -58,38 +61,51 @@ public class AudioManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Procura música configurada para a cena recém-carregada
+        Debug.Log($"[AudioManager] OnSceneLoaded: {scene.name} | instance={GetInstanceID()}");
+
         foreach (var entry in sceneMusics)
         {
             if (entry.sceneName == scene.name)
             {
                 enemiesInChase = 0;
                 currentClipVolume = entry.volume;
-                PlayMusic(entry.clip, entry.fadeDuration);
+
+                if (musicSource.clip == entry.clip && musicSource.isPlaying)
+                {
+                    ApplyVolumes();
+                    return;
+                }
+
+                // Clip já carregado no source, mas pausado/parado (ex: ficou preso
+                // num PauseMusicForChase sem o Resume correspondente). Nesse caso
+                // não precisa de fade, só retomar o play.
+                if (musicSource.clip == entry.clip && !musicSource.isPlaying)
+                {
+                    musicSource.UnPause();
+                    if (!musicSource.isPlaying)
+                        musicSource.Play();
+                    ApplyVolumes();
+                    return;
+                }
+
+                if (_fadeCoroutine != null) StopCoroutine(_fadeCoroutine);
+                _fadeCoroutine = StartCoroutine(FadeToMusic(entry.clip, entry.fadeDuration));
                 return;
             }
         }
 
-        // ── Cena carregada aditivamente sem música própria (ex: minigames) ──
-        // Não para a música da cena de gameplay por baixo. Apenas cenas
-        // carregadas em modo Single (troca de cena "de verdade") devem
-        // parar a música caso não tenham trilha configurada.
         if (mode == LoadSceneMode.Additive)
             return;
 
         enemiesInChase = 0;
-        StopMusic();
+        if (_fadeCoroutine != null) StopCoroutine(_fadeCoroutine);
+        _fadeCoroutine = StartCoroutine(FadeToMusic(null, 1f));
     }
 
     private void OnSceneUnloaded(Scene scene)
     {
-        // ── Restaura a música da cena ativa ao fechar uma cena aditiva ──
-        // Quando o RepairPuzzle (ou outro minigame em cena aditiva) é
-        // descarregado, nenhum evento sceneLoaded dispara para a cena de
-        // gameplay por baixo — então a música precisa ser retomada aqui.
         Scene activeScene = SceneManager.GetActiveScene();
 
-        // Evita reagir ao unload da própria cena ativa (ex: troca de cena Single)
         if (scene.name == activeScene.name)
             return;
 
@@ -99,27 +115,22 @@ public class AudioManager : MonoBehaviour
             {
                 currentClipVolume = entry.volume;
 
-                // Se a música certa já está tocando (nunca foi parada), não faz nada
                 if (musicSource.clip == entry.clip && musicSource.isPlaying)
                     return;
 
-                PlayMusic(entry.clip, entry.fadeDuration);
+                if (musicSource.clip == entry.clip && !musicSource.isPlaying)
+                {
+                    musicSource.UnPause();
+                    if (!musicSource.isPlaying)
+                        musicSource.Play();
+                    return;
+                }
+
+                if (_fadeCoroutine != null) StopCoroutine(_fadeCoroutine);
+                _fadeCoroutine = StartCoroutine(FadeToMusic(entry.clip, entry.fadeDuration));
                 return;
             }
         }
-    }
-
-    private void PlayMusic(AudioClip clip, float fadeDuration)
-    {
-        if (musicSource.clip == clip && musicSource.isPlaying) return;
-        StopAllCoroutines();
-        StartCoroutine(FadeToMusic(clip, fadeDuration));
-    }
-
-    private void StopMusic(float fadeDuration = 1f)
-    {
-        StopAllCoroutines();
-        StartCoroutine(FadeToMusic(null, fadeDuration));
     }
 
     private IEnumerator FadeToMusic(AudioClip newClip, float duration)
@@ -153,14 +164,14 @@ public class AudioManager : MonoBehaviour
         }
         musicSource.volume = targetVolume;
         isFading = false;
+        _fadeCoroutine = null;
     }
 
     public void PauseMusicForChase()
     {
         enemiesInChase++;
-
         if (musicSource == null || !musicSource.isPlaying) return;
-        StopAllCoroutines();
+        if (_fadeCoroutine != null) StopCoroutine(_fadeCoroutine);
         isFading = false;
         musicSource.Pause();
     }
@@ -168,7 +179,6 @@ public class AudioManager : MonoBehaviour
     public void ResumeMusicAfterChase()
     {
         enemiesInChase = Mathf.Max(0, enemiesInChase - 1);
-
         if (enemiesInChase > 0) return;
         if (musicSource == null || musicSource.isPlaying) return;
         musicSource.UnPause();
@@ -176,26 +186,22 @@ public class AudioManager : MonoBehaviour
 
     public void PlayButtonClick()
     {
-        if (buttonClickSFX != null)
-            sfxSource.PlayOneShot(buttonClickSFX, sfxVolume);
+        if (buttonClickSFX != null) sfxSource.PlayOneShot(buttonClickSFX, sfxVolume);
     }
 
     public void PlayButtonHover()
     {
-        if (buttonHoverSFX != null)
-            sfxSource.PlayOneShot(buttonHoverSFX, sfxVolume);
+        if (buttonHoverSFX != null) sfxSource.PlayOneShot(buttonHoverSFX, sfxVolume);
     }
 
     public void PlayButtonDisabled()
     {
-        if (buttonDisabledSFX != null)
-            sfxSource.PlayOneShot(buttonDisabledSFX, sfxVolume);
+        if (buttonDisabledSFX != null) sfxSource.PlayOneShot(buttonDisabledSFX, sfxVolume);
     }
 
     public void PlaySFX(AudioClip clip)
     {
-        if (clip != null)
-            sfxSource.PlayOneShot(clip, sfxVolume);
+        if (clip != null) sfxSource.PlayOneShot(clip, sfxVolume);
     }
 
     public void SetMusicVolume(float value)
@@ -224,7 +230,6 @@ public class AudioManager : MonoBehaviour
     {
         if (PlayerPrefs.HasKey("MusicVolume"))
             musicVolume = PlayerPrefs.GetFloat("MusicVolume");
-
         if (PlayerPrefs.HasKey("SFXVolume"))
             sfxVolume = PlayerPrefs.GetFloat("SFXVolume");
     }

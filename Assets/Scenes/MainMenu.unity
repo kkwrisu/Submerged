@@ -3023,26 +3023,26 @@ PrefabInstance:
     - target: {fileID: 8214029671932087620, guid: 1f7930e58fb06dc469eea4858d708a65, type: 3}
       propertyPath: sceneMusics.Array.data[2].clip
       value: 
-      objectReference: {fileID: 8300000, guid: fe8a234539dd5964e8dabf60eb24ee17, type: 3}
+      objectReference: {fileID: 8300000, guid: 6addb5167d0c5914ea66413f38ed3122, type: 3}
     - target: {fileID: 8214029671932087620, guid: 1f7930e58fb06dc469eea4858d708a65, type: 3}
       propertyPath: sceneMusics.Array.data[3].clip
       value: 
-      objectReference: {fileID: 8300000, guid: fe8a234539dd5964e8dabf60eb24ee17, type: 3}
+      objectReference: {fileID: 8300000, guid: 6addb5167d0c5914ea66413f38ed3122, type: 3}
     - target: {fileID: 8214029671932087620, guid: 1f7930e58fb06dc469eea4858d708a65, type: 3}
       propertyPath: sceneMusics.Array.data[4].clip
       value: 
-      objectReference: {fileID: 8300000, guid: fe8a234539dd5964e8dabf60eb24ee17, type: 3}
+      objectReference: {fileID: 8300000, guid: 6addb5167d0c5914ea66413f38ed3122, type: 3}
     - target: {fileID: 8214029671932087620, guid: 1f7930e58fb06dc469eea4858d708a65, type: 3}
       propertyPath: sceneMusics.Array.data[2].volume
-      value: 0.4
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 8214029671932087620, guid: 1f7930e58fb06dc469eea4858d708a65, type: 3}
       propertyPath: sceneMusics.Array.data[3].volume
-      value: 0.4
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 8214029671932087620, guid: 1f7930e58fb06dc469eea4858d708a65, type: 3}
       propertyPath: sceneMusics.Array.data[4].volume
-      value: 0.4
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 8214029671932087620, guid: 1f7930e58fb06dc469eea4858d708a65, type: 3}
       propertyPath: sceneMusics.Array.data[2].sceneName

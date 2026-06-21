@@ -127,7 +127,19 @@ public class RepairPuzzleInteractable : MonoBehaviour, ISaveable
         if (lightFlickerComponents == null) return;
 
         foreach (var comp in lightFlickerComponents)
-            if (comp != null) comp.enabled = false;
+        {
+            if (comp == null) continue;
+
+            LightFlicker flicker = comp as LightFlicker;
+            if (flicker != null)
+            {
+                Light light = flicker.GetComponent<Light>();
+                if (light != null)
+                    light.intensity = flicker.maxIntensity;
+            }
+
+            comp.enabled = false;
+        }
     }
 
     private void DisableAudioSources()
